@@ -1,0 +1,399 @@
+@page "/estado-dispensario"
+@implements IAsyncDisposable
+@using System.Globalization
+@inject IGasStationConsoleClient ConsoleClient
+
+<PageTitle>Estado de dispensario</PageTitle>
+
+<section class="console-shell">
+    <header class="console-header">
+        <div>
+            <h1>Estado de dispensario</h1>
+        </div>
+    </header>
+
+    <section class="dispensers-panel">
+        <div class="panel-heading status-panel-heading">
+            <h2>Dispensarios</h2>
+            <div class="status-query-controls">
+                <span>@GetSelectedSummary()</span>
+                <button class="btn btn-primary status-query-button" @onclick="ConsultSelectedAsync" disabled="@(!CanConsult)">
+                    @(isConsulting ? "Consultando..." : "Consultar")
+                </button>
+            </div>
+        </div>
+
+        <div class="dispensers-grid">
+            @foreach (var dispenser in dispensers)
+            {
+                <button class="dispenser-card @GetDispenserClass(dispenser)"
+                        @onclick="() => SelectDispenserAsync(dispenser)">
+                    <img src="@dispenser.ImagePath" alt="" />
+                    <span class="dispenser-number">@dispenser.Number</span>
+                    <span class="dispenser-status">@dispenser.StatusText</span>
+                </button>
+            }
+        </div>
+    </section>
+
+    <section class="tester-panel">
+        <div class="panel-heading">
+            <h2>Peticion cruda</h2>
+            <span>Trama enviada</span>
+        </div>
+
+        @if (string.IsNullOrWhiteSpace(lastRequest))
+        {
+            <p class="empty-message">Sin peticion enviada.</p>
+        }
+        else
+        {
+            <div class="raw-response-list raw-request-list">
+                <code>@lastRequest</code>
+            </div>
+        }
+    </section>
+
+    <section class="tester-panel">
+        <div class="panel-heading response-heading">
+            <div>
+                <h2>Respuesta cruda</h2>
+                <span>Consola</span>
+            </div>
+            <button class="btn btn-outline-secondary clear-response-button" @onclick="ClearResponse" disabled="@string.IsNullOrWhiteSpace(lastResponse)">
+                Limpiar
+            </button>
+        </div>
+
+        @if (string.IsNullOrWhiteSpace(lastResponse))
+        {
+            <p class="empty-message">Sin respuesta registrada.</p>
+        }
+        else
+        {
+            <div class="raw-response-list">
+                <code>@lastResponse</code>
+            </div>
+        }
+    </section>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(toastMessage))
+{
+    <div class="app-toast @toastCss">@toastMessage</div>
+}
+
+@code {
+    private const string CheckingImage = "images/dispensers/inactivo.png";
+    private const string InactiveImage = "images/dispensers/inactivo.png";
+    private const string HoseLiftedImage = "images/dispensers/llamando.png";
+    private const string ServingImage = "images/dispensers/sirviendo.png";
+    private const string OfflineImage = "images/dispensers/fuera-de-linea.png";
+
+    private readonly CancellationTokenSource pageCancellation = new();
+    private readonly List<DispenserStatusViewModel> dispensers = [];
+    private bool isConsulting;
+    private string? selectedDispenser;
+    private string? lastRequest;
+    private string? lastResponse;
+    private string? toastMessage;
+    private string toastCss = "is-success";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await LoadDispensersFromSummaryAsync();
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private async Task LoadDispensersFromSummaryAsync()
+    {
+        try
+        {
+            var connection = await ConsoleClient.ConnectAsync(pageCancellation.Token);
+            if (!connection.IsAvailable)
+            {
+                ShowToast(connection.UserMessage, false);
+                return;
+            }
+
+            var result = await ConsoleClient.SendDispenserSummaryAsync(pageCancellation.Token);
+            if (!result.IsSuccess)
+            {
+                ShowToast(result.UserMessage, false);
+                return;
+            }
+
+            foreach (var status in ParseDispenserSummary(result.ResponseFrame))
+            {
+                var dispenser = new DispenserStatusViewModel
+                {
+                    Number = NormalizeDispenserNumber(status.Key)
+                };
+
+                ApplySummaryStatus(dispenser, status.Value);
+                dispensers.Add(dispenser);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        finally
+        {
+            await ConsoleClient.DisconnectAsync();
+        }
+    }
+
+    private bool CanConsult => !isConsulting && !string.IsNullOrWhiteSpace(selectedDispenser);
+
+    private void SelectDispenserAsync(DispenserStatusViewModel dispenser)
+    {
+        selectedDispenser = dispenser.Number;
+    }
+
+    private async Task ConsultSelectedAsync()
+    {
+        if (!CanConsult)
+        {
+            return;
+        }
+
+        isConsulting = true;
+
+        try
+        {
+            await ConsoleClient.DisconnectAsync();
+
+            var connection = await ConsoleClient.ConnectAsync(pageCancellation.Token);
+            if (!connection.IsAvailable)
+            {
+                ShowToast(connection.UserMessage, connection.IsAvailable);
+                return;
+            }
+
+            var dispenser = dispensers.First(item => item.Number == selectedDispenser);
+            await QueryDispenserAsync(dispenser);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        finally
+        {
+            await ConsoleClient.DisconnectAsync();
+            isConsulting = false;
+        }
+    }
+
+    private async Task QueryDispenserAsync(DispenserStatusViewModel dispenser)
+    {
+        lastRequest = $"TDE|{ToCommandNumber(dispenser.Number)}";
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(pageCancellation.Token);
+        timeout.CancelAfter(TimeSpan.FromSeconds(8));
+
+        var result = await ConsoleClient.SendRawFrameAsync(lastRequest, timeout.Token);
+        lastResponse = result.IsSuccess
+            ? result.ResponseFrame
+            : result.UserMessage;
+
+        if (result.IsSuccess)
+        {
+            ApplyStatus(dispenser, result.ResponseFrame);
+        }
+        else
+        {
+            ApplyStatus(dispenser, null);
+        }
+
+        ShowToast(result.UserMessage, result.IsSuccess);
+    }
+
+    private void ClearResponse()
+    {
+        lastRequest = null;
+        lastResponse = null;
+    }
+
+    private static void ApplyStatus(DispenserStatusViewModel dispenser, string? response)
+    {
+        dispenser.LastResponse = response;
+        var statusCode = TryParseStatus(response);
+        dispenser.StatusCode = statusCode ?? string.Empty;
+
+        switch (statusCode)
+        {
+            case "2":
+                dispenser.StatusText = "Disponible";
+                dispenser.ImagePath = InactiveImage;
+                break;
+            case "3":
+                dispenser.StatusText = "Manguera levantada";
+                dispenser.ImagePath = HoseLiftedImage;
+                break;
+            case "4":
+                dispenser.StatusText = "Surtiendo";
+                dispenser.ImagePath = ServingImage;
+                break;
+            default:
+                dispenser.StatusText = string.IsNullOrWhiteSpace(statusCode) ? "Sin respuesta" : $"Estatus {statusCode}";
+                dispenser.ImagePath = OfflineImage;
+                break;
+        }
+    }
+
+    private static void ApplySummaryStatus(DispenserStatusViewModel dispenser, string? statusCode)
+    {
+        dispenser.LastResponse = statusCode;
+        dispenser.StatusCode = statusCode ?? string.Empty;
+
+        switch (statusCode)
+        {
+            case "1":
+                dispenser.StatusText = "Libre";
+                dispenser.ImagePath = InactiveImage;
+                break;
+            case "2":
+                dispenser.StatusText = "Disponible";
+                dispenser.ImagePath = InactiveImage;
+                break;
+            case "3":
+                dispenser.StatusText = "Manguera levantada";
+                dispenser.ImagePath = HoseLiftedImage;
+                break;
+            case "4":
+                dispenser.StatusText = "Surtiendo";
+                dispenser.ImagePath = ServingImage;
+                break;
+            default:
+                dispenser.StatusText = string.IsNullOrWhiteSpace(statusCode) ? "Sin respuesta" : $"Estatus {statusCode}";
+                dispenser.ImagePath = OfflineImage;
+                break;
+        }
+    }
+
+    private static Dictionary<string, string> ParseDispenserSummary(string? responseFrame)
+    {
+        var statuses = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        if (string.IsNullOrWhiteSpace(responseFrame))
+        {
+            return statuses;
+        }
+
+        var payload = responseFrame.StartsWith("RSDI|", StringComparison.OrdinalIgnoreCase)
+            ? responseFrame["RSDI|".Length..]
+            : responseFrame;
+
+        foreach (var part in payload.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var values = part.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (values.Length >= 2)
+            {
+                statuses[values[0]] = values[1];
+            }
+        }
+
+        return statuses;
+    }
+
+    private static string? TryParseStatus(string? response)
+    {
+        if (string.IsNullOrWhiteSpace(response))
+        {
+            return null;
+        }
+
+        var payload = response.StartsWith("RTDE|", StringComparison.OrdinalIgnoreCase)
+            ? response["RTDE|".Length..]
+            : response.StartsWith("R-TDE|", StringComparison.OrdinalIgnoreCase)
+                ? response["R-TDE|".Length..]
+                : response;
+
+        var firstBlock = payload.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .FirstOrDefault();
+        var values = firstBlock?.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        return values?.Length >= 2 ? values[1] : null;
+    }
+
+    private string GetDispenserClass(DispenserStatusViewModel dispenser)
+    {
+        var classes = new List<string>();
+
+        classes.Add(dispenser.StatusCode switch
+        {
+            "2" => "is-authorized",
+            "3" => "is-hose-lifted",
+            "4" => "is-serving",
+            _ => "is-checking"
+        });
+
+        if (selectedDispenser == dispenser.Number)
+        {
+            classes.Add("is-selected");
+        }
+
+        return string.Join(" ", classes);
+    }
+
+    private string GetSelectedSummary()
+    {
+        return string.IsNullOrWhiteSpace(selectedDispenser)
+            ? "Seleccione dispensario"
+            : $"Seleccionado {selectedDispenser}";
+    }
+
+    private void ShowToast(string message, bool isSuccess)
+    {
+        toastMessage = message;
+        toastCss = isSuccess ? "is-success" : "is-error";
+        _ = ClearToastAsync();
+    }
+
+    private async Task ClearToastAsync()
+    {
+        try
+        {
+            await Task.Delay(3500, pageCancellation.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        toastMessage = null;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private static string NormalizeDispenserNumber(string value)
+    {
+        return int.TryParse(value, out var number) ? number.ToString("00", CultureInfo.InvariantCulture) : value;
+    }
+
+    private static string ToCommandNumber(string value)
+    {
+        return int.TryParse(value, out var number) ? number.ToString(CultureInfo.InvariantCulture) : value;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await pageCancellation.CancelAsync();
+        pageCancellation.Dispose();
+    }
+
+    private sealed class DispenserStatusViewModel
+    {
+        public string Number { get; init; } = string.Empty;
+
+        public string StatusCode { get; set; } = string.Empty;
+
+        public string StatusText { get; set; } = "Sin consultar";
+
+        public string ImagePath { get; set; } = CheckingImage;
+
+        public string? LastResponse { get; set; }
+    }
+}

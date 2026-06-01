@@ -1,0 +1,10 @@
+namespace LoadManager.Models;
+
+public sealed class DispenserProductOption
+{
+    public int Hose { get; init; }
+
+    public int ProductId { get; init; }
+
+    public string Description { get; init; } = string.Empty;
+}

@@ -1,0 +1,99 @@
+<section class="diagnostics-panel">
+    <div class="console-grid">
+        <section class="command-panel">
+            <div class="panel-heading">
+                <h2>Estado de comunicacion</h2>
+                <span>@DashboardStatus</span>
+            </div>
+
+            <div class="availability-box @AvailabilityClass">
+                <div>
+                    <span>Disponibilidad del destino</span>
+                    <strong>@AvailabilityMessage</strong>
+                    @if (!string.IsNullOrWhiteSpace(AvailabilityResult?.Endpoint))
+                    {
+                        <small>@AvailabilityResult.Endpoint</small>
+                    }
+                </div>
+            </div>
+        </section>
+
+        <section class="response-panel @ResponseClass">
+            <div class="panel-heading">
+                <h2>Respuesta</h2>
+                @if (LastResult is not null)
+                {
+                    <span>@(LastResult.IsSuccess ? "Correcto" : "Error")</span>
+                }
+                else
+                {
+                    <span>Consultando</span>
+                }
+            </div>
+
+            @if (LastResult is null)
+            {
+                <p class="empty-message">Consultando el sistema de despacho.</p>
+            }
+            else
+            {
+                <p class="user-message">@LastResult.UserMessage</p>
+
+                @if (!string.IsNullOrWhiteSpace(LastResult.ResponseFrame))
+                {
+                    <div class="frame-box">
+                        <span>Respuesta recibida</span>
+                        <strong>@LastResult.ResponseFrame</strong>
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(LastResult.LogPath))
+                {
+                    <div class="log-path">
+                        <span>Log generado</span>
+                        <code>@LastResult.LogPath</code>
+                    </div>
+                }
+            }
+        </section>
+    </div>
+</section>
+
+@code {
+    [Parameter]
+    public string DashboardStatus { get; set; } = "Consultando";
+
+    [Parameter]
+    public ConsoleAvailabilityResult? AvailabilityResult { get; set; }
+
+    [Parameter]
+    public ConsoleCommandResult? LastResult { get; set; }
+
+    private string AvailabilityMessage => AvailabilityResult?.UserMessage ?? "Consultando.";
+
+    private string AvailabilityClass
+    {
+        get
+        {
+            if (AvailabilityResult is null)
+            {
+                return string.Empty;
+            }
+
+            return AvailabilityResult.IsAvailable ? "is-available" : "is-unavailable";
+        }
+    }
+
+    private string ResponseClass
+    {
+        get
+        {
+            if (LastResult is null)
+            {
+                return string.Empty;
+            }
+
+            return LastResult.IsSuccess ? "is-success" : "is-error";
+        }
+    }
+}

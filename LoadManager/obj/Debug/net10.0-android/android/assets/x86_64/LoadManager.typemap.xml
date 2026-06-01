@@ -1,0 +1,10 @@
+<api type="debug" assembly-name="LoadManager" mvid="0eeb57b3545f4b18a6a1c56f64a636c5">
+  <java-to-managed>
+    <entry java-name="crc6497aa724cb0e912d0/MainActivity" managed-name="LoadManager.MainActivity, LoadManager" managed-type-token-id="33554441" />
+    <entry java-name="crc6497aa724cb0e912d0/MainApplication" managed-name="LoadManager.MainApplication, LoadManager" managed-type-token-id="33554442" />
+  </java-to-managed>
+  <managed-to-java>
+    <entry java-name="crc6497aa724cb0e912d0/MainActivity" managed-name="LoadManager.MainActivity, LoadManager" managed-type-token-id="33554441" />
+    <entry java-name="crc6497aa724cb0e912d0/MainApplication" managed-name="LoadManager.MainApplication, LoadManager" managed-type-token-id="33554442" />
+  </managed-to-java>
+</api>

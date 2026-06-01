@@ -1,0 +1,303 @@
+@page "/configuracion"
+@inject IAppSettingsProvider SettingsProvider
+@inject IGasStationConsoleClient ConsoleClient
+@inject IGasStationDatabaseService DatabaseService
+
+<PageTitle>Configuracion</PageTitle>
+
+<section class="console-shell">
+    <header class="console-header">
+        <div>
+            <h1>Configuracion</h1>
+        </div>
+    </header>
+
+    <section class="settings-panel">
+        <div class="panel-heading">
+            <h2>Destino TCP/IP</h2>
+            <span class="@GetTcpIndicatorClass()">@GetTcpIndicatorText()</span>
+        </div>
+
+        <label class="settings-field">
+            <span>IP destino</span>
+            <input type="text" @bind="ipAddress" placeholder="172.20.11.40" />
+        </label>
+
+        <label class="settings-field">
+            <span>Puerto</span>
+            <input type="number" @bind="port" min="1" max="65535" />
+        </label>
+    </section>
+
+    <section class="settings-panel">
+        <div class="panel-heading">
+            <h2>App Configuracion</h2>
+            <span>Datos generales</span>
+        </div>
+
+        <label class="settings-field">
+            <span>TPV</span>
+            <input type="number" @bind="tpv" min="1" />
+        </label>
+
+        <label class="settings-field">
+            <span>Usuario</span>
+            <input type="number" @bind="usuario" min="1" />
+        </label>
+    </section>
+
+    <section class="settings-panel">
+        <div class="panel-heading">
+            <h2>Base de datos</h2>
+            <span class="@GetDatabaseIndicatorClass()">@GetDatabaseIndicatorText()</span>
+        </div>
+
+        <label class="settings-field">
+            <span>Servidor</span>
+            <input type="text" @bind="dbServer" placeholder="172.2.1.100" />
+        </label>
+
+        <label class="settings-field">
+            <span>Base de datos</span>
+            <input type="text" @bind="dbName" placeholder="dbctg" />
+        </label>
+
+        <label class="settings-field">
+            <span>Usuario SQL</span>
+            <input type="text" @bind="dbUser" />
+        </label>
+
+        <label class="settings-field">
+            <span>Password SQL</span>
+            <input type="password" @bind="dbPassword" />
+        </label>
+
+        <label class="settings-field settings-check">
+            <span>Encriptar conexion</span>
+            <input type="checkbox" @bind="dbEncrypt" />
+        </label>
+
+        <label class="settings-field settings-check">
+            <span>Confiar certificado</span>
+            <input type="checkbox" @bind="dbTrustServerCertificate" />
+        </label>
+
+        <div class="settings-actions">
+            <button class="@GetConnectionButtonClass()" @onclick="SaveConnectOrDisconnectAsync" disabled="@isSaving">
+                @GetConnectionButtonText()
+            </button>
+        </div>
+    </section>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(toastMessage))
+{
+    <div class="app-toast @toastCss">@toastMessage</div>
+}
+
+@code {
+    private AppSettings? settings;
+    private string ipAddress = string.Empty;
+    private int port;
+    private int tpv = 88;
+    private int usuario = 1;
+    private string dbServer = string.Empty;
+    private string dbName = string.Empty;
+    private string dbUser = string.Empty;
+    private string dbPassword = string.Empty;
+    private bool dbEncrypt;
+    private bool dbTrustServerCertificate = true;
+    private bool isSaving;
+    private string connectionStatus = "Sin validar";
+    private string databaseStatus = "Sin validar";
+    private bool? databaseIsConnected;
+    private string? toastMessage;
+    private string toastCss = "is-success";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var current = await SettingsProvider.GetSettingsAsync();
+        settings = new AppSettings
+        {
+            GasStationConsole = new GasStationConsoleOptions
+            {
+                IpAddress = current.GasStationConsole.IpAddress,
+                Port = current.GasStationConsole.Port,
+                ReadTimeoutMilliseconds = current.GasStationConsole.ReadTimeoutMilliseconds,
+                EncodingName = current.GasStationConsole.EncodingName,
+                Commands = new Dictionary<string, string>(current.GasStationConsole.Commands)
+            },
+            AppConfiguration = new AppConfigurationOptions
+            {
+                Tpv = current.AppConfiguration.Tpv,
+                Usuario = current.AppConfiguration.Usuario,
+                TipoInterfaz = current.AppConfiguration.TipoInterfaz,
+                LimiteImporte = current.AppConfiguration.LimiteImporte,
+                LimiteLitros = current.AppConfiguration.LimiteLitros,
+                QuantityDecimals = current.AppConfiguration.QuantityDecimals
+            },
+            Database = new DatabaseOptions
+            {
+                Server = current.Database.Server,
+                Database = current.Database.Database,
+                UserId = current.Database.UserId,
+                Password = current.Database.Password,
+                Encrypt = current.Database.Encrypt,
+                TrustServerCertificate = current.Database.TrustServerCertificate,
+                ConnectionTimeoutSeconds = current.Database.ConnectionTimeoutSeconds
+            },
+            ConsoleLogs = new ConsoleLogOptions
+            {
+                BasePath = current.ConsoleLogs.BasePath,
+                SuccessFolderName = current.ConsoleLogs.SuccessFolderName,
+                ErrorFolderName = current.ConsoleLogs.ErrorFolderName
+            }
+        };
+
+        ipAddress = settings.GasStationConsole.IpAddress;
+        port = settings.GasStationConsole.Port;
+        tpv = settings.AppConfiguration.Tpv;
+        usuario = settings.AppConfiguration.Usuario;
+        dbServer = settings.Database.Server;
+        dbName = settings.Database.Database;
+        dbUser = settings.Database.UserId;
+        dbPassword = settings.Database.Password;
+        dbEncrypt = settings.Database.Encrypt;
+        dbTrustServerCertificate = settings.Database.TrustServerCertificate;
+    }
+
+    private async Task SaveConnectOrDisconnectAsync()
+    {
+        isSaving = true;
+
+        try
+        {
+            if (ConsoleClient.IsConnected)
+            {
+                await ConsoleClient.DisconnectAsync();
+                connectionStatus = "Desconectado";
+                databaseStatus = "Sin validar";
+                databaseIsConnected = null;
+                ShowToast("Se desconecto correctamente.", true);
+                return;
+            }
+
+            if (!await SaveConfigurationOnlyAsync())
+            {
+                return;
+            }
+
+            await ConsoleClient.DisconnectAsync();
+
+            var result = await ConsoleClient.ConnectAsync();
+            connectionStatus = result.IsAvailable ? "Conectado" : "Sin conexion";
+
+            var databaseResult = await DatabaseService.CheckConnectionAsync();
+            databaseIsConnected = databaseResult.IsSuccess;
+            databaseStatus = databaseResult.IsSuccess ? "Conectado" : "Sin conexion";
+
+            var allConnected = result.IsAvailable && databaseResult.IsSuccess;
+            var message = allConnected
+                ? "TCP/IP y base de datos conectados correctamente."
+                : "Revise la conexion TCP/IP o la base de datos.";
+            ShowToast(message, allConnected);
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task<bool> SaveConfigurationOnlyAsync()
+    {
+        if (settings is null || string.IsNullOrWhiteSpace(ipAddress) || port is <= 0 or > 65535)
+        {
+            ShowToast("Capture una IP y puerto validos.", false);
+            return false;
+        }
+
+        settings.GasStationConsole.IpAddress = ipAddress.Trim();
+        settings.GasStationConsole.Port = port;
+        settings.AppConfiguration.Tpv = tpv;
+        settings.AppConfiguration.Usuario = usuario;
+        settings.Database.Server = dbServer.Trim();
+        settings.Database.Database = dbName.Trim();
+        settings.Database.UserId = dbUser.Trim();
+        settings.Database.Password = dbPassword;
+        settings.Database.Encrypt = dbEncrypt;
+        settings.Database.TrustServerCertificate = dbTrustServerCertificate;
+
+        await SettingsProvider.SaveSettingsAsync(settings);
+        return true;
+    }
+
+    private string GetConnectionStatus()
+    {
+        if (ConsoleClient.IsConnected)
+        {
+            return "Conectado";
+        }
+
+        return connectionStatus == "Conectado" ? "Desconectado" : connectionStatus;
+    }
+
+    private string GetTcpIndicatorText()
+    {
+        return ConsoleClient.IsConnected ? "✓ Conectado" : $"✕ {GetConnectionStatus()}";
+    }
+
+    private string GetTcpIndicatorClass()
+    {
+        return ConsoleClient.IsConnected ? "status-indicator is-success" : "status-indicator is-error";
+    }
+
+    private string GetDatabaseIndicatorText()
+    {
+        if (databaseIsConnected == true)
+        {
+            return "✓ Conectado";
+        }
+
+        if (databaseIsConnected == false)
+        {
+            return "✕ Sin conexion";
+        }
+
+        return $"✕ {databaseStatus}";
+    }
+
+    private string GetDatabaseIndicatorClass()
+    {
+        return databaseIsConnected == true ? "status-indicator is-success" : "status-indicator is-error";
+    }
+
+    private string GetConnectionButtonText()
+    {
+        if (isSaving)
+        {
+            return ConsoleClient.IsConnected ? "Desconectando..." : "Guardando...";
+        }
+
+        return ConsoleClient.IsConnected ? "Desconectar" : "Guardar y conectar";
+    }
+
+    private string GetConnectionButtonClass()
+    {
+        var colorClass = ConsoleClient.IsConnected ? "btn-outline-danger" : "btn-primary";
+        return $"btn {colorClass} action-button settings-save-button";
+    }
+
+    private void ShowToast(string message, bool isSuccess)
+    {
+        toastMessage = message;
+        toastCss = isSuccess ? "is-success" : "is-error";
+        _ = ClearToastAsync();
+    }
+
+    private async Task ClearToastAsync()
+    {
+        await Task.Delay(3500);
+        toastMessage = null;
+        await InvokeAsync(StateHasChanged);
+    }
+}

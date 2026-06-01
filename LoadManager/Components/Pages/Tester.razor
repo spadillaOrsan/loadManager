@@ -1,0 +1,339 @@
+@page "/tester"
+@using System.Globalization
+@inject IGasStationConsoleClient ConsoleClient
+
+<PageTitle>Tester de comunicacion</PageTitle>
+
+<section class="console-shell">
+    <header class="console-header">
+        <div>
+            <h1>Tester de comunicacion</h1>
+        </div>
+    </header>
+
+    <section class="connection-panel">
+        <div>
+            <span>Conexion TCP/IP</span>
+            <strong>@(ConsoleClient.IsConnected ? "Conectado" : "Desconectado")</strong>
+        </div>
+        <button class="btn btn-primary action-button" @onclick="RefreshConnectionAsync" disabled="@isRefreshing">
+            @(isRefreshing ? "Refrescando..." : "Refrescar")
+        </button>
+    </section>
+
+    <section class="tester-panel">
+        <div class="panel-heading">
+            <h2>Grafico</h2>
+            <span>@SelectedCommandDescription</span>
+        </div>
+
+        <div class="tester-form-grid">
+            <label class="settings-field">
+                <span>Comando</span>
+                <select @bind="graphicCommand">
+                    <option value="AUTH">Autorizacion de carga</option>
+                    <option value="TDE">Consulta de detalle de dispensario</option>
+                    <option value="TD">Consulta de sin detalle de dispensario</option>
+                    <option value="SDI">Consulta de estatus del dispensario</option>
+                    <option value="PRE">Consulta de precio del dispensario</option>
+                    <option value="TOT">Consulta de totalizadores del dispensario</option>
+                </select>
+            </label>
+
+            @if (NeedsDispenser)
+            {
+                <label class="settings-field">
+                    <span>Dispensario</span>
+                    <input type="number" min="1" @bind="graphicDispenser" @bind:event="oninput" />
+                </label>
+            }
+
+            @if (NeedsAuthFields)
+            {
+                <label class="settings-field">
+                    <span>TPV</span>
+                    <input type="number" min="1" @bind="graphicTpv" @bind:event="oninput" />
+                </label>
+
+                <label class="settings-field">
+                    <span>Manguera</span>
+                    <input type="number" min="1" @bind="graphicHose" @bind:event="oninput" />
+                </label>
+
+                <label class="settings-field">
+                    <span>Tipo de carga</span>
+                    <select @bind="graphicLoadType">
+                        <option value="1">Pesos</option>
+                        <option value="2">Litros</option>
+                        <option value="3">Tanque lleno</option>
+                    </select>
+                </label>
+
+                <label class="settings-field">
+                    <span>Cantidad</span>
+                    <input type="text"
+                           inputmode="decimal"
+                           placeholder="0.00"
+                           value="@graphicAmount"
+                           @oninput="OnGraphicAmountChanged"
+                           @onblur="FormatGraphicAmount" />
+                </label>
+
+                <label class="settings-field">
+                    <span>Folio</span>
+                    <input type="text" @bind="graphicFolio" @bind:event="oninput" />
+                </label>
+
+                <label class="settings-field">
+                    <span>Tipo interfaz</span>
+                    <input type="text" maxlength="3" @bind="graphicInterfaceType" @bind:event="oninput" />
+                </label>
+            }
+        </div>
+
+        <label class="settings-field">
+            <span>Trama</span>
+            <input type="text" value="@GeneratedGraphicFrame" readonly />
+        </label>
+
+        <div class="actions-panel tester-actions-panel">
+            <button class="btn btn-primary action-button" @onclick="SendGraphicCommandAsync" disabled="@(!CanSendGraphic)">
+                Enviar
+            </button>
+        </div>
+    </section>
+
+    <section class="tester-panel">
+        <div class="panel-heading response-heading">
+            <div>
+                <h2>Respuesta</h2>
+                <span>@responseLines.Count registros</span>
+            </div>
+            <button class="btn btn-outline-secondary clear-response-button" @onclick="ClearResponses" disabled="@(responseLines.Count == 0)">
+                Limpiar
+            </button>
+        </div>
+
+        @if (responseLines.Count == 0)
+        {
+            <p class="empty-message">Sin respuestas registradas.</p>
+        }
+        else
+        {
+            <div class="raw-response-list">
+                @foreach (var line in responseLines)
+                {
+                    <code>@line</code>
+                }
+            </div>
+        }
+    </section>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(toastMessage))
+{
+    <div class="app-toast @toastCss">@toastMessage</div>
+}
+
+@code {
+    private bool isRefreshing;
+    private bool isSendingGraphic;
+    private string graphicCommand = "AUTH";
+    private int graphicDispenser = 1;
+    private int graphicTpv = 88;
+    private int graphicHose = 1;
+    private string graphicInterfaceType = "G";
+    private string graphicLoadType = "1";
+    private string graphicAmount = "10.00";
+    private string graphicFolio = "376517";
+    private string? toastMessage;
+    private string toastCss = "is-success";
+    private readonly List<string> responseLines = [];
+
+    private string GeneratedGraphicFrame => BuildGraphicFrame();
+
+    private bool NeedsDispenser => true;
+
+    private bool NeedsAuthFields => graphicCommand == "AUTH";
+
+    private string SelectedCommandDescription => graphicCommand switch
+    {
+        "AUTH" => "Autorizacion de carga",
+        "TDE" => "Consulta de detalle de dispensario",
+        "TD" => "Consulta de sin detalle de dispensario",
+        "SDI" => "Consulta de estatus del dispensario",
+        "PRE" => "Consulta de precio del dispensario",
+        "TOT" => "Consulta de totalizadores del dispensario",
+        _ => "Seleccion y envio"
+    };
+
+    private bool CanSendGraphic =>
+        ConsoleClient.IsConnected &&
+        !isSendingGraphic &&
+        !string.IsNullOrWhiteSpace(GeneratedGraphicFrame);
+
+    private async Task RefreshConnectionAsync()
+    {
+        isRefreshing = true;
+
+        try
+        {
+            await ConsoleClient.DisconnectAsync();
+            var result = await ConsoleClient.ConnectAsync();
+            ShowToast(result.UserMessage, result.IsAvailable);
+        }
+        finally
+        {
+            isRefreshing = false;
+        }
+    }
+
+    private async Task SendGraphicCommandAsync()
+    {
+        if (!CanSendGraphic)
+        {
+            return;
+        }
+
+        isSendingGraphic = true;
+
+        try
+        {
+            var result = await ConsoleClient.SendRawFrameAsync(GeneratedGraphicFrame);
+            AddResponseLine(result);
+            ShowToast(result.UserMessage, result.IsSuccess);
+        }
+        finally
+        {
+            isSendingGraphic = false;
+        }
+    }
+
+    private string BuildGraphicFrame()
+    {
+        var dispenser = graphicDispenser.ToString(CultureInfo.InvariantCulture);
+        var hose = graphicHose.ToString(CultureInfo.InvariantCulture);
+        var amount = NormalizeAmountForFrame();
+        var folio = string.IsNullOrWhiteSpace(graphicFolio) ? "0" : graphicFolio.Trim();
+
+        var commandCode = NormalizeCommandCode(graphicCommand);
+        var tpv = graphicTpv.ToString(CultureInfo.InvariantCulture);
+
+        return commandCode switch
+        {
+            "TDE" => $"TDE|{dispenser}",
+            "TD" => $"TD|{dispenser}",
+            "SDI" => $"SDI|{dispenser}",
+            "PRE" => $"PRE|{dispenser}",
+            "TOT" => $"TOT|{dispenser}",
+            "AUTH" => $"AUTH|{tpv}-{dispenser}-{hose}-{amount}-{graphicLoadType}-{folio}-{amount}-{amount}-{GetInterfaceType()}",
+            _ => $"{commandCode}|{dispenser}"
+        };
+    }
+
+    private string GetInterfaceType()
+    {
+        return string.IsNullOrWhiteSpace(graphicInterfaceType)
+            ? "G"
+            : graphicInterfaceType.Trim();
+    }
+
+    private static string NormalizeCommandCode(string command)
+    {
+        return command.StartsWith("P-", StringComparison.OrdinalIgnoreCase)
+            ? command[2..]
+            : command;
+    }
+
+    private void OnGraphicAmountChanged(ChangeEventArgs args)
+    {
+        graphicAmount = args.Value?.ToString() ?? string.Empty;
+    }
+
+    private void FormatGraphicAmount()
+    {
+        if (!TryGetGraphicAmount(out var amount))
+        {
+            graphicAmount = string.Empty;
+            return;
+        }
+
+        graphicAmount = amount.ToString("N2", CultureInfo.GetCultureInfo("en-US"));
+    }
+
+    private string NormalizeAmountForFrame()
+    {
+        if (graphicLoadType == "3")
+        {
+            return "9990";
+        }
+
+        return TryGetGraphicAmount(out var amount)
+            ? amount.ToString("0.##", CultureInfo.InvariantCulture)
+            : "0";
+    }
+
+    private bool TryGetGraphicAmount(out decimal amount)
+    {
+        var normalized = graphicAmount.Replace(",", string.Empty);
+        return decimal.TryParse(normalized, NumberStyles.Number, CultureInfo.InvariantCulture, out amount);
+    }
+
+    private void AddResponseLine(ConsoleCommandResult result)
+    {
+        var time = DateTime.Now.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+        var request = string.IsNullOrWhiteSpace(result.RequestFrame) ? "Sin peticion" : result.RequestFrame;
+        var response = !string.IsNullOrWhiteSpace(result.ResponseFrame)
+            ? result.ResponseFrame
+            : BuildReadableError(result);
+
+        responseLines.Insert(0, $"[{time}]: ({request}) ({response})");
+
+        if (responseLines.Count > 80)
+        {
+            responseLines.RemoveAt(responseLines.Count - 1);
+        }
+    }
+
+    private static string BuildReadableError(ConsoleCommandResult result)
+    {
+        if (string.IsNullOrWhiteSpace(result.TechnicalMessage))
+        {
+            return result.UserMessage;
+        }
+
+        if (result.TechnicalMessage.Contains("Unable to read data from the transport connection", StringComparison.OrdinalIgnoreCase) ||
+            result.TechnicalMessage.Contains("Se ha forzado la interrupción de una conexión existente", StringComparison.OrdinalIgnoreCase) ||
+            result.TechnicalMessage.Contains("Se ha forzado la interrupcion de una conexion existente", StringComparison.OrdinalIgnoreCase))
+        {
+            return "La consola cerro la conexion sin enviar respuesta. Verifique que la trama sea valida para ese dispensario y vuelva a intentar.";
+        }
+
+        var firstLine = result.TechnicalMessage
+            .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .FirstOrDefault();
+
+        return string.IsNullOrWhiteSpace(firstLine)
+            ? result.UserMessage
+            : $"{result.UserMessage} Detalle: {firstLine}";
+    }
+
+    private void ClearResponses()
+    {
+        responseLines.Clear();
+    }
+
+    private void ShowToast(string message, bool isSuccess)
+    {
+        toastMessage = message;
+        toastCss = isSuccess ? "is-success" : "is-error";
+        _ = ClearToastAsync();
+    }
+
+    private async Task ClearToastAsync()
+    {
+        await Task.Delay(3500);
+        toastMessage = null;
+        await InvokeAsync(StateHasChanged);
+    }
+}
