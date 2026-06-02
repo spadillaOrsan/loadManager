@@ -12,12 +12,12 @@
       <RelatedAsset></RelatedAsset>
       <AssetTraitName></AssetTraitName>
       <AssetTraitValue></AssetTraitValue>
-      <Fingerprint>48xr6gse44</Fingerprint>
-      <Integrity>DNm21IQNkCzEgxhWaWrk6hgTe1Y+owowdFPrm3lhrM0=</Integrity>
+      <Fingerprint>ig4rm3fcx2</Fingerprint>
+      <Integrity>UgEtAGbjjkBU2MkJq7hPQdko8uHYGomlhghUssgQNP8=</Integrity>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      <FileLength>22778</FileLength>
-      <LastWriteTime>Mon, 01 Jun 2026 23:53:52 GMT</LastWriteTime>
+      <FileLength>27520</FileLength>
+      <LastWriteTime>Tue, 02 Jun 2026 18:41:17 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\app.css'))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\images\dispensers\autorizado.png'))">

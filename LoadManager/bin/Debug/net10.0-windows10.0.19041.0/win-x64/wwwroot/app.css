@@ -300,6 +300,19 @@ a, .btn-link {
     font-size: 0.88rem;
 }
 
+.panel-heading-actions {
+    align-items: center;
+    display: flex;
+    gap: 0.65rem;
+}
+
+.refresh-dispensers-button {
+    font-size: 0.78rem;
+    min-height: 2rem;
+    min-width: 5.75rem;
+    padding: 0.25rem 0.65rem;
+}
+
 .panel-heading .status-indicator {
     border-radius: 999px;
     font-size: 0.8rem;
@@ -452,7 +465,8 @@ a, .btn-link {
 
 .fuel-panel,
 .amount-panel,
-.quantity-panel {
+.quantity-panel,
+.authorization-panel {
     display: grid;
     gap: 1rem;
 }
@@ -632,6 +646,24 @@ a, .btn-link {
     padding: 0.7rem 0.85rem;
 }
 
+.fuel-option-text {
+    display: grid;
+    gap: 0.15rem;
+    min-width: 0;
+    text-align: left;
+}
+
+.fuel-option-text strong,
+.fuel-option-text small {
+    overflow-wrap: anywhere;
+}
+
+.fuel-option-text small {
+    color: #667684;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
 .fuel-option:disabled,
 .amount-mode:disabled,
 .amount-input input:disabled {
@@ -768,6 +800,208 @@ a, .btn-link {
     min-width: 0;
     outline: none;
     padding: 0.65rem 0.85rem;
+}
+
+.authorization-panel {
+    align-items: stretch;
+}
+
+.countdown-display {
+    align-items: center;
+    background: #f4f8fc;
+    border: 1px solid #d8e0e6;
+    border-radius: 8px;
+    color: #17212b;
+    display: flex;
+    gap: 0.85rem;
+    justify-content: center;
+    min-height: 6rem;
+}
+
+.countdown-display strong {
+    color: #1b6ec2;
+    font-size: 3rem;
+    line-height: 1;
+}
+
+.countdown-display span {
+    color: #526273;
+    font-size: 1rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.liters-display {
+    align-items: center;
+    background: #eef6ff;
+    border: 1px solid #b7d6f7;
+    border-radius: 8px;
+    color: #17212b;
+    display: grid;
+    gap: 0.35rem;
+    justify-items: center;
+    min-height: 10rem;
+    padding: 1.25rem;
+}
+
+.liters-display span {
+    color: #1b6ec2;
+    font-size: 0.9rem;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.liters-display .live-counter-status {
+    color: #1b6ec2;
+    font-size: 1rem;
+    letter-spacing: 0;
+}
+
+.liters-display strong {
+    align-items: baseline;
+    color: #1b6ec2;
+    display: inline-flex;
+    font-size: clamp(3rem, 12vw, 6rem);
+    gap: 0.2rem;
+    line-height: 1;
+}
+
+.live-currency-symbol {
+    color: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+}
+
+.liters-display small {
+    color: #526273;
+    font-size: 1.1rem;
+    font-weight: 900;
+}
+
+.liters-display.is-finished {
+    background: #eef9f1;
+    border-color: #b8dfc4;
+}
+
+.liters-display.is-finished span,
+.liters-display.is-finished .live-counter-status,
+.liters-display.is-finished strong {
+    color: #176c35;
+}
+
+.fueling-note {
+    color: #455463;
+    font-weight: 800;
+    margin: 0;
+    text-align: center;
+}
+
+.ticket-panel {
+    display: grid;
+    gap: 1rem;
+}
+
+.ticket-folio {
+    background: #f4f8fc;
+    border: 1px solid #c9d9e8;
+    border-radius: 8px;
+    display: grid;
+    gap: 0.25rem;
+    justify-items: center;
+    padding: 1rem;
+}
+
+.ticket-folio span {
+    color: #667684;
+    font-size: 0.78rem;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.ticket-folio strong {
+    color: #1b6ec2;
+    font-size: clamp(1.8rem, 6vw, 3rem);
+    line-height: 1;
+}
+
+.ticket-grid {
+    display: grid;
+    gap: 0.8rem;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.ticket-grid div {
+    background: #fff;
+    border: 1px solid #d8e0e6;
+    border-radius: 8px;
+    display: grid;
+    gap: 0.35rem;
+    min-height: 5rem;
+    padding: 0.85rem;
+}
+
+.ticket-grid span {
+    color: #667684;
+    font-size: 0.74rem;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.ticket-grid strong {
+    color: #17212b;
+    font-size: 1rem;
+    overflow-wrap: anywhere;
+}
+
+.ticket-home-button {
+    justify-self: end;
+}
+
+.instruction-card {
+    background: #fff;
+    border: 1px solid #d8e0e6;
+    border-radius: 8px;
+    box-shadow: 0 8px 20px rgba(23, 33, 43, 0.08);
+    display: grid;
+    gap: 0.75rem;
+    min-height: 8rem;
+    padding: 1rem;
+}
+
+.instruction-card-single {
+    gap: 0;
+    min-height: auto;
+    padding: 0;
+}
+
+.instruction-item {
+    align-items: center;
+    display: flex;
+    gap: 0.85rem;
+    padding: 1rem;
+}
+
+.instruction-item + .instruction-item {
+    border-top: 1px solid #edf1f5;
+}
+
+.instruction-item span {
+    align-items: center;
+    background: #1b6ec2;
+    border-radius: 999px;
+    color: #fff;
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-weight: 900;
+    height: 2rem;
+    justify-content: center;
+    width: 2rem;
+}
+
+.instruction-item strong {
+    color: #17212b;
+    font-size: 1.05rem;
 }
 
 .actions-panel {
@@ -914,6 +1148,45 @@ a, .btn-link {
     overflow: auto;
     padding: 1rem;
     width: 100%;
+}
+
+.hose-alert {
+    justify-items: center;
+    max-width: min(430px, calc(100vw - 2rem));
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.hose-alert-icon {
+    align-items: center;
+    background: #fff7ed;
+    border: 3px solid #f59e0b;
+    border-radius: 999px;
+    color: #b45309;
+    display: flex;
+    font-size: 2rem;
+    font-weight: 900;
+    height: 4.25rem;
+    justify-content: center;
+    width: 4.25rem;
+}
+
+.hose-alert h2 {
+    color: #17212b;
+    font-size: 1.35rem;
+    margin: 0;
+}
+
+.hose-alert p {
+    color: #455463;
+    font-weight: 800;
+    margin: 0;
+}
+
+.hose-alert span {
+    color: #667684;
+    font-size: 0.88rem;
+    font-weight: 700;
 }
 
 .app-modal-header {
@@ -1094,6 +1367,7 @@ a, .btn-link {
 
     .fuel-options,
     .amount-layout,
+    .ticket-grid,
     .tester-grid {
         grid-template-columns: 1fr;
     }

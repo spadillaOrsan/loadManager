@@ -13,4 +13,8 @@ public sealed class AppConfigurationOptions
     public decimal LimiteLitros { get; set; } = 500m;
 
     public int QuantityDecimals { get; set; } = 2;
+
+    public int AuthorizationCountdownSeconds { get; set; } = 45;
+
+    public int DispenserCount { get; set; } = 2;
 }

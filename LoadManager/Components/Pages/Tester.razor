@@ -25,7 +25,7 @@
                     <option value="TDE">Consulta de detalle de dispensario</option>
                     <option value="TD">Consulta de sin detalle de dispensario</option>
                     <option value="SDI">Consulta de estatus del dispensario</option>
-                    <option value="PRE">Consulta de precio del dispensario</option>
+                    <option value="CPRE">Consulta de precio del producto</option>
                     <option value="TOT">Consulta de totalizadores del dispensario</option>
                 </select>
             </label>
@@ -80,6 +80,14 @@
                     <input type="text" maxlength="3" @bind="graphicInterfaceType" @bind:event="oninput" disabled="@isSendingGraphic" />
                 </label>
             }
+
+            @if (NeedsPriceFields)
+            {
+                <label class="settings-field">
+                    <span>Producto</span>
+                    <input type="number" min="1" @bind="graphicProduct" @bind:event="oninput" disabled="@isSendingGraphic" />
+                </label>
+            }
         </div>
 
         <label class="settings-field">
@@ -132,6 +140,7 @@
     private int graphicDispenser = 1;
     private int graphicTpv = 88;
     private int graphicHose = 1;
+    private int graphicProduct = 1;
     private string graphicInterfaceType = "G";
     private string graphicLoadType = "1";
     private string graphicAmount = "10.00";
@@ -144,9 +153,11 @@
 
     private string GeneratedGraphicFrame => BuildGraphicFrame();
 
-    private bool NeedsDispenser => true;
+    private bool NeedsDispenser => graphicCommand != "CPRE";
 
     private bool NeedsAuthFields => graphicCommand == "AUTH";
+
+    private bool NeedsPriceFields => graphicCommand == "CPRE";
 
     private string SelectedCommandDescription => graphicCommand switch
     {
@@ -154,7 +165,7 @@
         "TDE" => "Consulta de detalle de dispensario",
         "TD" => "Consulta de sin detalle de dispensario",
         "SDI" => "Consulta de estatus del dispensario",
-        "PRE" => "Consulta de precio del dispensario",
+        "CPRE" => "Consulta de precio del producto",
         "TOT" => "Consulta de totalizadores del dispensario",
         _ => "Seleccion y envio"
     };
@@ -194,13 +205,14 @@
 
         var commandCode = NormalizeCommandCode(graphicCommand);
         var tpv = graphicTpv.ToString(CultureInfo.InvariantCulture);
+        var product = graphicProduct.ToString(CultureInfo.InvariantCulture);
 
         return commandCode switch
         {
             "TDE" => $"TDE|{dispenser}",
             "TD" => $"TD|{dispenser}",
             "SDI" => $"SDI|{dispenser}",
-            "PRE" => $"PRE|{dispenser}",
+            "CPRE" => $"CPRE|{product}",
             "TOT" => $"TOT|{dispenser}",
             "AUTH" => $"AUTH|{tpv}-{dispenser}-{hose}-{amount}-{graphicLoadType}-{folio}-{amount}-{amount}-{GetInterfaceType()}",
             _ => $"{commandCode}|{dispenser}"

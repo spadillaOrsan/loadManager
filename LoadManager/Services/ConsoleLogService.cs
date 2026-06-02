@@ -9,6 +9,7 @@ public sealed class ConsoleLogService(IAppSettingsProvider settingsProvider) : I
 {
     private const string Source = "LoadManager.Services.GasStationConsoleClient";
     private const string Channel = "[Despacho][TCP]";
+    private static readonly SemaphoreSlim FileLock = new(1, 1);
 
     public async Task<string> WriteAsync(ConsoleCommandResult result, CancellationToken cancellationToken = default)
     {
@@ -18,7 +19,16 @@ public sealed class ConsoleLogService(IAppSettingsProvider settingsProvider) : I
         var filePath = ConsoleLogPathHelper.GetDailyLogFilePath(options, result.IsSuccess, now);
         var content = BuildContent(result, now);
 
-        await File.AppendAllTextAsync(filePath, content, Encoding.UTF8, cancellationToken);
+        await FileLock.WaitAsync(cancellationToken);
+
+        try
+        {
+            await File.AppendAllTextAsync(filePath, content, Encoding.UTF8, cancellationToken);
+        }
+        finally
+        {
+            FileLock.Release();
+        }
 
         return filePath;
     }

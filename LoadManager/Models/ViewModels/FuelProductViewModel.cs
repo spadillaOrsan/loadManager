@@ -6,4 +6,5 @@ public sealed record FuelProductViewModel(
     string CssClass,
     int ProductCode,
     string AuthorizationCode,
-    int Hose);
+    int Hose,
+    decimal? Price = null);

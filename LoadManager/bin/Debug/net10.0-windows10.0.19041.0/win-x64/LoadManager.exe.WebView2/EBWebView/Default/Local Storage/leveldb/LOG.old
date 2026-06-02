@@ -1,3 +1,3 @@
-2026/06/02-08:58:06.951 1043c Reusing MANIFEST C:\Users\S.padilla\source\repos\LoadManager\LoadManager\bin\Debug\net10.0-windows10.0.19041.0\win-x64\LoadManager.exe.WebView2\EBWebView\Default\Local Storage\leveldb/MANIFEST-000001
-2026/06/02-08:58:06.978 1043c Recovering log #3
-2026/06/02-08:58:06.999 1043c Reusing old log C:\Users\S.padilla\source\repos\LoadManager\LoadManager\bin\Debug\net10.0-windows10.0.19041.0\win-x64\LoadManager.exe.WebView2\EBWebView\Default\Local Storage\leveldb/000003.log 
+2026/06/02-12:46:16.942 13374 Reusing MANIFEST C:\Users\S.padilla\source\repos\LoadManager\LoadManager\bin\Debug\net10.0-windows10.0.19041.0\win-x64\LoadManager.exe.WebView2\EBWebView\Default\Local Storage\leveldb/MANIFEST-000001
+2026/06/02-12:46:16.953 13374 Recovering log #3
+2026/06/02-12:46:16.959 13374 Reusing old log C:\Users\S.padilla\source\repos\LoadManager\LoadManager\bin\Debug\net10.0-windows10.0.19041.0\win-x64\LoadManager.exe.WebView2\EBWebView\Default\Local Storage\leveldb/000003.log 

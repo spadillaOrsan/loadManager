@@ -1,4 +1,3 @@
-wwwroot\app.css
 wwwroot\images\dispensers\autorizado.png
 wwwroot\images\dispensers\fuera-de-linea.png
 wwwroot\images\dispensers\inactivo.png
@@ -8,5 +7,6 @@ wwwroot\images\dispensers\sirviendo.png
 wwwroot\index.html
 wwwroot\lib\bootstrap\dist\css\bootstrap.min.css
 wwwroot\lib\bootstrap\dist\css\bootstrap.min.css.map
+wwwroot\app.css
 C:\Users\S.padilla\.nuget\packages\microsoft.aspnetcore.components.webview\10.0.0\build\..\staticwebassets\blazor.webview.js
 C:\Users\S.padilla\.nuget\packages\microsoft.aspnetcore.components.webview\10.0.0\build\..\staticwebassets\blazor.modules.json

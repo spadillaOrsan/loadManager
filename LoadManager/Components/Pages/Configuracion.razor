@@ -45,6 +45,16 @@
             <span>Usuario</span>
             <input type="number" @bind="usuario" min="1" />
         </label>
+
+        <label class="settings-field">
+            <span>Tiempo instrucciones (segundos)</span>
+            <input type="number" @bind="authorizationCountdownSeconds" min="1" />
+        </label>
+
+        <label class="settings-field">
+            <span>Cantidad de dispensarios</span>
+            <input type="number" @bind="dispenserCount" min="1" />
+        </label>
     </section>
 
     <section class="settings-panel">
@@ -102,6 +112,8 @@
     private int port;
     private int tpv = 88;
     private int usuario = 1;
+    private int authorizationCountdownSeconds = 45;
+    private int dispenserCount = 2;
     private string dbServer = string.Empty;
     private string dbName = string.Empty;
     private string dbUser = string.Empty;
@@ -135,7 +147,9 @@
                 TipoInterfaz = current.AppConfiguration.TipoInterfaz,
                 LimiteImporte = current.AppConfiguration.LimiteImporte,
                 LimiteLitros = current.AppConfiguration.LimiteLitros,
-                QuantityDecimals = current.AppConfiguration.QuantityDecimals
+                QuantityDecimals = current.AppConfiguration.QuantityDecimals,
+                AuthorizationCountdownSeconds = current.AppConfiguration.AuthorizationCountdownSeconds,
+                DispenserCount = current.AppConfiguration.DispenserCount
             },
             Database = new DatabaseOptions
             {
@@ -159,6 +173,12 @@
         port = settings.GasStationConsole.Port;
         tpv = settings.AppConfiguration.Tpv;
         usuario = settings.AppConfiguration.Usuario;
+        authorizationCountdownSeconds = settings.AppConfiguration.AuthorizationCountdownSeconds > 0
+            ? settings.AppConfiguration.AuthorizationCountdownSeconds
+            : 45;
+        dispenserCount = settings.AppConfiguration.DispenserCount > 0
+            ? settings.AppConfiguration.DispenserCount
+            : 2;
         dbServer = settings.Database.Server;
         dbName = settings.Database.Database;
         dbUser = settings.Database.UserId;
@@ -223,6 +243,12 @@
         settings.GasStationConsole.Port = port;
         settings.AppConfiguration.Tpv = tpv;
         settings.AppConfiguration.Usuario = usuario;
+        settings.AppConfiguration.AuthorizationCountdownSeconds = authorizationCountdownSeconds > 0
+            ? authorizationCountdownSeconds
+            : 45;
+        settings.AppConfiguration.DispenserCount = dispenserCount > 0
+            ? dispenserCount
+            : 2;
         settings.Database.Server = dbServer.Trim();
         settings.Database.Database = dbName.Trim();
         settings.Database.UserId = dbUser.Trim();

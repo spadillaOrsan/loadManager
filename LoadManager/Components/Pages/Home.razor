@@ -1,3 +1,4 @@
+@page "/"
 @page "/despacho"
 @implements IAsyncDisposable
 @using System.Globalization
@@ -39,11 +40,18 @@
             <span>1.- Seleccione el dispensario</span> 
         </div>
 
-        <div class="selection-workspace @(IsSelectionWorkspaceLoading ? "is-loading" : string.Empty)" aria-busy="@IsSelectionWorkspaceLoading">
+        <div class="selection-workspace @(IsSelectionWorkspaceLoading || isDispatching ? "is-loading" : string.Empty)" aria-busy="@(IsSelectionWorkspaceLoading || isDispatching)">
             <section class="dispensers-panel">
                 <div class="panel-heading">
                     <h2>Dispensarios</h2>
-                    <span>@(isLoadingDispensers ? "Consultando..." : $"{AvailableDispensersCount} disponibles")</span>
+                    <div class="panel-heading-actions">
+                        <span>@(isLoadingDispensers ? "Consultando estatus..." : $"{AvailableDispensersCount} disponibles")</span>
+                        <button class="btn btn-outline-secondary refresh-dispensers-button"
+                                @onclick="RefreshConfiguredDispensersAsync"
+                                disabled="@(isLoadingDispensers || isDispatching)">
+                            Refrescar estatus
+                        </button>
+                    </div>
                 </div>
 
                 @if (dispensers.Count == 0)
@@ -57,7 +65,7 @@
                         {
                             <button class="dispenser-card @GetDispenserClass(dispenser)"
                                     @onclick="() => SelectDispenserAsync(dispenser)"
-                                    disabled="@(IsSelectionWorkspaceLoading || !CanSelectDispenser(dispenser))">
+                                    disabled="@(IsSelectionWorkspaceLoading || isDispatching || !CanSelectDispenser(dispenser))">
                                 <img src="@dispenser.ImagePath" alt="" />
                                 <span class="dispenser-number">@dispenser.Number</span>
                                 <span class="dispenser-status">@dispenser.StatusText</span>
@@ -78,9 +86,12 @@
                     {
                         <button class="fuel-option @product.CssClass @(selectedProductKey == product.Key ? "is-selected" : string.Empty)"
                                 @onclick="() => SelectProduct(product)"
-                                disabled="@(IsSelectionWorkspaceLoading || !CanEditSelectedDispenser)">
+                                disabled="@(IsSelectionWorkspaceLoading || isDispatching || !CanEditSelectedDispenser)">
                             <span class="fuel-swatch"></span>
-                            <strong>@product.Name</strong>
+                            <span class="fuel-option-text">
+                                <strong>@product.Name</strong>
+                                <small>@GetProductPriceText(product)</small>
+                            </span>
                         </button>
                     }
                 </div>
@@ -100,17 +111,6 @@
             }
         </div>
 
-        <section class="actions-panel">
-            <button class="btn btn-outline-secondary action-button" @onclick="GoBack">
-                Atras
-            </button>
-            <button class="btn btn-primary action-button" @onclick="GoNextAsync" disabled="@(IsSelectionWorkspaceLoading || !CanGoNext)">
-                @(isLoadingDispatchTypes ? "Consultando..." : "Siguiente")
-            </button>
-        </section>
-    }
-    else
-    {
         <section class="quantity-panel">
             <div class="panel-heading">
                 <h2>Tipo de despacho</h2>
@@ -182,11 +182,146 @@
         </section>
 
     }
+    else if (currentStep == 3)
+    {
+        <section class="authorization-panel">
+            <div class="panel-heading">
+                <h2>@GetAuthorizationStepTitle()</h2>
+                <span>@GetAuthorizationStepStatus()</span>
+            </div>
+
+            @if (dispatchTicket is not null)
+            {
+                <div class="ticket-panel">
+                    <div class="liters-display is-finished" aria-live="polite">
+                        <span class="live-counter-status">Terminado</span>
+                        <span>@GetLiveCounterLabel()</span>
+                        <strong>
+                            @if (SelectedDispatchType?.IsMoney == true)
+                            {
+                                <span class="live-currency-symbol">$</span>
+                            }
+                            @FormatLiveCounter()
+                        </strong>
+                    </div>
+
+                    <div class="ticket-folio">
+                        <span>Folio</span>
+                        <strong>@dispatchTicket.Folio</strong>
+                    </div>
+
+                    <div class="ticket-grid">
+                        <div>
+                            <span>Dispensario</span>
+                            <strong>#@dispatchTicket.Dispenser</strong>
+                        </div>
+                        <div>
+                            <span>Manguera</span>
+                            <strong>@dispatchTicket.Hose</strong>
+                        </div>
+                        <div>
+                            <span>Producto</span>
+                            <strong>@dispatchTicket.Product</strong>
+                        </div>
+                        <div>
+                            <span>Tipo</span>
+                            <strong>@dispatchTicket.DispatchType</strong>
+                        </div>
+                        <div>
+                            <span>Cantidad</span>
+                            <strong>@dispatchTicket.ProgrammedAmount</strong>
+                        </div>
+                        <div>
+                            <span>Precio</span>
+                            <strong>@($"${dispatchTicket.Price:N2}")</strong>
+                        </div>
+                        <div>
+                            <span>Litros</span>
+                            <strong>@(dispatchTicket.Liters + " Lt")</strong>
+                        </div>
+                        <div>
+                            <span>Importe</span>
+                            <strong>@($"${dispatchTicket.Amount:N2}")</strong>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary action-button ticket-home-button" @onclick="ReturnToStart">
+                        Volver a inicio
+                    </button>
+                </div>
+            }
+            else if (isFueling)
+            {
+                <div class="liters-display" aria-live="polite">
+                    <span class="live-counter-status">Surtiendo</span>
+                    <span>@GetLiveCounterLabel()</span>
+                    <strong>
+                        @if (SelectedDispatchType?.IsMoney == true)
+                        {
+                            <span class="live-currency-symbol">$</span>
+                        }
+                        @FormatLiveCounter()
+                    </strong>
+                    @if (SelectedDispatchType?.IsMoney != true)
+                    {
+                        <small>Lt</small>
+                    }
+                </div>
+                <p class="fueling-note">Cuelga la manguera al terminar para generar el ticket.</p>
+            }
+            else
+            {
+                <div class="countdown-display" role="timer" aria-live="polite">
+                    <strong>@remainingAuthorizationSeconds</strong>
+                    <span>segundos</span>
+                </div>
+
+                <article class="instruction-card instruction-card-single">
+                    <div class="instruction-item">
+                        <span>1</span>
+                        <strong>Descuelga la manguera</strong>
+                    </div>
+                    <div class="instruction-item">
+                        <span>2</span>
+                        <strong>Coloque en el tanque</strong>
+                    </div>
+                    <div class="instruction-item">
+                        <span>3</span>
+                        <strong>Presione gatillo</strong>
+                    </div>
+                </article>
+            }
+        </section>
+    }
 </section>
 
 @if (!string.IsNullOrWhiteSpace(toastMessage))
 {
     <div class="app-toast @toastCss">@toastMessage</div>
+}
+
+@if (isHoseLiftedBlockVisible)
+{
+    <div class="app-modal-backdrop">
+        <section class="app-modal hose-alert" role="alertdialog" aria-modal="true" aria-live="assertive">
+            <div class="hose-alert-icon">!</div>
+            <h2>Favor de colgar la manguera</h2>
+            <p>@hoseLiftedBlockMessage</p>
+            <span>La pantalla se habilitara automaticamente cuando el dispensario vuelva a disponible.</span>
+        </section>
+    </div>
+}
+
+@if (isDispatching)
+{
+    <div class="app-modal-backdrop">
+        <section class="app-modal hose-alert" role="alertdialog" aria-modal="true" aria-live="assertive">
+            <span class="loading-spinner" aria-hidden="true"></span>
+            <h2>Enviando peticion</h2>
+            <p>Espere un momento...</p>
+            <span>Los campos permaneceran bloqueados hasta recibir respuesta.</span>
+        </section>
+    </div>
 }
 
 @code {
@@ -198,6 +333,8 @@
 
     private readonly CancellationTokenSource pageCancellation = new();
     private CancellationTokenSource? dispatchCancellation;
+    private CancellationTokenSource? authorizationCountdownCancellation;
+    private CancellationTokenSource? fuelingMonitorCancellation;
     private bool isRefreshingSummary;
     private bool isDispatching;
     private bool isLoadingDispensers;
@@ -215,18 +352,34 @@
     private decimal amountLimit = 9999m;
     private decimal litersLimit = 500m;
     private int quantityDecimals = 2;
+    private int authorizationCountdownSeconds = 45;
+    private int configuredDispenserCount = 2;
+    private int remainingAuthorizationSeconds;
+    private int? authorizedDispenserForCountdown;
+    private bool countdownWarningShown;
+    private bool isFueling;
+    private bool isCompletingDispatch;
+    private bool isHoseLiftedBlockVisible;
+    private bool isWaitingForHoseRestored;
+    private decimal liveLiters;
+    private decimal liveAmount;
+    private string? liveDispenserStatus;
+    private string? hoseLiftedBlockMessage;
+    private string? blockedHoseDispenser;
+    private DispatchTicketViewModel? dispatchTicket;
     private int hoseNumber = 1;
     private string? toastMessage;
     private string? startupStatusMessage;
     private string toastCss = "is-success";
     private int toastVersion;
     private ConsoleCommandResult? lastResult;
+    private int? currentDispatchFolio;
     private readonly List<DispenserViewModel> dispensers = [];
     private readonly List<DispatchStep> steps =
     [
         new(1, "Comenzar"),
-        new(2, "Seleccion"),
-        new(3, "Carga")
+        new(2, "Carga"),
+        new(3, "Instrucciones")
     ];
 
     private readonly List<FuelProductViewModel> products = [];
@@ -281,8 +434,12 @@
         quantityDecimals = settings.AppConfiguration.QuantityDecimals >= 0
             ? settings.AppConfiguration.QuantityDecimals
             : 2;
-
-        _ = PollStatusesAsync(pageCancellation.Token);
+        authorizationCountdownSeconds = settings.AppConfiguration.AuthorizationCountdownSeconds > 0
+            ? settings.AppConfiguration.AuthorizationCountdownSeconds
+            : 45;
+        configuredDispenserCount = settings.AppConfiguration.DispenserCount > 0
+            ? settings.AppConfiguration.DispenserCount
+            : 2;
     }
 
     private async Task LoadDispatchTypesAsync()
@@ -314,6 +471,7 @@
         }
 
         isStartingFlow = true;
+        StopAuthorizationCountdown();
         databaseIsReady = false;
         startupStatusMessage = "Validando comunicacion...";
 
@@ -355,17 +513,33 @@
                 return;
             }
 
-            currentStep = 2;
             isLoadingDispensers = true;
+            isLoadingDispatchTypes = true;
             startupStatusMessage = "Consultando dispensarios disponibles...";
 
             try
             {
+                var currentSettings = await SettingsProvider.GetSettingsAsync(pageCancellation.Token);
+                configuredDispenserCount = currentSettings.AppConfiguration.DispenserCount > 0
+                    ? currentSettings.AppConfiguration.DispenserCount
+                    : 2;
+                LoadConfiguredDispensers();
                 await RefreshDispenserSummaryAsync(pageCancellation.Token);
+                blockedHoseDispenser = GetFirstLiftedHoseDispenser();
+                if (HasLiftedHose() || await HasLiftedHoseFromDetailAsync(pageCancellation.Token))
+                {
+                    await ShowHoseLiftedBlockAsync("Hay una manguera descolgada. Cuelgue la manguera para continuar.", blockedHoseDispenser);
+                    startupStatusMessage = null;
+                    return;
+                }
+
+                await LoadDispatchTypesAsync();
+                currentStep = 2;
             }
             finally
             {
                 isLoadingDispensers = false;
+                isLoadingDispatchTypes = false;
             }
 
             startupStatusMessage = null;
@@ -376,34 +550,6 @@
         finally
         {
             isStartingFlow = false;
-        }
-    }
-
-    private async Task PollStatusesAsync(CancellationToken cancellationToken)
-    {
-        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
-
-        try
-        {
-            while (await timer.WaitForNextTickAsync(cancellationToken))
-            {
-                if (currentStep == 1 || !ConsoleClient.IsConnected)
-                {
-                    continue;
-                }
-
-                await RefreshDispenserSummaryAsync(cancellationToken);
-
-                if (!string.IsNullOrWhiteSpace(selectedDispenser))
-                {
-                    await RefreshSelectedDispenserDetailAsync(cancellationToken);
-                }
-
-                await InvokeAsync(StateHasChanged);
-            }
-        }
-        catch (OperationCanceledException)
-        {
         }
     }
 
@@ -438,26 +584,69 @@
         }
     }
 
+    private async Task RefreshConfiguredDispensersAsync()
+    {
+        if (isLoadingDispensers || isDispatching)
+        {
+            return;
+        }
+
+        isLoadingDispensers = true;
+
+        try
+        {
+            var settings = await SettingsProvider.GetSettingsAsync(pageCancellation.Token);
+            configuredDispenserCount = settings.AppConfiguration.DispenserCount > 0
+                ? settings.AppConfiguration.DispenserCount
+                : 2;
+
+            LoadConfiguredDispensers();
+            await RefreshDispenserSummaryAsync(pageCancellation.Token);
+            selectedDispenser = null;
+            selectedProductKey = null;
+            products.Clear();
+            productLoadMessage = null;
+            amountValue = null;
+            lastResult = null;
+            ShowToast("Estatus de dispensarios actualizado correctamente.", true);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        finally
+        {
+            isLoadingDispensers = false;
+        }
+    }
+
     private void ApplyDispenserSummary(string? responseFrame, CancellationToken cancellationToken = default)
     {
         var statuses = DispenserFrameHelper.ParseDispenserSummary(responseFrame);
-
-        foreach (var status in statuses)
-        {
-            AddOrUpdateDispenser(DispenserFrameHelper.NormalizeDispenserNumber(status.Key), status.Value);
-        }
 
         foreach (var dispenser in dispensers)
         {
             var commandNumber = DispenserFrameHelper.ToCommandNumber(dispenser.Number);
             statuses.TryGetValue(commandNumber, out var statusCode);
             ApplyDispenserStatusCode(dispenser, statusCode);
+            HandleSummaryStatusTransition(dispenser, statusCode);
 
             if (int.TryParse(commandNumber, out var dispenserNumber) &&
                 int.TryParse(statusCode, out var parsedStatus))
             {
                 _ = DatabaseService.UpdateDispenserStatusAsync(dispenserNumber, parsedStatus, cancellationToken);
             }
+        }
+    }
+
+    private void LoadConfiguredDispensers()
+    {
+        dispensers.Clear();
+
+        for (var dispenser = 1; dispenser <= configuredDispenserCount; dispenser++)
+        {
+            AddOrUpdateDispenser(
+                DispenserFrameHelper.NormalizeDispenserNumber(dispenser.ToString(CultureInfo.InvariantCulture)),
+                statusCode: null);
         }
     }
 
@@ -477,6 +666,7 @@
         }
 
         ApplyDispenserDetailStatus(dispenser, result.ResponseFrame);
+        await HandleAuthorizationDetailAsync(result.ResponseFrame);
     }
 
     private async Task SelectDispenserAsync(DispenserViewModel dispenser)
@@ -492,6 +682,17 @@
         productLoadMessage = null;
         hoseNumber = 1;
         lastResult = null;
+        isFueling = false;
+        isCompletingDispatch = false;
+        liveLiters = 0;
+        liveAmount = 0;
+        liveDispenserStatus = null;
+        dispatchTicket = null;
+
+        if (SelectedDispatchType?.IsFull == true)
+        {
+            amountValue = FormatQuantity(FullTankProgrammedAmount);
+        }
 
         isSelectingDispenser = true;
 
@@ -525,7 +726,8 @@
                 CssClass: FuelProductHelper.GetCssClass(product.Description),
                 ProductCode: product.ProductId,
                 AuthorizationCode: FuelProductHelper.GetAuthorizationProductCode(product.Description, product.ProductId),
-                Hose: product.Hose));
+                Hose: product.Hose,
+                Price: product.Price));
         }
 
         if (products.Count == 0)
@@ -553,42 +755,6 @@
         amountValue = null;
     }
 
-    private async Task GoNextAsync()
-    {
-        if (!databaseIsReady)
-        {
-            ShowToast("La base de datos no ha sido validada. Presione comenzar nuevamente.", false);
-            return;
-        }
-
-        if (!ConsoleClient.IsConnected)
-        {
-            ShowToast("No hay comunicacion activa con la consola. Presione comenzar nuevamente.", false);
-            return;
-        }
-
-        if (!CanGoNext)
-        {
-            return;
-        }
-
-        currentStep = 3;
-        lastResult = null;
-        selectedDispatchTypeId = null;
-        amountValue = null;
-        isLoadingDispatchTypes = true;
-        await InvokeAsync(StateHasChanged);
-
-        try
-        {
-            await LoadDispatchTypesAsync();
-        }
-        finally
-        {
-            isLoadingDispatchTypes = false;
-        }
-    }
-
     private void GoBack()
     {
         if (currentStep == 3)
@@ -610,8 +776,33 @@
             return;
         }
 
+        if (SelectedDispenser?.StatusCode == "3")
+        {
+            await ShowHoseLiftedBlockAsync("La manguera del dispensario seleccionado esta descolgada. Cuelguela para poder cargar.", selectedDispenser);
+            return;
+        }
+
+        if (!databaseIsReady)
+        {
+            ShowToast("La base de datos no ha sido validada. Presione comenzar nuevamente.", false);
+            return;
+        }
+
+        if (!ConsoleClient.IsConnected)
+        {
+            ShowToast("No hay comunicacion activa con la consola. Presione comenzar nuevamente.", false);
+            return;
+        }
+
+        if (!await ValidateSelectedDispenserForAuthorizationAsync(pageCancellation.Token))
+        {
+            return;
+        }
+
         dispatchCancellation = new CancellationTokenSource();
         isDispatching = true;
+        StopAuthorizationCountdown();
+        await InvokeAsync(StateHasChanged);
 
         try
         {
@@ -626,6 +817,7 @@
             var amount = GetAmountOrZero();
             var loadType = SelectedDispatchType!.AuthorizationLoadType;
             var folio = await DatabaseService.GetNextFolioAsync(dispatchCancellation.Token);
+            currentDispatchFolio = folio;
             var authorizationRequest = new FuelAuthorizationRequest
             {
                 Tpv = settings.AppConfiguration.Tpv,
@@ -644,7 +836,7 @@
                 ? "G"
                 : settings.AppConfiguration.TipoInterfaz.Trim();
             var requestFrame = BuildAuthorizationFrame(settings.AppConfiguration.Tpv, dispenser, hoseNumber, amount, loadType, folio, interfaceType);
-            ShowInfoToast("Enviando...");
+            ShowInfoToast("Enviando peticion...");
             await InvokeAsync(StateHasChanged);
 
             lastResult = await ConsoleClient.SendRawFrameAsync(requestFrame, dispatchCancellation.Token);
@@ -654,6 +846,7 @@
             if (IsAuthorizedResponse(lastResult))
             {
                 await SendTotalizersForLogAsync(dispenser, dispatchCancellation.Token);
+                StartAuthorizationCountdown(dispenser);
             }
         }
         catch (OperationCanceledException)
@@ -663,6 +856,16 @@
                 IsSuccess = false,
                 UserMessage = "Solicitud de servicio cancelada por el usuario."
             };
+        }
+        catch (Exception ex)
+        {
+            lastResult = new ConsoleCommandResult
+            {
+                IsSuccess = false,
+                UserMessage = "No fue posible enviar la autorizacion.",
+                TechnicalMessage = ex.Message
+            };
+            ShowToast($"No fue posible enviar la autorizacion. {ex.Message}", false);
         }
         finally
         {
@@ -676,6 +879,382 @@
     {
         dispatchCancellation?.Cancel();
         return Task.CompletedTask;
+    }
+
+    private async Task<bool> ValidateSelectedDispenserForAuthorizationAsync(CancellationToken cancellationToken)
+    {
+        var dispenser = SelectedDispenser;
+        if (dispenser is null)
+        {
+            ShowToast("Seleccione un dispensario para continuar.", false);
+            return false;
+        }
+
+        ShowInfoToast("Validando estatus del dispensario...");
+
+        var commandNumber = DispenserFrameHelper.ToCommandNumber(dispenser.Number);
+        var result = await ConsoleClient.SendDispenserDetailAsync(commandNumber, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            ShowToast("No fue posible validar el estatus del dispensario.", false);
+            return false;
+        }
+
+        ApplyDispenserDetailStatus(dispenser, result.ResponseFrame);
+
+        if (dispenser.StatusCode == "3")
+        {
+            await ShowHoseLiftedBlockAsync("La manguera del dispensario seleccionado esta descolgada. Cuelguela para poder cargar.", dispenser.Number);
+            return false;
+        }
+
+        if (!dispenser.IsAvailable)
+        {
+            ShowToast($"El dispensario {dispenser.Number} no esta disponible para autorizar.", false);
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool HasLiftedHose(string? dispenserNumber = null)
+    {
+        return dispensers.Any(dispenser =>
+            dispenser.StatusCode == "3" &&
+            (string.IsNullOrWhiteSpace(dispenserNumber) || dispenser.Number == dispenserNumber));
+    }
+
+    private string? GetFirstLiftedHoseDispenser()
+    {
+        return dispensers.FirstOrDefault(dispenser => dispenser.StatusCode == "3")?.Number;
+    }
+
+    private async Task<bool> HasLiftedHoseFromDetailAsync(CancellationToken cancellationToken)
+    {
+        foreach (var dispenser in dispensers)
+        {
+            var result = await ConsoleClient.SendDispenserDetailAsync(
+                DispenserFrameHelper.ToCommandNumber(dispenser.Number),
+                cancellationToken);
+
+            if (!result.IsSuccess)
+            {
+                continue;
+            }
+
+            ApplyDispenserDetailStatus(dispenser, result.ResponseFrame);
+
+            if (dispenser.StatusCode == "3")
+            {
+                blockedHoseDispenser = dispenser.Number;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private async Task ShowHoseLiftedBlockAsync(string message, string? dispenserNumber = null)
+    {
+        hoseLiftedBlockMessage = message;
+        blockedHoseDispenser = dispenserNumber;
+        isHoseLiftedBlockVisible = true;
+        await InvokeAsync(StateHasChanged);
+
+        if (!isWaitingForHoseRestored)
+        {
+            _ = WaitForHoseRestoredAsync(pageCancellation.Token);
+        }
+    }
+
+    private async Task WaitForHoseRestoredAsync(CancellationToken cancellationToken)
+    {
+        isWaitingForHoseRestored = true;
+
+        try
+        {
+            while (isHoseLiftedBlockVisible)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+                await RefreshDispenserSummaryAsync(cancellationToken);
+
+                if (!HasLiftedHose(blockedHoseDispenser))
+                {
+                    isHoseLiftedBlockVisible = false;
+                    blockedHoseDispenser = null;
+                    hoseLiftedBlockMessage = null;
+                    ShowToast("Manguera colgada. Puede continuar.", true);
+                    await InvokeAsync(StateHasChanged);
+                    break;
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        finally
+        {
+            isWaitingForHoseRestored = false;
+        }
+    }
+
+    private void StartAuthorizationCountdown(int dispenser)
+    {
+        StopAuthorizationCountdown();
+        StopFuelingMonitor();
+        authorizedDispenserForCountdown = dispenser;
+        remainingAuthorizationSeconds = authorizationCountdownSeconds;
+        countdownWarningShown = false;
+        isFueling = false;
+        isCompletingDispatch = false;
+        liveLiters = 0;
+        liveAmount = 0;
+        liveDispenserStatus = null;
+        dispatchTicket = null;
+        currentStep = 3;
+        authorizationCountdownCancellation = CancellationTokenSource.CreateLinkedTokenSource(pageCancellation.Token);
+        _ = RunAuthorizationCountdownAsync(authorizationCountdownCancellation.Token);
+    }
+
+    private void StopAuthorizationCountdown(bool clearAuthorization = true)
+    {
+        authorizationCountdownCancellation?.Cancel();
+        authorizationCountdownCancellation?.Dispose();
+        authorizationCountdownCancellation = null;
+        if (clearAuthorization)
+        {
+            authorizedDispenserForCountdown = null;
+            isFueling = false;
+            isCompletingDispatch = false;
+            liveLiters = 0;
+            liveAmount = 0;
+            liveDispenserStatus = null;
+            dispatchTicket = null;
+        }
+
+        countdownWarningShown = false;
+    }
+
+    private async Task RunAuthorizationCountdownAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await InvokeAsync(StateHasChanged);
+
+            while (remainingAuthorizationSeconds > 0)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+                remainingAuthorizationSeconds--;
+                await QueryAuthorizedDispenserDetailAsync(cancellationToken);
+
+                if (isFueling || dispatchTicket is not null)
+                {
+                    break;
+                }
+
+                var warningThreshold = Math.Min(10, Math.Max(1, authorizationCountdownSeconds / 4));
+                if (!countdownWarningShown && remainingAuthorizationSeconds <= warningThreshold)
+                {
+                    countdownWarningShown = true;
+                    await InvokeAsync(() => ShowInfoToast($"La carga se cancelara en {remainingAuthorizationSeconds} segundos si no inicia."));
+                }
+
+                await InvokeAsync(StateHasChanged);
+            }
+
+            if (isFueling || dispatchTicket is not null)
+            {
+                return;
+            }
+
+            if (authorizedDispenserForCountdown is int dispenser)
+            {
+                await InvokeAsync(() => ShowToast("Tiempo agotado. Cancelando autorizacion.", false));
+                await ConsoleClient.SendRawFrameAsync($"CAUTH|{dispenser.ToString(CultureInfo.InvariantCulture)}", pageCancellation.Token);
+            }
+
+            await InvokeAsync(() =>
+            {
+                currentStep = 2;
+                authorizedDispenserForCountdown = null;
+                countdownWarningShown = false;
+                StateHasChanged();
+            });
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private void StartFuelingMonitor()
+    {
+        StopFuelingMonitor();
+        fuelingMonitorCancellation = CancellationTokenSource.CreateLinkedTokenSource(pageCancellation.Token);
+        _ = RunFuelingMonitorAsync(fuelingMonitorCancellation.Token);
+    }
+
+    private void StopFuelingMonitor()
+    {
+        fuelingMonitorCancellation?.Cancel();
+        fuelingMonitorCancellation?.Dispose();
+        fuelingMonitorCancellation = null;
+    }
+
+    private async Task RunFuelingMonitorAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            while (isFueling && currentStep == 3 && dispatchTicket is null)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+                await QueryAuthorizedDispenserDetailAsync(cancellationToken);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private async Task QueryAuthorizedDispenserDetailAsync(CancellationToken cancellationToken)
+    {
+        if (authorizedDispenserForCountdown is not int dispenser)
+        {
+            return;
+        }
+
+        var result = await ConsoleClient.SendDispenserDetailAsync(
+            dispenser.ToString(CultureInfo.InvariantCulture),
+            cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return;
+        }
+
+        var dispenserNumber = DispenserFrameHelper.NormalizeDispenserNumber(dispenser.ToString(CultureInfo.InvariantCulture));
+        var selected = dispensers.FirstOrDefault(item => item.Number == dispenserNumber);
+        if (selected is not null)
+        {
+            ApplyDispenserDetailStatus(selected, result.ResponseFrame);
+        }
+
+        await HandleAuthorizationDetailAsync(result.ResponseFrame);
+    }
+
+    private async Task HandleAuthorizationDetailAsync(string? responseFrame)
+    {
+        if (currentStep != 3 || authorizedDispenserForCountdown is null)
+        {
+            return;
+        }
+
+        var detail = TryParseDispenserDetail(responseFrame);
+        if (detail is null)
+        {
+            return;
+        }
+
+        liveDispenserStatus = detail.StatusCode;
+
+        if (detail.Liters.HasValue)
+        {
+            liveLiters = detail.Liters.Value;
+        }
+
+        if (detail.Amount.HasValue)
+        {
+            liveAmount = detail.Amount.Value;
+        }
+
+        if (detail.StatusCode == "6")
+        {
+            if (!isFueling)
+            {
+                isFueling = true;
+                StopAuthorizationCountdown(clearAuthorization: false);
+                StartFuelingMonitor();
+                ShowInfoToast("Despacho iniciado. Mostrando litros en tiempo real.");
+            }
+
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        if (isFueling && detail.StatusCode == "2")
+        {
+            await CompleteDispatchAsync(responseFrame);
+        }
+    }
+
+    private void HandleSummaryStatusTransition(DispenserViewModel dispenser, string? statusCode)
+    {
+        if (currentStep != 3 ||
+            !isFueling ||
+            statusCode != "2" ||
+            selectedDispenser != dispenser.Number)
+        {
+            return;
+        }
+
+        _ = CompleteDispatchAsync();
+    }
+
+    private async Task CompleteDispatchAsync(string? finalResponseFrame = null)
+    {
+        if (isCompletingDispatch)
+        {
+            return;
+        }
+
+        isCompletingDispatch = true;
+
+        try
+        {
+            var responseFrame = finalResponseFrame;
+            if (string.IsNullOrWhiteSpace(responseFrame) && !string.IsNullOrWhiteSpace(selectedDispenser))
+            {
+                var result = await ConsoleClient.SendDispenserDetailAsync(
+                    DispenserFrameHelper.ToCommandNumber(selectedDispenser),
+                    pageCancellation.Token);
+
+                responseFrame = result.ResponseFrame;
+            }
+
+            dispatchTicket = BuildDispatchTicket(responseFrame);
+            isFueling = false;
+            liveDispenserStatus = "2";
+            StopAuthorizationCountdown(clearAuthorization: false);
+            StopFuelingMonitor();
+            ShowToast("Despacho finalizado. Revise los datos del ticket.", true);
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private void ResetDispatchFlow()
+    {
+        StopAuthorizationCountdown();
+        StopFuelingMonitor();
+        currentStep = 1;
+        selectedDispenser = null;
+        selectedProductKey = null;
+        selectedDispatchTypeId = null;
+        amountValue = null;
+        amountInputRenderKey++;
+        productLoadMessage = null;
+        hoseNumber = 1;
+        lastResult = null;
+        currentDispatchFolio = null;
+        liveAmount = 0;
+        products.Clear();
+    }
+
+    private void ReturnToStart()
+    {
+        ResetDispatchFlow();
     }
 
     private void OnAmountChanged(ChangeEventArgs args)
@@ -876,6 +1455,15 @@
             return;
         }
 
+        if (statusCode == "6")
+        {
+            dispenser.StatusCode = statusCode;
+            dispenser.IsAvailable = false;
+            dispenser.StatusText = "Surtiendo";
+            dispenser.ImagePath = "images/dispensers/sirviendo.png";
+            return;
+        }
+
         dispenser.StatusCode = statusCode;
         dispenser.IsAvailable = false;
         dispenser.StatusText = string.IsNullOrWhiteSpace(statusCode) ? "No disponible" : $"Estatus {statusCode}";
@@ -930,6 +1518,11 @@
 
     private static string? TryParseDispenserDetailStatus(string? responseFrame)
     {
+        return TryParseDispenserDetail(responseFrame)?.StatusCode;
+    }
+
+    private static DispenserDetailFrame? TryParseDispenserDetail(string? responseFrame)
+    {
         if (string.IsNullOrWhiteSpace(responseFrame))
         {
             return null;
@@ -939,14 +1532,137 @@
             ? responseFrame["R-TDE|".Length..]
             : responseFrame.StartsWith("RTDE|", StringComparison.OrdinalIgnoreCase)
                 ? responseFrame["RTDE|".Length..]
-            : responseFrame;
+                : responseFrame;
 
         var firstBlock = payload.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .FirstOrDefault();
         var values = firstBlock?.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-        return values?.Length >= 2 ? values[1] : null;
+        if (values is null || values.Length < 2)
+        {
+            return null;
+        }
+
+        decimal? price = null;
+        if (values.Length >= 4 &&
+            TryParseFrameDecimal(values[3], out var parsedPrice))
+        {
+            price = parsedPrice;
+        }
+
+        decimal? liters = null;
+        if (values.Length >= 5 &&
+            TryParseFrameDecimal(values[4], out var parsedLiters))
+        {
+            liters = parsedLiters;
+        }
+
+        decimal? amount = null;
+        if (values.Length >= 6 &&
+            TryParseFrameDecimal(values[5], out var parsedAmount))
+        {
+            amount = parsedAmount;
+        }
+
+        var folio = values.Length >= 8 ? values[7] : string.Empty;
+
+        return new DispenserDetailFrame(values[0], values[1], values.ElementAtOrDefault(2) ?? string.Empty, price, liters, amount, folio);
     }
+
+    private DispatchTicketViewModel BuildDispatchTicket(string? responseFrame)
+    {
+        var detail = TryParseDispenserDetail(responseFrame);
+        var selectedFuel = SelectedProduct;
+        var selectedType = SelectedDispatchType;
+
+        return new DispatchTicketViewModel
+        {
+            Dispenser = detail?.Dispenser ?? selectedDispenser ?? string.Empty,
+            Hose = hoseNumber.ToString(CultureInfo.InvariantCulture),
+            Product = selectedFuel?.Name ?? "Sin producto",
+            ProductCode = detail?.ProductCode ?? selectedFuel?.ProductCode.ToString(CultureInfo.InvariantCulture) ?? string.Empty,
+            DispatchType = selectedType?.Description ?? "Sin tipo",
+            ProgrammedAmount = string.IsNullOrWhiteSpace(amountValue) ? "0.00" : amountValue,
+            Price = FormatTicketDecimal(detail?.Price),
+            Liters = FormatTicketDecimal(detail?.Liters),
+            Amount = FormatTicketDecimal(detail?.Amount),
+            Folio = !string.IsNullOrWhiteSpace(detail?.Folio)
+                ? detail.Folio
+                : currentDispatchFolio?.ToString(CultureInfo.InvariantCulture) ?? string.Empty,
+            RawResponse = responseFrame ?? string.Empty
+        };
+    }
+
+    private static string FormatTicketDecimal(decimal? value)
+    {
+        return value.HasValue
+            ? value.Value.ToString("N3", CultureInfo.GetCultureInfo("en-US"))
+            : "0.000";
+    }
+
+    private string GetAuthorizationStepTitle()
+    {
+        if (dispatchTicket is not null)
+        {
+            return "Ticket de despacho";
+        }
+
+        return isFueling ? "Despacho en curso" : "Instrucciones";
+    }
+
+    private string GetAuthorizationStepStatus()
+    {
+        if (dispatchTicket is not null)
+        {
+            return "Despacho finalizado";
+        }
+
+        if (isFueling)
+        {
+            return string.IsNullOrWhiteSpace(liveDispenserStatus)
+                ? "Surtiendo"
+                : $"Estatus {liveDispenserStatus}";
+        }
+
+        return "Esperando manguera";
+    }
+
+    private string GetLiveCounterLabel()
+    {
+        return SelectedDispatchType?.IsMoney == true
+            ? "Importe surtido"
+            : "Litros surtidos";
+    }
+
+    private string FormatLiveCounter()
+    {
+        var value = SelectedDispatchType?.IsMoney == true ? liveAmount : liveLiters;
+        return value.ToString("N2", CultureInfo.GetCultureInfo("en-US"));
+    }
+
+    private static bool TryParseFrameDecimal(string? value, out decimal result)
+    {
+        result = 0;
+        return !string.IsNullOrWhiteSpace(value) &&
+            decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out result);
+    }
+
+    private static string GetProductPriceText(FuelProductViewModel product)
+    {
+        return product.Price.HasValue
+            ? $"Precio {product.Price.Value.ToString("C2", CultureInfo.GetCultureInfo("es-MX"))}"
+            : "Precio sin consultar";
+    }
+
+    private sealed record DispenserDetailFrame(
+        string Dispenser,
+        string StatusCode,
+        string ProductCode,
+        decimal? Price,
+        decimal? Liters,
+        decimal? Amount,
+        string Folio);
+
 
     private string GetDispenserClass(DispenserViewModel dispenser)
     {
@@ -1141,6 +1857,8 @@
         await pageCancellation.CancelAsync();
         pageCancellation.Dispose();
         dispatchCancellation?.Dispose();
+        authorizationCountdownCancellation?.Dispose();
+        fuelingMonitorCancellation?.Dispose();
     }
 
 }

@@ -184,7 +184,7 @@ public sealed class GasStationDatabaseService(
         {
             await using var connection = await OpenConnectionAsync(cancellationToken);
             await using var command = new SqlCommand("""
-                SELECT tm.intManguera, tm.intProducto, tp.strDescripcion
+                SELECT tm.intManguera, tm.intProducto, tp.strDescripcion, tp.dblPrecioU
                 FROM dbo.tblMangueras tm
                 INNER JOIN dbo.tblProductos tp ON tp.intProducto = tm.intProducto
                 WHERE tm.bitActivo = 1
@@ -202,7 +202,10 @@ public sealed class GasStationDatabaseService(
                 {
                     Hose = Convert.ToInt32(reader["intManguera"]),
                     ProductId = Convert.ToInt32(reader["intProducto"]),
-                    Description = Convert.ToString(reader["strDescripcion"]) ?? string.Empty
+                    Description = Convert.ToString(reader["strDescripcion"]) ?? string.Empty,
+                    Price = reader["dblPrecioU"] == DBNull.Value
+                        ? null
+                        : Convert.ToDecimal(reader["dblPrecioU"])
                 });
             }
 
@@ -210,7 +213,7 @@ public sealed class GasStationDatabaseService(
             {
                 IsSuccess = true,
                 CommandName = "database",
-                RequestFrame = $"SELECT mangueras/productos WHERE intDispensario = {dispenser}",
+                RequestFrame = $"SELECT mangueras/productos/precios WHERE intDispensario = {dispenser}",
                 ResponseFrame = $"{products.Count} productos",
                 UserMessage = "Productos del dispensario consultados correctamente."
             }, cancellationToken);
@@ -218,7 +221,7 @@ public sealed class GasStationDatabaseService(
         catch (Exception ex)
         {
             await LogAndReturnAsync(CreateErrorResult(
-                $"SELECT mangueras/productos WHERE intDispensario = {dispenser}",
+                $"SELECT mangueras/productos/precios WHERE intDispensario = {dispenser}",
                 "No se pudieron consultar los productos del dispensario.",
                 ex), cancellationToken);
         }
