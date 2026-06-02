@@ -1,5 +1,7 @@
 using System.Text;
+using LoadManager.Helpers;
 using LoadManager.Models;
+using LoadManager.Services.Interfaces;
 
 namespace LoadManager.Services;
 
@@ -13,20 +15,7 @@ public sealed class ConsoleLogService(IAppSettingsProvider settingsProvider) : I
         var settings = await settingsProvider.GetSettingsAsync(cancellationToken);
         var options = settings.ConsoleLogs;
         var now = DateTime.Now;
-        var statusFolder = result.IsSuccess ? options.SuccessFolderName : options.ErrorFolderName;
-        var basePath = Path.IsPathRooted(options.BasePath)
-            ? options.BasePath
-            : Path.Combine(AppContext.BaseDirectory, options.BasePath);
-
-        var folderPath = Path.Combine(
-            basePath,
-            statusFolder,
-            now.ToString("yyyy-MM"),
-            now.ToString("yyyy-MM-dd"));
-
-        Directory.CreateDirectory(folderPath);
-
-        var filePath = Path.Combine(folderPath, $"log_{now:yyyyMMdd}.txt");
+        var filePath = ConsoleLogPathHelper.GetDailyLogFilePath(options, result.IsSuccess, now);
         var content = BuildContent(result, now);
 
         await File.AppendAllTextAsync(filePath, content, Encoding.UTF8, cancellationToken);

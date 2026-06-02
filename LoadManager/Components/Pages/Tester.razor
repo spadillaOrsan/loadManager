@@ -2,35 +2,25 @@
 @using System.Globalization
 @inject IGasStationConsoleClient ConsoleClient
 
-<PageTitle>Tester de comunicacion</PageTitle>
+<PageTitle>Tester de comunicacion (@ConnectionStatusText)</PageTitle>
 
 <section class="console-shell">
     <header class="console-header">
         <div>
-            <h1>Tester de comunicacion</h1>
+            <h1>Tester de comunicacion (@ConnectionStatusText)</h1>
         </div>
     </header>
 
-    <section class="connection-panel">
-        <div>
-            <span>Conexion TCP/IP</span>
-            <strong>@(ConsoleClient.IsConnected ? "Conectado" : "Desconectado")</strong>
-        </div>
-        <button class="btn btn-primary action-button" @onclick="RefreshConnectionAsync" disabled="@isRefreshing">
-            @(isRefreshing ? "Refrescando..." : "Refrescar")
-        </button>
-    </section>
-
-    <section class="tester-panel">
+    <section class="tester-panel @(isSendingGraphic ? "is-disabled-panel" : string.Empty)">
         <div class="panel-heading">
             <h2>Grafico</h2>
-            <span>@SelectedCommandDescription</span>
+            <span>@(isSendingGraphic ? "Esperando respuesta..." : SelectedCommandDescription)</span>
         </div>
 
         <div class="tester-form-grid">
             <label class="settings-field">
                 <span>Comando</span>
-                <select @bind="graphicCommand">
+                <select @bind="graphicCommand" disabled="@isSendingGraphic">
                     <option value="AUTH">Autorizacion de carga</option>
                     <option value="TDE">Consulta de detalle de dispensario</option>
                     <option value="TD">Consulta de sin detalle de dispensario</option>
@@ -44,7 +34,7 @@
             {
                 <label class="settings-field">
                     <span>Dispensario</span>
-                    <input type="number" min="1" @bind="graphicDispenser" @bind:event="oninput" />
+                    <input type="number" min="1" @bind="graphicDispenser" @bind:event="oninput" disabled="@isSendingGraphic" />
                 </label>
             }
 
@@ -52,17 +42,17 @@
             {
                 <label class="settings-field">
                     <span>TPV</span>
-                    <input type="number" min="1" @bind="graphicTpv" @bind:event="oninput" />
+                    <input type="number" min="1" @bind="graphicTpv" @bind:event="oninput" disabled="@isSendingGraphic" />
                 </label>
 
                 <label class="settings-field">
                     <span>Manguera</span>
-                    <input type="number" min="1" @bind="graphicHose" @bind:event="oninput" />
+                    <input type="number" min="1" @bind="graphicHose" @bind:event="oninput" disabled="@isSendingGraphic" />
                 </label>
 
                 <label class="settings-field">
                     <span>Tipo de carga</span>
-                    <select @bind="graphicLoadType">
+                    <select @bind="graphicLoadType" disabled="@isSendingGraphic">
                         <option value="1">Pesos</option>
                         <option value="2">Litros</option>
                         <option value="3">Tanque lleno</option>
@@ -76,29 +66,30 @@
                            placeholder="0.00"
                            value="@graphicAmount"
                            @oninput="OnGraphicAmountChanged"
-                           @onblur="FormatGraphicAmount" />
+                           @onblur="FormatGraphicAmount"
+                           disabled="@isSendingGraphic" />
                 </label>
 
                 <label class="settings-field">
                     <span>Folio</span>
-                    <input type="text" @bind="graphicFolio" @bind:event="oninput" />
+                    <input type="text" @bind="graphicFolio" @bind:event="oninput" disabled="@isSendingGraphic" />
                 </label>
 
                 <label class="settings-field">
                     <span>Tipo interfaz</span>
-                    <input type="text" maxlength="3" @bind="graphicInterfaceType" @bind:event="oninput" />
+                    <input type="text" maxlength="3" @bind="graphicInterfaceType" @bind:event="oninput" disabled="@isSendingGraphic" />
                 </label>
             }
         </div>
 
         <label class="settings-field">
             <span>Trama</span>
-            <input type="text" value="@GeneratedGraphicFrame" readonly />
+            <input type="text" value="@GeneratedGraphicFrame" readonly disabled="@isSendingGraphic" />
         </label>
 
         <div class="actions-panel tester-actions-panel">
             <button class="btn btn-primary action-button" @onclick="SendGraphicCommandAsync" disabled="@(!CanSendGraphic)">
-                Enviar
+                @(isSendingGraphic ? "Enviando..." : "Enviar")
             </button>
         </div>
     </section>
@@ -109,7 +100,7 @@
                 <h2>Respuesta</h2>
                 <span>@responseLines.Count registros</span>
             </div>
-            <button class="btn btn-outline-secondary clear-response-button" @onclick="ClearResponses" disabled="@(responseLines.Count == 0)">
+            <button class="btn btn-outline-secondary clear-response-button" @onclick="ClearResponses" disabled="@(isSendingGraphic || responseLines.Count == 0)">
                 Limpiar
             </button>
         </div>
@@ -136,7 +127,6 @@
 }
 
 @code {
-    private bool isRefreshing;
     private bool isSendingGraphic;
     private string graphicCommand = "AUTH";
     private int graphicDispenser = 1;
@@ -149,6 +139,8 @@
     private string? toastMessage;
     private string toastCss = "is-success";
     private readonly List<string> responseLines = [];
+
+    private string ConnectionStatusText => ConsoleClient.IsConnected ? "Conectado" : "Desconectado";
 
     private string GeneratedGraphicFrame => BuildGraphicFrame();
 
@@ -168,25 +160,8 @@
     };
 
     private bool CanSendGraphic =>
-        ConsoleClient.IsConnected &&
         !isSendingGraphic &&
         !string.IsNullOrWhiteSpace(GeneratedGraphicFrame);
-
-    private async Task RefreshConnectionAsync()
-    {
-        isRefreshing = true;
-
-        try
-        {
-            await ConsoleClient.DisconnectAsync();
-            var result = await ConsoleClient.ConnectAsync();
-            ShowToast(result.UserMessage, result.IsAvailable);
-        }
-        finally
-        {
-            isRefreshing = false;
-        }
-    }
 
     private async Task SendGraphicCommandAsync()
     {
@@ -196,6 +171,7 @@
         }
 
         isSendingGraphic = true;
+        await InvokeAsync(StateHasChanged);
 
         try
         {

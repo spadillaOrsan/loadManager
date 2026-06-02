@@ -1,7 +1,10 @@
+@page "/"
 @page "/estado-dispensario"
 @implements IAsyncDisposable
 @using System.Globalization
+@using System.Text
 @inject IGasStationConsoleClient ConsoleClient
+@inject IAppSettingsProvider SettingsProvider
 
 <PageTitle>Estado de dispensario</PageTitle>
 
@@ -17,21 +20,34 @@
             <h2>Dispensarios</h2>
             <div class="status-query-controls">
                 <span>@GetSelectedSummary()</span>
+                <button class="btn btn-outline-secondary status-query-button" @onclick="OpenLogsAsync">
+                    Logs del dia
+                </button>
+                <button class="btn btn-outline-secondary status-query-button" @onclick="LoadDispensersFromSummaryAsync" disabled="@isLoadingDispensers">
+                    @(isLoadingDispensers ? "Consultando..." : "1.-Consultar dispensarios")
+                </button>
                 <button class="btn btn-primary status-query-button" @onclick="ConsultSelectedAsync" disabled="@(!CanConsult)">
-                    @(isConsulting ? "Consultando..." : "Consultar")
+                    @(isConsulting ? "Consultando..." : "2.-Consultar")
                 </button>
             </div>
         </div>
 
         <div class="dispensers-grid">
-            @foreach (var dispenser in dispensers)
+            @if (dispensers.Count == 0)
             {
-                <button class="dispenser-card @GetDispenserClass(dispenser)"
-                        @onclick="() => SelectDispenserAsync(dispenser)">
-                    <img src="@dispenser.ImagePath" alt="" />
-                    <span class="dispenser-number">@dispenser.Number</span>
-                    <span class="dispenser-status">@dispenser.StatusText</span>
-                </button>
+                <p class="empty-message">Consulte dispensarios para seleccionar uno.</p>
+            }
+            else
+            {
+                @foreach (var dispenser in dispensers)
+                {
+                    <button class="dispenser-card @GetDispenserClass(dispenser)"
+                            @onclick="() => SelectDispenserAsync(dispenser)">
+                        <img src="@dispenser.ImagePath" alt="" />
+                        <span class="dispenser-number">@dispenser.Number</span>
+                        <span class="dispenser-status">@dispenser.StatusText</span>
+                    </button>
+                }
             }
         </div>
     </section>
@@ -78,6 +94,54 @@
     </section>
 </section>
 
+@if (showLogsPopup)
+{
+    <div class="app-modal-backdrop" role="presentation">
+        <section class="app-modal" role="dialog" aria-modal="true" aria-labelledby="todayLogsTitle">
+            <header class="app-modal-header">
+                <div>
+                    <h2 id="todayLogsTitle">Logs del dia</h2>
+                    <span>@DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)</span>
+                </div>
+                <div class="app-modal-actions">
+                    <button class="btn btn-outline-secondary clear-response-button" @onclick="LoadTodayLogsAsync" disabled="@isLoadingLogs">
+                        @(isLoadingLogs ? "Consultando..." : "Actualizar")
+                    </button>
+                    <button class="btn btn-outline-danger clear-response-button" @onclick="CloseLogs">
+                        Cerrar
+                    </button>
+                </div>
+            </header>
+
+            @if (isLoadingLogs)
+            {
+                <p class="empty-message">Consultando logs del dia...</p>
+            }
+            else if (todayLogFiles.Count == 0)
+            {
+                <p class="empty-message">No hay logs generados para el dia actual.</p>
+            }
+            else
+            {
+                <div class="today-log-list">
+                    @foreach (var file in todayLogFiles)
+                    {
+                        <article class="today-log-file">
+                            <header>
+                                <strong>@file.Title</strong>
+                                <span>@file.Path</span>
+                            </header>
+                            <div class="raw-response-list">
+                                <code>@file.Content</code>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+        </section>
+    </div>
+}
+
 @if (!string.IsNullOrWhiteSpace(toastMessage))
 {
     <div class="app-toast @toastCss">@toastMessage</div>
@@ -92,26 +156,23 @@
 
     private readonly CancellationTokenSource pageCancellation = new();
     private readonly List<DispenserStatusViewModel> dispensers = [];
+    private readonly List<LogFileViewModel> todayLogFiles = [];
     private bool isConsulting;
+    private bool isLoadingDispensers;
+    private bool showLogsPopup;
+    private bool isLoadingLogs;
     private string? selectedDispenser;
     private string? lastRequest;
     private string? lastResponse;
     private string? toastMessage;
     private string toastCss = "is-success";
 
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            await LoadDispensersFromSummaryAsync();
-        }
-        catch (OperationCanceledException)
-        {
-        }
-    }
-
     private async Task LoadDispensersFromSummaryAsync()
     {
+        isLoadingDispensers = true;
+        dispensers.Clear();
+        selectedDispenser = null;
+
         try
         {
             var connection = await ConsoleClient.ConnectAsync(pageCancellation.Token);
@@ -122,17 +183,22 @@
             }
 
             var result = await ConsoleClient.SendDispenserSummaryAsync(pageCancellation.Token);
+            lastRequest = result.RequestFrame;
+            lastResponse = !string.IsNullOrWhiteSpace(result.ResponseFrame)
+                ? result.ResponseFrame
+                : result.UserMessage;
+
             if (!result.IsSuccess)
             {
                 ShowToast(result.UserMessage, false);
                 return;
             }
 
-            foreach (var status in ParseDispenserSummary(result.ResponseFrame))
+            foreach (var status in DispenserFrameHelper.ParseDispenserSummary(result.ResponseFrame))
             {
                 var dispenser = new DispenserStatusViewModel
                 {
-                    Number = NormalizeDispenserNumber(status.Key)
+                    Number = DispenserFrameHelper.NormalizeDispenserNumber(status.Key)
                 };
 
                 ApplySummaryStatus(dispenser, status.Value);
@@ -145,10 +211,11 @@
         finally
         {
             await ConsoleClient.DisconnectAsync();
+            isLoadingDispensers = false;
         }
     }
 
-    private bool CanConsult => !isConsulting && !string.IsNullOrWhiteSpace(selectedDispenser);
+    private bool CanConsult => !isConsulting && !isLoadingDispensers && !string.IsNullOrWhiteSpace(selectedDispenser);
 
     private void SelectDispenserAsync(DispenserStatusViewModel dispenser)
     {
@@ -163,6 +230,10 @@
         }
 
         isConsulting = true;
+        var dispenser = dispensers.First(item => item.Number == selectedDispenser);
+        lastRequest = $"TDE|{DispenserFrameHelper.ToCommandNumber(dispenser.Number)}";
+        lastResponse = "Esperando respuesta de la consola...";
+        await InvokeAsync(StateHasChanged);
 
         try
         {
@@ -171,15 +242,18 @@
             var connection = await ConsoleClient.ConnectAsync(pageCancellation.Token);
             if (!connection.IsAvailable)
             {
+                lastResponse = connection.UserMessage;
                 ShowToast(connection.UserMessage, connection.IsAvailable);
                 return;
             }
 
-            var dispenser = dispensers.First(item => item.Number == selectedDispenser);
-            await QueryDispenserAsync(dispenser);
+            await QueryDispenserAsync(dispenser, lastRequest);
         }
         catch (OperationCanceledException)
         {
+            lastResponse = "La consola no respondio dentro del tiempo esperado.";
+            ApplyStatus(dispenser, null);
+            ShowToast(lastResponse, false);
         }
         finally
         {
@@ -188,14 +262,27 @@
         }
     }
 
-    private async Task QueryDispenserAsync(DispenserStatusViewModel dispenser)
+    private async Task QueryDispenserAsync(DispenserStatusViewModel dispenser, string requestFrame)
     {
-        lastRequest = $"TDE|{ToCommandNumber(dispenser.Number)}";
+        lastRequest = requestFrame;
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(pageCancellation.Token);
-        timeout.CancelAfter(TimeSpan.FromSeconds(8));
+        timeout.CancelAfter(TimeSpan.FromSeconds(30));
 
-        var result = await ConsoleClient.SendRawFrameAsync(lastRequest, timeout.Token);
-        lastResponse = result.IsSuccess
+        ConsoleCommandResult result;
+        try
+        {
+            result = await ConsoleClient.SendRawFrameAsync(lastRequest, timeout.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            lastResponse = "La consola no respondio dentro del tiempo esperado.";
+            ApplyStatus(dispenser, null);
+            ShowToast(lastResponse, false);
+            return;
+        }
+
+        lastRequest = string.IsNullOrWhiteSpace(result.RequestFrame) ? lastRequest : result.RequestFrame;
+        lastResponse = !string.IsNullOrWhiteSpace(result.ResponseFrame)
             ? result.ResponseFrame
             : result.UserMessage;
 
@@ -217,10 +304,82 @@
         lastResponse = null;
     }
 
+    private async Task OpenLogsAsync()
+    {
+        showLogsPopup = true;
+        await LoadTodayLogsAsync();
+    }
+
+    private void CloseLogs()
+    {
+        showLogsPopup = false;
+    }
+
+    private async Task LoadTodayLogsAsync()
+    {
+        isLoadingLogs = true;
+        todayLogFiles.Clear();
+
+        try
+        {
+            var settings = await SettingsProvider.GetSettingsAsync(pageCancellation.Token);
+            var options = settings.ConsoleLogs;
+            var today = DateTime.Now;
+            var basePath = Path.IsPathRooted(options.BasePath)
+                ? options.BasePath
+                : Path.Combine(AppContext.BaseDirectory, options.BasePath);
+
+            await LoadLogFolderAsync(basePath, options.SuccessFolderName, "Success", today);
+            await LoadLogFolderAsync(basePath, options.ErrorFolderName, "Error", today);
+            todayLogFiles.Sort((left, right) => right.LastWriteTime.CompareTo(left.LastWriteTime));
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        finally
+        {
+            isLoadingLogs = false;
+        }
+    }
+
+    private async Task LoadLogFolderAsync(string basePath, string statusFolder, string title, DateTime date)
+    {
+        var folderPath = Path.Combine(
+            basePath,
+            statusFolder,
+            date.ToString("yyyy-MM", CultureInfo.InvariantCulture),
+            date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+
+        if (!Directory.Exists(folderPath))
+        {
+            return;
+        }
+
+        foreach (var filePath in Directory.GetFiles(folderPath, "*.txt").OrderByDescending(File.GetLastWriteTime))
+        {
+            var content = await File.ReadAllTextAsync(filePath, Encoding.UTF8, pageCancellation.Token);
+            var lastWriteTime = File.GetLastWriteTime(filePath);
+            todayLogFiles.Add(new LogFileViewModel(
+                $"{title} - {Path.GetFileName(filePath)}",
+                filePath,
+                string.IsNullOrWhiteSpace(content) ? "(archivo sin contenido)" : FormatNewestLogEntriesFirst(content),
+                lastWriteTime));
+        }
+    }
+
+    private static string FormatNewestLogEntriesFirst(string content)
+    {
+        var lines = content
+            .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Reverse();
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
     private static void ApplyStatus(DispenserStatusViewModel dispenser, string? response)
     {
         dispenser.LastResponse = response;
-        var statusCode = TryParseStatus(response);
+        var statusCode = DispenserFrameHelper.TryParseDetailStatus(response);
         dispenser.StatusCode = statusCode ?? string.Empty;
 
         switch (statusCode)
@@ -274,51 +433,6 @@
         }
     }
 
-    private static Dictionary<string, string> ParseDispenserSummary(string? responseFrame)
-    {
-        var statuses = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-        if (string.IsNullOrWhiteSpace(responseFrame))
-        {
-            return statuses;
-        }
-
-        var payload = responseFrame.StartsWith("RSDI|", StringComparison.OrdinalIgnoreCase)
-            ? responseFrame["RSDI|".Length..]
-            : responseFrame;
-
-        foreach (var part in payload.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-        {
-            var values = part.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            if (values.Length >= 2)
-            {
-                statuses[values[0]] = values[1];
-            }
-        }
-
-        return statuses;
-    }
-
-    private static string? TryParseStatus(string? response)
-    {
-        if (string.IsNullOrWhiteSpace(response))
-        {
-            return null;
-        }
-
-        var payload = response.StartsWith("RTDE|", StringComparison.OrdinalIgnoreCase)
-            ? response["RTDE|".Length..]
-            : response.StartsWith("R-TDE|", StringComparison.OrdinalIgnoreCase)
-                ? response["R-TDE|".Length..]
-                : response;
-
-        var firstBlock = payload.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .FirstOrDefault();
-        var values = firstBlock?.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-        return values?.Length >= 2 ? values[1] : null;
-    }
-
     private string GetDispenserClass(DispenserStatusViewModel dispenser)
     {
         var classes = new List<string>();
@@ -346,6 +460,16 @@
             : $"Seleccionado {selectedDispenser}";
     }
 
+    private string GetRawRequestText()
+    {
+        return string.IsNullOrWhiteSpace(lastRequest) ? "Sin peticion enviada." : lastRequest;
+    }
+
+    private string GetRawResponseText()
+    {
+        return string.IsNullOrWhiteSpace(lastResponse) ? "Sin respuesta registrada." : lastResponse;
+    }
+
     private void ShowToast(string message, bool isSuccess)
     {
         toastMessage = message;
@@ -368,32 +492,10 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    private static string NormalizeDispenserNumber(string value)
-    {
-        return int.TryParse(value, out var number) ? number.ToString("00", CultureInfo.InvariantCulture) : value;
-    }
-
-    private static string ToCommandNumber(string value)
-    {
-        return int.TryParse(value, out var number) ? number.ToString(CultureInfo.InvariantCulture) : value;
-    }
-
     public async ValueTask DisposeAsync()
     {
         await pageCancellation.CancelAsync();
         pageCancellation.Dispose();
     }
 
-    private sealed class DispenserStatusViewModel
-    {
-        public string Number { get; init; } = string.Empty;
-
-        public string StatusCode { get; set; } = string.Empty;
-
-        public string StatusText { get; set; } = "Sin consultar";
-
-        public string ImagePath { get; set; } = CheckingImage;
-
-        public string? LastResponse { get; set; }
-    }
 }

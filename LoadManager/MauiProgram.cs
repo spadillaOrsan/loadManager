@@ -1,4 +1,5 @@
 using LoadManager.Services;
+using LoadManager.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace LoadManager
@@ -20,6 +21,7 @@ namespace LoadManager
             builder.Services.AddSingleton<IConsoleLogService, ConsoleLogService>();
             builder.Services.AddSingleton<IGasStationConsoleClient, GasStationConsoleClient>();
             builder.Services.AddSingleton<IGasStationDatabaseService, GasStationDatabaseService>();
+            builder.Services.AddSingleton<IConnectionValidationState, ConnectionValidationState>();
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();

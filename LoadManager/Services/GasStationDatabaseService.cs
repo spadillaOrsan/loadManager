@@ -1,5 +1,6 @@
 using System.Data;
 using LoadManager.Models;
+using LoadManager.Services.Interfaces;
 using Microsoft.Data.SqlClient;
 
 namespace LoadManager.Services;

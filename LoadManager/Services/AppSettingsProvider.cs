@@ -1,5 +1,7 @@
 using System.Text.Json;
+using LoadManager.Helpers;
 using LoadManager.Models;
+using LoadManager.Services.Interfaces;
 
 namespace LoadManager.Services;
 
@@ -21,7 +23,7 @@ public sealed class AppSettingsProvider : IAppSettingsProvider
             return settings;
         }
 
-        var userSettingsPath = GetUserSettingsPath();
+        var userSettingsPath = AppSettingsPathHelper.GetUserSettingsPath();
         if (File.Exists(userSettingsPath))
         {
             await using var userStream = File.OpenRead(userSettingsPath);
@@ -40,10 +42,10 @@ public sealed class AppSettingsProvider : IAppSettingsProvider
 
     public async Task SaveSettingsAsync(AppSettings settingsToSave, CancellationToken cancellationToken = default)
     {
-        var userSettingsPath = GetUserSettingsPath();
+        var userSettingsPath = AppSettingsPathHelper.GetUserSettingsPath();
         await WriteSettingsFileAsync(userSettingsPath, settingsToSave, cancellationToken);
 
-        foreach (var appSettingsPath in GetWritableAppSettingsPaths())
+        foreach (var appSettingsPath in AppSettingsPathHelper.GetWritableAppSettingsPaths())
         {
             await WriteSettingsFileAsync(appSettingsPath, settingsToSave, cancellationToken);
         }
@@ -66,37 +68,4 @@ public sealed class AppSettingsProvider : IAppSettingsProvider
         await JsonSerializer.SerializeAsync(stream, settingsToSave, SerializerOptions, cancellationToken);
     }
 
-    private static IEnumerable<string> GetWritableAppSettingsPaths()
-    {
-        var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var baseDirectory = AppContext.BaseDirectory;
-        var outputSettingsPath = Path.Combine(baseDirectory, "appsettings.json");
-
-        if (File.Exists(outputSettingsPath))
-        {
-            paths.Add(outputSettingsPath);
-        }
-
-        var current = new DirectoryInfo(baseDirectory);
-        while (current is not null)
-        {
-            var projectSettingsPath = Path.Combine(current.FullName, "appsettings.json");
-            var projectFilePath = Path.Combine(current.FullName, "LoadManager.csproj");
-
-            if (File.Exists(projectSettingsPath) && File.Exists(projectFilePath))
-            {
-                paths.Add(projectSettingsPath);
-                break;
-            }
-
-            current = current.Parent;
-        }
-
-        return paths;
-    }
-
-    private static string GetUserSettingsPath()
-    {
-        return Path.Combine(FileSystem.AppDataDirectory, "appsettings.json");
-    }
 }

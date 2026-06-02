@@ -1,6 +1,8 @@
 using System.Net.Sockets;
 using System.Text;
+using LoadManager.Helpers;
 using LoadManager.Models;
+using LoadManager.Services.Interfaces;
 
 namespace LoadManager.Services;
 
@@ -120,13 +122,13 @@ public sealed class GasStationConsoleClient(
         try
         {
             var responseFrame = await SendFrameAsync(options, requestFrame, cancellationToken);
-            var authorizationStatus = GetAuthorizationStatus(requestFrame, responseFrame);
+            var authorizationStatus = ConsoleFrameHelper.GetAuthorizationStatus(requestFrame, responseFrame);
 
             return await LogAndReturnAsync(new ConsoleCommandResult
             {
-                IsSuccess = authorizationStatus != AuthorizationStatus.NotAuthorized,
+                IsSuccess = authorizationStatus != AuthorizationFrameStatus.NotAuthorized,
                 CommandName = "raw",
-                UserMessage = GetRawFrameUserMessage(authorizationStatus),
+                UserMessage = ConsoleFrameHelper.GetRawFrameUserMessage(authorizationStatus),
                 RequestFrame = requestFrame,
                 ResponseFrame = responseFrame
             }, cancellationToken);
@@ -217,7 +219,7 @@ public sealed class GasStationConsoleClient(
             }, cancellationToken);
         }
 
-        requestFrame = ApplyReplacements(requestFrame, replacements);
+        requestFrame = ConsoleFrameHelper.ApplyReplacements(requestFrame, replacements);
 
         try
         {
@@ -374,23 +376,6 @@ public sealed class GasStationConsoleClient(
         connectedEndpoint = endpoint;
     }
 
-    private static string ApplyReplacements(
-        string requestFrame,
-        IReadOnlyDictionary<string, string>? replacements)
-    {
-        if (replacements is null)
-        {
-            return requestFrame;
-        }
-
-        foreach (var replacement in replacements)
-        {
-            requestFrame = requestFrame.Replace($"{{{replacement.Key}}}", replacement.Value);
-        }
-
-        return requestFrame;
-    }
-
     private static ConsoleCommandResult CreateErrorResult(
         string commandName,
         string requestFrame,
@@ -405,37 +390,6 @@ public sealed class GasStationConsoleClient(
             RequestFrame = requestFrame,
             TechnicalMessage = exception.ToString()
         };
-    }
-
-    private static string GetRawFrameUserMessage(AuthorizationStatus authorizationStatus)
-    {
-        return authorizationStatus switch
-        {
-            AuthorizationStatus.Authorized => "La carga fue autorizada.",
-            AuthorizationStatus.NotAuthorized => "La carga no fue autorizada.",
-            _ => "La consola respondio correctamente."
-        };
-    }
-
-    private static AuthorizationStatus GetAuthorizationStatus(string requestFrame, string responseFrame)
-    {
-        if (!requestFrame.TrimStart().StartsWith("AUTH|", StringComparison.OrdinalIgnoreCase))
-        {
-            return AuthorizationStatus.NotAuthorization;
-        }
-
-        if (responseFrame.Contains("NoAutorizado", StringComparison.OrdinalIgnoreCase) ||
-            responseFrame.Contains("No autorizado", StringComparison.OrdinalIgnoreCase))
-        {
-            return AuthorizationStatus.NotAuthorized;
-        }
-
-        if (responseFrame.Contains("Autorizado", StringComparison.OrdinalIgnoreCase))
-        {
-            return AuthorizationStatus.Authorized;
-        }
-
-        return AuthorizationStatus.UnknownAuthorizationResponse;
     }
 
     private async Task<ConsoleCommandResult> LogAndReturnAsync(
@@ -469,13 +423,5 @@ public sealed class GasStationConsoleClient(
     {
         await DisconnectAsync();
         connectionLock.Dispose();
-    }
-
-    private enum AuthorizationStatus
-    {
-        NotAuthorization,
-        Authorized,
-        NotAuthorized,
-        UnknownAuthorizationResponse
     }
 }

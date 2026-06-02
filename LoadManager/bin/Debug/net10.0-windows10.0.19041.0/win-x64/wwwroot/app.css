@@ -866,13 +866,92 @@ a, .btn-link {
     color: #17212b;
 }
 
+.today-log-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.today-log-file {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.today-log-file header {
+    display: grid;
+    gap: 0.25rem;
+}
+
+.today-log-file header strong {
+    color: #111827;
+    font-size: 0.95rem;
+}
+
+.today-log-file header span {
+    color: #64748b;
+    font-size: 0.8rem;
+    overflow-wrap: anywhere;
+}
+
+.app-modal-backdrop {
+    align-items: center;
+    background: rgba(15, 23, 42, 0.55);
+    display: flex;
+    inset: 0;
+    justify-content: center;
+    padding: 1.25rem;
+    position: fixed;
+    z-index: 1050;
+}
+
+.app-modal {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+    display: grid;
+    gap: 1rem;
+    max-height: min(82vh, 760px);
+    max-width: min(980px, calc(100vw - 2rem));
+    overflow: auto;
+    padding: 1rem;
+    width: 100%;
+}
+
+.app-modal-header {
+    align-items: center;
+    border-bottom: 1px solid #e5edf5;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    padding-bottom: 0.85rem;
+}
+
+.app-modal-header h2 {
+    color: #17212b;
+    font-size: 1.15rem;
+    margin: 0;
+}
+
+.app-modal-header span {
+    color: #64748b;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.app-modal-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
 .settings-field {
     display: grid;
     gap: 0.35rem;
 }
 
 .settings-field input,
-.settings-field select {
+.settings-field select,
+.settings-field textarea {
     background: #fff;
     border: 1px solid #d8e0e6;
     border-radius: 8px;
@@ -881,6 +960,42 @@ a, .btn-link {
     min-height: 3rem;
     outline: none;
     padding: 0.65rem 0.85rem;
+}
+
+.settings-field input:disabled,
+.settings-field select:disabled,
+.settings-field textarea:disabled {
+    background: #edf2f7;
+    border-color: #cbd5e1;
+    color: #64748b;
+    cursor: not-allowed;
+    opacity: 1;
+}
+
+.tester-panel.is-disabled-panel {
+    border-color: #94a3b8;
+    box-shadow: inset 0 0 0 2px rgba(100, 116, 139, 0.12);
+    position: relative;
+}
+
+.tester-panel.is-disabled-panel::after {
+    background: rgba(248, 250, 252, 0.72);
+    border-radius: 8px;
+    content: "Esperando respuesta de la consola...";
+    color: #334155;
+    font-size: 0.85rem;
+    font-weight: 800;
+    left: 50%;
+    padding: 0.35rem 0.6rem;
+    position: absolute;
+    text-align: center;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.settings-field textarea {
+    min-height: 8rem;
+    resize: vertical;
 }
 
 .settings-check {
@@ -895,7 +1010,8 @@ a, .btn-link {
 }
 
 .settings-field input:focus,
-.settings-field select:focus {
+.settings-field select:focus,
+.settings-field textarea:focus {
     border-color: #1b6ec2;
     box-shadow: 0 0 0 0.2rem rgba(27, 110, 194, 0.16);
 }

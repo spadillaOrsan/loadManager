@@ -12,12 +12,12 @@
       <RelatedAsset></RelatedAsset>
       <AssetTraitName></AssetTraitName>
       <AssetTraitValue></AssetTraitValue>
-      <Fingerprint>nx7yvt7day</Fingerprint>
-      <Integrity>qx/MKPO+mBo9Vpr0TkQzh9eysoEqU+qrIxesxEcmlZ4=</Integrity>
+      <Fingerprint>rgtosldsgh</Fingerprint>
+      <Integrity>K4u1td8mRUtf9J2ficRgIBlc3z5GA8yfUNsFAAckwy8=</Integrity>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      <FileLength>18611</FileLength>
-      <LastWriteTime>Thu, 28 May 2026 17:41:17 GMT</LastWriteTime>
+      <FileLength>22040</FileLength>
+      <LastWriteTime>Mon, 01 Jun 2026 19:56:54 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\app.css'))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\images\dispensers\autorizado.png'))">
@@ -212,12 +212,12 @@
       <RelatedAsset></RelatedAsset>
       <AssetTraitName>ScopedCss</AssetTraitName>
       <AssetTraitValue>ApplicationBundle</AssetTraitValue>
-      <Fingerprint>4mf4xjmzly</Fingerprint>
-      <Integrity>9MqpqkXujc/89yM5XL83QxTJNLu9y5PQWB9OHKFCyT4=</Integrity>
+      <Fingerprint>ldeammb37j</Fingerprint>
+      <Integrity>tzoHQrH2kJOkIo+3oNIERtyPCrgQA6YmMkXFNmt80Ds=</Integrity>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      <FileLength>5483</FileLength>
-      <LastWriteTime>Thu, 21 May 2026 23:50:19 GMT</LastWriteTime>
+      <FileLength>6431</FileLength>
+      <LastWriteTime>Mon, 01 Jun 2026 19:48:18 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\LoadManager.styles.css'))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\_framework\blazor.modules.json'))">

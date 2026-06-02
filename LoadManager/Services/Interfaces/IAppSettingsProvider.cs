@@ -1,6 +1,6 @@
 using LoadManager.Models;
 
-namespace LoadManager.Services;
+namespace LoadManager.Services.Interfaces;
 
 public interface IAppSettingsProvider
 {

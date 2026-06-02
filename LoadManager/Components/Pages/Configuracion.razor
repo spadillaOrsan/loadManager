@@ -2,6 +2,7 @@
 @inject IAppSettingsProvider SettingsProvider
 @inject IGasStationConsoleClient ConsoleClient
 @inject IGasStationDatabaseService DatabaseService
+@inject IConnectionValidationState ConnectionState
 
 <PageTitle>Configuracion</PageTitle>
 
@@ -164,6 +165,8 @@
         dbPassword = settings.Database.Password;
         dbEncrypt = settings.Database.Encrypt;
         dbTrustServerCertificate = settings.Database.TrustServerCertificate;
+        databaseIsConnected = ConnectionState.DatabaseIsConnected;
+        databaseStatus = ConnectionState.DatabaseStatus;
     }
 
     private async Task SaveConnectOrDisconnectAsync()
@@ -176,8 +179,8 @@
             {
                 await ConsoleClient.DisconnectAsync();
                 connectionStatus = "Desconectado";
-                databaseStatus = "Sin validar";
-                databaseIsConnected = null;
+                ConnectionState.ResetDatabase();
+                SyncDatabaseState();
                 ShowToast("Se desconecto correctamente.", true);
                 return;
             }
@@ -193,8 +196,8 @@
             connectionStatus = result.IsAvailable ? "Conectado" : "Sin conexion";
 
             var databaseResult = await DatabaseService.CheckConnectionAsync();
-            databaseIsConnected = databaseResult.IsSuccess;
-            databaseStatus = databaseResult.IsSuccess ? "Conectado" : "Sin conexion";
+            ConnectionState.SetDatabaseResult(databaseResult);
+            SyncDatabaseState();
 
             var allConnected = result.IsAvailable && databaseResult.IsSuccess;
             var message = allConnected
@@ -239,6 +242,12 @@
         }
 
         return connectionStatus == "Conectado" ? "Desconectado" : connectionStatus;
+    }
+
+    private void SyncDatabaseState()
+    {
+        databaseIsConnected = ConnectionState.DatabaseIsConnected;
+        databaseStatus = ConnectionState.DatabaseStatus;
     }
 
     private string GetTcpIndicatorText()

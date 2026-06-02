@@ -1105,3 +1105,154 @@
 2026-06-01 13:03:17.905 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
 2026-06-01 13:03:17.912 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 2 | [R] OK | [S] Estatus de dispensario actualizado.
 2026-06-01 13:03:17.912 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 1 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 13:29:34.351 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SQL CHECK CONNECTION | [R] dbctg | [S] La conexion a base de datos fue correcta.
+2026-06-01 13:29:34.932 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 13:29:35.034 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 1 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 13:51:41.153 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 13:51:45.585 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 13:55:13.588 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:04:28.486 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:04:34.925 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:04:43.846 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:04:52.616 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:06:29.941 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:10:12.306 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:10:19.498 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SQL CHECK CONNECTION | [R] dbctg | [S] La conexion a base de datos fue correcta.
+2026-06-01 16:10:21.217 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:10:21.292 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 1 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 16:10:22.091 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SELECT mangueras/productos WHERE intDispensario = 1 | [R] 3 productos | [S] Productos del dispensario consultados correctamente.
+2026-06-01 16:10:23.312 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 2 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 16:10:23.442 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:10:23.447 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 1 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 16:10:23.448 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 2 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 16:10:51.892 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:10:56.239 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:11:09.560 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SQL CHECK CONNECTION | [R] dbctg | [S] La conexion a base de datos fue correcta.
+2026-06-01 16:11:11.524 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:11:11.544 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 1 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 16:11:12.215 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 2 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 16:11:12.346 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SELECT mangueras/productos WHERE intDispensario = 1 | [R] 3 productos | [S] Productos del dispensario consultados correctamente.
+2026-06-01 16:11:13.853 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SELECT * FROM tblTipoDespacho WHERE bitEstatus = 1 | [R] 3 tipos | [S] Tipos de despacho consultados correctamente.
+2026-06-01 16:11:13.858 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:11:13.864 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 1 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 16:11:13.865 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 2 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 16:11:19.202 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] EXEC sp_UA_foliosecuencia_app | [R] 376781 | [S] Folio generado correctamente.
+2026-06-01 16:11:19.302 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] EXEC sp_UA_Bitacora_APP @intTPV=88, @intDispensario=1, @intManguera=1, @intProducto=1, @dblProgramado=100.00, @intFolioSecuencia=376781 | [R] OK | [S] Bitacora registrada correctamente.
+2026-06-01 16:11:40.980 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:11:40.987 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 2 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 16:12:22.405 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:21:23.879 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:21:42.687 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SQL CHECK CONNECTION | [R] dbctg | [S] La conexion a base de datos fue correcta.
+2026-06-01 16:21:43.927 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:21:43.949 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 1 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 16:21:44.400 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 2 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 16:21:45.866 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SELECT mangueras/productos WHERE intDispensario = 1 | [R] 3 productos | [S] Productos del dispensario consultados correctamente.
+2026-06-01 16:21:46.258 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:21:46.264 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 1 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 16:21:46.265 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 2 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 16:21:47.344 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SELECT * FROM tblTipoDespacho WHERE bitEstatus = 1 | [R] 3 tipos | [S] Tipos de despacho consultados correctamente.
+2026-06-01 16:21:50.487 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] EXEC sp_UA_foliosecuencia_app | [R] 376782 | [S] Folio generado correctamente.
+2026-06-01 16:21:50.497 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] EXEC sp_UA_Bitacora_APP @intTPV=88, @intDispensario=1, @intManguera=1, @intProducto=1, @dblProgramado=500.00, @intFolioSecuencia=376782 | [R] OK | [S] Bitacora registrada correctamente.
+2026-06-01 16:22:13.368 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:22:13.404 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 1 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 16:22:13.406 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 2 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 16:24:28.924 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:24:33.266 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:27:34.829 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:29:40.929 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:31:58.113 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:33:23.322 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:42:30.221 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:52:03.386 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:52:34.119 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 16:53:14.006 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SQL CHECK CONNECTION | [R] dbctg | [S] La conexion a base de datos fue correcta.
+2026-06-01 16:58:15.088 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 17:00:04.017 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 17:00:37.013 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 17:02:43.247 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 17:13:51.860 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 17:14:35.945 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SQL CHECK CONNECTION | [R] dbctg | [S] La conexion a base de datos fue correcta.
+2026-06-01 17:14:37.561 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 17:14:37.584 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 1 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 17:14:39.582 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 2 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 17:14:40.018 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 17:14:40.024 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 1 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 17:14:40.029 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 2 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 17:21:37.875 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SQL CHECK CONNECTION | [R] dbctg | [S] La conexion a base de datos fue correcta.
+2026-06-01 17:21:39.338 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 17:21:39.363 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 1 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 17:21:41.445 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 2 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 17:21:41.547 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 17:21:41.649 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 2 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 17:21:41.651 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 1 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 17:33:15.325 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 17:38:22.428 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SQL CHECK CONNECTION | [R] dbctg | [S] La conexion a base de datos fue correcta.
+2026-06-01 17:38:23.576 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 17:38:23.594 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 1 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 17:38:35.796 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SQL CHECK CONNECTION | [R] dbctg | [S] La conexion a base de datos fue correcta.
+2026-06-01 17:47:15.065 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SQL CHECK CONNECTION | [R] dbctg | [S] La conexion a base de datos fue correcta.
+2026-06-01 17:50:19.840 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SQL CHECK CONNECTION | [R] dbctg | [S] La conexion a base de datos fue correcta.
+2026-06-01 17:54:44.658 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SQL CHECK CONNECTION | [R] dbctg | [S] La conexion a base de datos fue correcta.
+2026-06-01 17:56:03.660 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SQL CHECK CONNECTION | [R] dbctg | [S] La conexion a base de datos fue correcta.
+2026-06-01 17:56:04.393 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 17:56:04.421 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 1 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 17:56:06.430 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 2 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 17:56:06.622 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 17:56:06.629 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 1 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 17:56:06.630 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 2 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 17:58:33.717 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SQL CHECK CONNECTION | [R] dbctg | [S] La conexion a base de datos fue correcta.
+2026-06-01 17:58:34.521 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 17:58:34.558 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 1 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 17:58:35.802 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SELECT mangueras/productos WHERE intDispensario = 1 | [R] 3 productos | [S] Productos del dispensario consultados correctamente.
+2026-06-01 17:58:36.669 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 2 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 17:58:36.855 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 17:58:36.863 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 1 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 17:58:36.865 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 2 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 17:58:38.109 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SELECT * FROM tblTipoDespacho WHERE bitEstatus = 1 | [R] 3 tipos | [S] Tipos de despacho consultados correctamente.
+2026-06-01 17:58:54.811 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] EXEC sp_UA_foliosecuencia_app | [R] 376785 | [S] Folio generado correctamente.
+2026-06-01 17:58:54.879 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] EXEC sp_UA_Bitacora_APP @intTPV=88, @intDispensario=1, @intManguera=1, @intProducto=1, @dblProgramado=200.00, @intFolioSecuencia=376785 | [R] OK | [S] Bitacora registrada correctamente.
+2026-06-01 17:59:01.395 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 17:59:01.406 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 2 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 17:59:01.409 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 1 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 17:59:56.927 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] EXEC sp_UA_foliosecuencia_app | [R] 376786 | [S] Folio generado correctamente.
+2026-06-01 17:59:56.942 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] EXEC sp_UA_Bitacora_APP @intTPV=88, @intDispensario=1, @intManguera=1, @intProducto=1, @dblProgramado=200.00, @intFolioSecuencia=376786 | [R] OK | [S] Bitacora registrada correctamente.
+2026-06-01 18:00:00.693 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 18:00:00.706 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 2 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 18:00:00.712 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 1 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 18:00:19.384 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] EXEC sp_UA_foliosecuencia_app | [R] 376787 | [S] Folio generado correctamente.
+2026-06-01 18:00:19.392 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] EXEC sp_UA_Bitacora_APP @intTPV=88, @intDispensario=1, @intManguera=1, @intProducto=1, @dblProgramado=9990.00, @intFolioSecuencia=376787 | [R] OK | [S] Bitacora registrada correctamente.
+2026-06-01 18:02:15.855 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SQL CHECK CONNECTION | [R] dbctg | [S] La conexion a base de datos fue correcta.
+2026-06-01 18:02:43.012 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SQL CHECK CONNECTION | [R] dbctg | [S] La conexion a base de datos fue correcta.
+2026-06-01 18:03:20.432 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SQL CHECK CONNECTION | [R] dbctg | [S] La conexion a base de datos fue correcta.
+2026-06-01 18:04:07.138 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SQL CHECK CONNECTION | [R] dbctg | [S] La conexion a base de datos fue correcta.
+2026-06-01 18:04:08.979 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 18:04:09.031 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 1 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 18:04:09.978 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 2 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 18:04:11.007 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SELECT mangueras/productos WHERE intDispensario = 1 | [R] 3 productos | [S] Productos del dispensario consultados correctamente.
+2026-06-01 18:04:11.318 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 18:04:11.325 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 2 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 18:04:11.327 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 1 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 18:04:12.980 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SELECT * FROM tblTipoDespacho WHERE bitEstatus = 1 | [R] 3 tipos | [S] Tipos de despacho consultados correctamente.
+2026-06-01 18:04:17.547 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] EXEC sp_UA_foliosecuencia_app | [R] 376788 | [S] Folio generado correctamente.
+2026-06-01 18:04:17.635 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] EXEC sp_UA_Bitacora_APP @intTPV=88, @intDispensario=1, @intManguera=1, @intProducto=1, @dblProgramado=9990.00, @intFolioSecuencia=376788 | [R] OK | [S] Bitacora registrada correctamente.
+2026-06-01 18:04:36.207 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 18:04:36.292 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 2 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 18:04:36.293 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 1 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 18:05:00.831 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] EXEC sp_UA_foliosecuencia_app | [R] 376789 | [S] Folio generado correctamente.
+2026-06-01 18:05:01.030 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] EXEC sp_UA_Bitacora_APP @intTPV=88, @intDispensario=1, @intManguera=1, @intProducto=1, @dblProgramado=9990.00, @intFolioSecuencia=376789 | [R] OK | [S] Bitacora registrada correctamente.
+2026-06-01 18:05:05.237 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 18:05:05.253 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 1 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 18:05:05.255 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 2 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 18:13:08.422 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SQL CHECK CONNECTION | [R] dbctg | [S] La conexion a base de datos fue correcta.
+2026-06-01 18:13:09.806 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 18:13:09.872 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 1 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 18:13:10.584 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SELECT mangueras/productos WHERE intDispensario = 1 | [R] 3 productos | [S] Productos del dispensario consultados correctamente.
+2026-06-01 18:13:11.923 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 2 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 18:13:12.131 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 18:13:12.139 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 2 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 18:13:12.142 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 1 | [R] OK | [S] Estatus de dispensario actualizado.
+2026-06-01 18:13:12.906 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SELECT * FROM tblTipoDespacho WHERE bitEstatus = 1 | [R] 3 tipos | [S] Tipos de despacho consultados correctamente.
+2026-06-01 18:13:14.984 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] EXEC sp_UA_foliosecuencia_app | [R] 376790 | [S] Folio generado correctamente.
+2026-06-01 18:13:15.048 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] EXEC sp_UA_Bitacora_APP @intTPV=88, @intDispensario=1, @intManguera=1, @intProducto=1, @dblProgramado=9990.00, @intFolioSecuencia=376790 | [R] OK | [S] Bitacora registrada correctamente.
+2026-06-01 18:13:37.039 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SDI|1 | [R] RSDI|1-2|2-2| | [S] La consola respondio correctamente.
+2026-06-01 18:13:37.053 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] UPDATE tblDispensarios SET intEstatus = 2 WHERE intDispensario = 1 | [R] OK | [S] Estatus de dispensario actualizado.
