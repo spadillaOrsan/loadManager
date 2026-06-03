@@ -75,32 +75,35 @@
                 }
             </section>
 
-            <section class="fuel-panel">
-                <div class="panel-heading">
-                    <h2>Producto</h2>
-                    <span>@GetProductSummary()</span>
-                </div>
+            @if (SelectedDispenser is not null)
+            {
+                <section class="fuel-panel">
+                    <div class="panel-heading">
+                        <h2>Producto</h2>
+                        <span>@GetProductSummary()</span>
+                    </div>
 
-                <div class="fuel-options">
-                    @foreach (var product in products)
+                    <div class="fuel-options">
+                        @foreach (var product in products)
+                        {
+                            <button class="fuel-option @product.CssClass @(selectedProductKey == product.Key ? "is-selected" : string.Empty)"
+                                    @onclick="() => SelectProduct(product)"
+                                    disabled="@(IsSelectionWorkspaceLoading || isDispatching || !CanEditSelectedDispenser)">
+                                <span class="fuel-swatch"></span>
+                                <span class="fuel-option-text">
+                                    <strong>@product.Name</strong>
+                                    <small>@GetProductPriceText(product)</small>
+                                </span>
+                            </button>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(productLoadMessage))
                     {
-                        <button class="fuel-option @product.CssClass @(selectedProductKey == product.Key ? "is-selected" : string.Empty)"
-                                @onclick="() => SelectProduct(product)"
-                                disabled="@(IsSelectionWorkspaceLoading || isDispatching || !CanEditSelectedDispenser)">
-                            <span class="fuel-swatch"></span>
-                            <span class="fuel-option-text">
-                                <strong>@product.Name</strong>
-                                <small>@GetProductPriceText(product)</small>
-                            </span>
-                        </button>
+                        <p class="empty-message">@productLoadMessage</p>
                     }
-                </div>
-
-                @if (!string.IsNullOrWhiteSpace(productLoadMessage))
-                {
-                    <p class="empty-message">@productLoadMessage</p>
-                }
-            </section>
+                </section>
+            }
 
             @if (IsSelectionWorkspaceLoading)
             {
@@ -111,75 +114,78 @@
             }
         </div>
 
-        <section class="quantity-panel">
-            <div class="panel-heading">
-                <h2>Tipo de despacho</h2>
-                <span>@(SelectedDispatchType?.Description ?? "Seleccione")</span>
-            </div>
+        @if (SelectedDispenser is not null)
+        {
+            <section class="quantity-panel">
+                <div class="panel-heading">
+                    <h2>Tipo de despacho</h2>
+                    <span>@(SelectedDispatchType?.Description ?? "Seleccione")</span>
+                </div>
 
-            <div class="amount-mode-group" role="group" aria-label="Tipo de carga">
-                @if (isLoadingDispatchTypes)
-                {
-                    <button class="amount-mode is-selected" disabled>
-                        Consultando tipos de despacho...
-                    </button>
-                }
-                else
-                {
-                    @foreach (var dispatchType in dispatchTypes)
+                <div class="amount-mode-group" role="group" aria-label="Tipo de carga">
+                    @if (isLoadingDispatchTypes)
                     {
-                        <button class="amount-mode @(selectedDispatchTypeId == dispatchType.Id ? "is-selected" : string.Empty)"
-                                @onclick="() => SelectDispatchType(dispatchType)"
-                                disabled="@(!CanEditSelectedDispenser || isDispatching)">
-                            @dispatchType.Description
+                        <button class="amount-mode is-selected" disabled>
+                            Consultando tipos de despacho...
                         </button>
                     }
-                }
-            </div>
-
-            @if (!isLoadingDispatchTypes && dispatchTypes.Count == 0)
-            {
-                <p class="empty-message">No se encontraron tipos de despacho activos.</p>
-            }
-
-            <label class="amount-input-wrap">
-                <div class="amount-input">
-                    @if (SelectedDispatchType?.IsMoney == true)
+                    else
                     {
-                        <strong>$</strong>
-                    }
-                    <input type="text"
-                           @key="amountInputRenderKey"
-                           inputmode="decimal"
-                           maxlength="12"
-                           placeholder="0.00"
-                           value="@amountValue"
-                           @oninput="OnAmountChanged"
-                           @onblur="FormatAmount"
-                           disabled="@(!CanEditSelectedDispenser || isDispatching || SelectedDispatchType?.IsFull == true)" />
-                    @if (SelectedDispatchType?.IsVolume == true)
-                    {
-                        <strong>Lt</strong>
-                    }
-                    @if (SelectedDispatchType?.IsFull == true)
-                    {
-                        <strong>Lt</strong>
+                        @foreach (var dispatchType in dispatchTypes)
+                        {
+                            <button class="amount-mode @(selectedDispatchTypeId == dispatchType.Id ? "is-selected" : string.Empty)"
+                                    @onclick="() => SelectDispatchType(dispatchType)"
+                                    disabled="@(!CanEditSelectedDispenser || isDispatching)">
+                                @dispatchType.Description
+                            </button>
+                        }
                     }
                 </div>
-            </label>
-        </section>
 
-        <section class="actions-panel">
-            <button class="btn btn-outline-secondary action-button" @onclick="GoBack" disabled="@isDispatching">
-                Atras
-            </button>
-            <button class="btn btn-outline-danger action-button" @onclick="CancelDispatchAsync" disabled="@(!isDispatching)">
-                Cancelar
-            </button>
-            <button class="btn btn-primary action-button" @onclick="StartDispatchAsync" disabled="@(!CanServe)">
-                @(isDispatching ? "Cargando..." : "Cargar")
-            </button>
-        </section>
+                @if (!isLoadingDispatchTypes && dispatchTypes.Count == 0)
+                {
+                    <p class="empty-message">No se encontraron tipos de despacho activos.</p>
+                }
+
+                <label class="amount-input-wrap">
+                    <div class="amount-input">
+                        @if (SelectedDispatchType?.IsMoney == true)
+                        {
+                            <strong>$</strong>
+                        }
+                        <input type="text"
+                               @key="amountInputRenderKey"
+                               inputmode="decimal"
+                               maxlength="12"
+                               placeholder="0.00"
+                               value="@amountValue"
+                               @oninput="OnAmountChanged"
+                               @onblur="FormatAmount"
+                               disabled="@(!CanEditSelectedDispenser || isDispatching || SelectedDispatchType?.IsFull == true)" />
+                        @if (SelectedDispatchType?.IsVolume == true)
+                        {
+                            <strong>Lt</strong>
+                        }
+                        @if (SelectedDispatchType?.IsFull == true)
+                        {
+                            <strong>Lt</strong>
+                        }
+                    </div>
+                </label>
+            </section>
+
+            <section class="actions-panel">
+                <button class="btn btn-outline-secondary action-button" @onclick="GoBack" disabled="@isDispatching">
+                    Atras
+                </button>
+                <button class="btn btn-outline-danger action-button" @onclick="CancelDispatchAsync" disabled="@(!isDispatching)">
+                    Cancelar
+                </button>
+                <button class="btn btn-primary action-button" @onclick="StartDispatchAsync" disabled="@(!CanServe)">
+                    @(isDispatching ? "Cargando..." : "Cargar")
+                </button>
+            </section>
+        }
 
     }
     else if (currentStep == 3)
@@ -195,14 +201,12 @@
                 <div class="ticket-panel">
                     <div class="liters-display is-finished" aria-live="polite">
                         <span class="live-counter-status">Terminado</span>
-                        <span>@GetLiveCounterLabel()</span>
-                        <strong>
-                            @if (SelectedDispatchType?.IsMoney == true)
-                            {
-                                <span class="live-currency-symbol">$</span>
-                            }
-                            @FormatLiveCounter()
-                        </strong>
+                        <span>@GetPrimaryLiveCounterLabel()</span>
+                        <strong>@((MarkupString)FormatPrimaryLiveCounter())</strong>
+                        <div class="live-secondary-counter">
+                            <span>@GetSecondaryLiveCounterLabel()</span>
+                            <strong>@((MarkupString)FormatSecondaryLiveCounter())</strong>
+                        </div>
                     </div>
 
                     <div class="ticket-folio">
@@ -236,6 +240,7 @@
                             <strong>@($"${dispatchTicket.Price:N2}")</strong>
                         </div>
                         <div>
+
                             <span>Litros</span>
                             <strong>@(dispatchTicket.Liters + " Lt")</strong>
                         </div>
@@ -254,18 +259,12 @@
             {
                 <div class="liters-display" aria-live="polite">
                     <span class="live-counter-status">Surtiendo</span>
-                    <span>@GetLiveCounterLabel()</span>
-                    <strong>
-                        @if (SelectedDispatchType?.IsMoney == true)
-                        {
-                            <span class="live-currency-symbol">$</span>
-                        }
-                        @FormatLiveCounter()
-                    </strong>
-                    @if (SelectedDispatchType?.IsMoney != true)
-                    {
-                        <small>Lt</small>
-                    }
+                    <span>@GetPrimaryLiveCounterLabel()</span>
+                    <strong>@((MarkupString)FormatPrimaryLiveCounter())</strong>
+                    <div class="live-secondary-counter">
+                        <span>@GetSecondaryLiveCounterLabel()</span>
+                        <strong>@((MarkupString)FormatSecondaryLiveCounter())</strong>
+                    </div>
                 </div>
                 <p class="fueling-note">Cuelga la manguera al terminar para generar el ticket.</p>
             }
@@ -324,6 +323,18 @@
     </div>
 }
 
+@if (isWaitingForDispatchHoseHang)
+{
+    <div class="app-modal-backdrop">
+        <section class="app-modal hose-alert" role="alertdialog" aria-modal="true" aria-live="assertive">
+            <div class="hose-alert-icon">!</div>
+            <h2>Favor de colgar la manguera</h2>
+            <p>La carga alcanzo la cantidad solicitada.</p>
+            <span>El ticket se mostrara cuando el dispensario vuelva a disponible.</span>
+        </section>
+    </div>
+}
+
 @code {
     private const string CheckingImage = "images/dispensers/inactivo.png";
     private const string AvailableImage = "images/dispensers/autorizado.png";
@@ -361,6 +372,7 @@
     private bool isCompletingDispatch;
     private bool isHoseLiftedBlockVisible;
     private bool isWaitingForHoseRestored;
+    private bool isWaitingForDispatchHoseHang;
     private decimal liveLiters;
     private decimal liveAmount;
     private string? liveDispenserStatus;
@@ -499,7 +511,8 @@
                     await ConsoleClient.DisconnectAsync();
                 }
 
-                startupStatusMessage = databaseResult.UserMessage;
+                startupStatusMessage = "No hay comunicacion.";
+                ShowToast("No hay comunicacion con TCP/IP o base de datos.", false);
                 return;
             }
 
@@ -509,7 +522,9 @@
 
             if (!tcpResult.IsAvailable)
             {
-                startupStatusMessage = tcpResult.UserMessage;
+                databaseIsReady = false;
+                startupStatusMessage = "No hay comunicacion.";
+                ShowToast("No hay comunicacion con TCP/IP o base de datos.", false);
                 return;
             }
 
@@ -546,6 +561,12 @@
         }
         catch (OperationCanceledException)
         {
+        }
+        catch (Exception ex)
+        {
+            databaseIsReady = false;
+            startupStatusMessage = "No hay comunicacion.";
+            ShowToast($"No hay comunicacion con TCP/IP o base de datos. {ex.Message}", false);
         }
         finally
         {
@@ -776,29 +797,6 @@
             return;
         }
 
-        if (SelectedDispenser?.StatusCode == "3")
-        {
-            await ShowHoseLiftedBlockAsync("La manguera del dispensario seleccionado esta descolgada. Cuelguela para poder cargar.", selectedDispenser);
-            return;
-        }
-
-        if (!databaseIsReady)
-        {
-            ShowToast("La base de datos no ha sido validada. Presione comenzar nuevamente.", false);
-            return;
-        }
-
-        if (!ConsoleClient.IsConnected)
-        {
-            ShowToast("No hay comunicacion activa con la consola. Presione comenzar nuevamente.", false);
-            return;
-        }
-
-        if (!await ValidateSelectedDispenserForAuthorizationAsync(pageCancellation.Token))
-        {
-            return;
-        }
-
         dispatchCancellation = new CancellationTokenSource();
         isDispatching = true;
         StopAuthorizationCountdown();
@@ -806,6 +804,29 @@
 
         try
         {
+            if (SelectedDispenser?.StatusCode == "3")
+            {
+                await ShowHoseLiftedBlockAsync("La manguera del dispensario seleccionado esta descolgada. Cuelguela para poder cargar.", selectedDispenser);
+                return;
+            }
+
+            if (!databaseIsReady)
+            {
+                ShowToast("La base de datos no ha sido validada. Presione comenzar nuevamente.", false);
+                return;
+            }
+
+            if (!ConsoleClient.IsConnected)
+            {
+                ShowToast("No hay comunicacion activa con la consola. Presione comenzar nuevamente.", false);
+                return;
+            }
+
+            if (!await ValidateSelectedDispenserForAuthorizationAsync(dispatchCancellation.Token))
+            {
+                return;
+            }
+
             var settings = await SettingsProvider.GetSettingsAsync(dispatchCancellation.Token);
             var dispenser = int.Parse(DispenserFrameHelper.ToCommandNumber(selectedDispenser!), CultureInfo.InvariantCulture);
             var selectedFuel = SelectedProduct;
@@ -1012,6 +1033,7 @@
         liveAmount = 0;
         liveDispenserStatus = null;
         dispatchTicket = null;
+        isWaitingForDispatchHoseHang = false;
         currentStep = 3;
         authorizationCountdownCancellation = CancellationTokenSource.CreateLinkedTokenSource(pageCancellation.Token);
         _ = RunAuthorizationCountdownAsync(authorizationCountdownCancellation.Token);
@@ -1031,6 +1053,7 @@
             liveAmount = 0;
             liveDispenserStatus = null;
             dispatchTicket = null;
+            isWaitingForDispatchHoseHang = false;
         }
 
         countdownWarningShown = false;
@@ -1167,6 +1190,11 @@
             liveAmount = detail.Amount.Value;
         }
 
+        if (isFueling && ShouldPromptForDispatchHoseHang())
+        {
+            isWaitingForDispatchHoseHang = true;
+        }
+
         if (detail.StatusCode == "6")
         {
             if (!isFueling)
@@ -1223,6 +1251,7 @@
 
             dispatchTicket = BuildDispatchTicket(responseFrame);
             isFueling = false;
+            isWaitingForDispatchHoseHang = false;
             liveDispenserStatus = "2";
             StopAuthorizationCountdown(clearAuthorization: false);
             StopFuelingMonitor();
@@ -1249,6 +1278,7 @@
         lastResult = null;
         currentDispatchFolio = null;
         liveAmount = 0;
+        isWaitingForDispatchHoseHang = false;
         products.Clear();
     }
 
@@ -1627,17 +1657,50 @@
         return "Esperando manguera";
     }
 
-    private string GetLiveCounterLabel()
+    private bool ShouldPromptForDispatchHoseHang()
+    {
+        if (SelectedDispatchType?.IsFull == true || !TryGetAmount(out var requestedAmount) || requestedAmount <= 0)
+        {
+            return false;
+        }
+
+        return SelectedDispatchType?.IsMoney == true
+            ? liveAmount >= requestedAmount
+            : liveLiters >= requestedAmount;
+    }
+
+    private string GetPrimaryLiveCounterLabel()
     {
         return SelectedDispatchType?.IsMoney == true
             ? "Importe surtido"
             : "Litros surtidos";
     }
 
-    private string FormatLiveCounter()
+    private string GetSecondaryLiveCounterLabel()
+    {
+        return SelectedDispatchType?.IsMoney == true
+            ? "Litros equivalentes"
+            : "Importe equivalente";
+    }
+
+    private string FormatPrimaryLiveCounter()
     {
         var value = SelectedDispatchType?.IsMoney == true ? liveAmount : liveLiters;
-        return value.ToString("N2", CultureInfo.GetCultureInfo("en-US"));
+        return FormatLiveCounterValue(value, SelectedDispatchType?.IsMoney == true);
+    }
+
+    private string FormatSecondaryLiveCounter()
+    {
+        var value = SelectedDispatchType?.IsMoney == true ? liveLiters : liveAmount;
+        return FormatLiveCounterValue(value, SelectedDispatchType?.IsMoney != true);
+    }
+
+    private static string FormatLiveCounterValue(decimal value, bool isMoney)
+    {
+        var formatted = value.ToString("N2", CultureInfo.GetCultureInfo("en-US"));
+        return isMoney
+            ? $"<span class=\"live-currency-symbol\">$</span>{formatted}"
+            : $"{formatted}<span class=\"live-counter-unit\">Lt</span>";
     }
 
     private static bool TryParseFrameDecimal(string? value, out decimal result)

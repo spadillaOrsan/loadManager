@@ -9,6 +9,10 @@ main[b-oo553ys63p] {
     flex: 1;
 }
 
+article.content[b-oo553ys63p] {
+    padding-bottom: calc(5vh + env(safe-area-inset-bottom));
+}
+
 .sidebar[b-oo553ys63p] {
     background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
 }

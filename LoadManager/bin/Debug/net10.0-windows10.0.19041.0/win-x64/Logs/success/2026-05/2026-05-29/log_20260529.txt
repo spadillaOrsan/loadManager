@@ -1,6 +1,0 @@
-﻿2026-05-29 12:33:33.929 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] TDE|1 | [R] RTDE|1-2-0-9786.70-2141.780-33243.16-33243.16-0| | [S] La consola respondio correctamente.
-2026-05-29 12:34:44.598 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] TDE|1 | [R] RTDE|1-2-0-9786.70-2141.780-33243.16-33243.16-0| | [S] La consola respondio correctamente.
-2026-05-29 12:39:35.500 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] TDE|1 | [R] RTDE|1-2-0-9786.70-2141.780-33243.16-33243.16-0| | [S] La consola respondio correctamente.
-2026-05-29 12:40:39.035 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] TDE|1 | [R] RTDE|1-2-0-9786.70-2141.780-33243.16-33243.16-0| | [S] La consola respondio correctamente.
-2026-05-29 18:27:43.082 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SQL CHECK CONNECTION | [R] master | [S] La conexion a base de datos fue correcta.
-2026-05-29 18:27:50.116 [DBG] LoadManager.Services.GasStationConsoleClient | [Despacho][TCP] [P] SQL CHECK CONNECTION | [R] master | [S] La conexion a base de datos fue correcta.

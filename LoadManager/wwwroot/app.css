@@ -2,6 +2,7 @@ html, body {
     background: #f4f7f9;
     color: #17212b;
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    min-height: 100%;
 }
 
 a, .btn-link {
@@ -20,6 +21,7 @@ a, .btn-link {
 
 .content {
     padding-top: 1.1rem;
+    padding-bottom: calc(5vh + env(safe-area-inset-bottom));
 }
 
 .console-shell {
@@ -740,7 +742,7 @@ a, .btn-link {
     border: 1px solid #d8e0e6;
     border-radius: 8px;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     overflow: hidden;
 }
 
@@ -750,6 +752,10 @@ a, .btn-link {
     color: #344353;
     font-weight: 800;
     min-height: 3rem;
+    padding: 0.65rem 0.85rem;
+    text-align: center;
+    white-space: normal;
+    width: 100%;
 }
 
 .amount-mode + .amount-mode {
@@ -873,6 +879,31 @@ a, .btn-link {
     line-height: inherit;
 }
 
+.live-counter-unit {
+    color: inherit;
+    font-size: 0.32em;
+    font-weight: 900;
+    line-height: inherit;
+    margin-left: 0.35rem;
+}
+
+.live-secondary-counter {
+    align-items: center;
+    display: grid;
+    gap: 0.2rem;
+    justify-items: center;
+}
+
+.live-secondary-counter span {
+    color: #526273;
+    font-size: 0.78rem;
+}
+
+.live-secondary-counter strong {
+    color: #526273;
+    font-size: clamp(1.35rem, 5vw, 2.1rem);
+}
+
 .liters-display small {
     color: #526273;
     font-size: 1.1rem;
@@ -886,7 +917,8 @@ a, .btn-link {
 
 .liters-display.is-finished span,
 .liters-display.is-finished .live-counter-status,
-.liters-display.is-finished strong {
+.liters-display.is-finished strong,
+.liters-display.is-finished .live-secondary-counter span {
     color: #176c35;
 }
 
@@ -1370,6 +1402,19 @@ a, .btn-link {
     .ticket-grid,
     .tester-grid {
         grid-template-columns: 1fr;
+    }
+
+    .console-shell {
+        padding-bottom: calc(5vh + env(safe-area-inset-bottom));
+    }
+
+    .amount-mode-group {
+        grid-template-columns: 1fr;
+    }
+
+    .amount-mode + .amount-mode {
+        border-left: 0;
+        border-top: 1px solid #d8e0e6;
     }
 
     .tester-command-grid {
