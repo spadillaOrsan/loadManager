@@ -18,7 +18,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("LoadManager")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+bfece21e4126e37f6c930d0e74c88640daf82fc4")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+18eebf9dea128beb968a2a9b06e71b3ced5c2281")]
 [assembly: System.Reflection.AssemblyProductAttribute("LoadManager")]
 [assembly: System.Reflection.AssemblyTitleAttribute("LoadManager")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
