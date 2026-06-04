@@ -280,7 +280,6 @@
                         <strong>@((MarkupString)FormatSecondaryLiveCounter())</strong>
                     </div>
                 </div>
-                <p class="fueling-note">Cuelga la manguera al terminar para generar el ticket.</p>
             }
             else
             {
@@ -315,7 +314,7 @@
 
 @if (isHoseLiftedBlockVisible)
 {
-    <div class="app-modal-backdrop">
+    <div class="app-modal-backdrop blocking-alert-backdrop">
         <section class="app-modal hose-alert" role="alertdialog" aria-modal="true" aria-live="assertive">
             <div class="hose-alert-icon">!</div>
             <h2>Favor de colgar la manguera</h2>
@@ -327,7 +326,7 @@
 
 @if (isDispatching)
 {
-    <div class="app-modal-backdrop">
+    <div class="app-modal-backdrop blocking-alert-backdrop">
         <section class="app-modal hose-alert" role="alertdialog" aria-modal="true" aria-live="assertive">
             <span class="loading-spinner" aria-hidden="true"></span>
             <h2>Enviando peticion</h2>
@@ -339,7 +338,7 @@
 
 @if (isWaitingForDispatchHoseHang)
 {
-    <div class="app-modal-backdrop">
+    <div class="app-modal-backdrop blocking-alert-backdrop">
         <section class="app-modal hose-alert" role="alertdialog" aria-modal="true" aria-live="assertive">
             <div class="hose-alert-icon">!</div>
             <h2>Favor de colgar la manguera</h2>

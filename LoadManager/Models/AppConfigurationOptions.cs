@@ -17,4 +17,6 @@ public sealed class AppConfigurationOptions
     public int AuthorizationCountdownSeconds { get; set; } = 45;
 
     public int DispenserCount { get; set; } = 2;
+
+    public string ConfigurationPasswordHash { get; set; } = string.Empty;
 }

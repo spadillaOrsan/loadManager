@@ -121,6 +121,61 @@
     display: none;
 }
 
+.nav-settings-button {
+    align-items: center;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 8px;
+    color: #fff;
+    display: flex;
+    gap: 0.25rem;
+    justify-content: center;
+    margin: 0.75rem 1rem 1rem;
+    min-height: 2.75rem;
+    padding: 0.65rem 0.8rem;
+    width: calc(100% - 2rem);
+}
+
+.nav-settings-button:hover {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+.nav-tester-button {
+    margin-bottom: 0.45rem;
+}
+
+.nav-tester-button + .nav-settings-button {
+    margin-top: 0;
+}
+
+.config-gate {
+    display: grid;
+    gap: 1rem;
+    max-width: min(380px, calc(100vw - 2rem));
+}
+
+.config-gate h2 {
+    font-size: 1.2rem;
+    margin: 0 0 0.35rem;
+}
+
+.config-gate p {
+    margin: 0;
+}
+
+.config-gate-error {
+    color: #b91c1c;
+    font-weight: 700;
+    margin-top: 0.65rem;
+}
+
+.config-gate-actions {
+    display: grid;
+    gap: 0.65rem;
+    grid-template-columns: 1fr 1fr;
+    margin-top: 1rem;
+}
+
 .navbar-toggler:checked ~ .nav-scrollable {
     display: block;
 }
@@ -136,10 +191,16 @@
 
     .nav-scrollable {
         /* Never collapse the sidebar for wide screens */
-        display: block;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
 
         /* Allow sidebar to scroll for tall menus */
         height: calc(100vh - 3.5rem);
         overflow-y: auto;
+    }
+
+    .nav-settings-button {
+        margin-top: auto;
     }
 }

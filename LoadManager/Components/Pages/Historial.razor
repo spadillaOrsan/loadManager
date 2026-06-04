@@ -5,7 +5,7 @@
 @inject IJSRuntime JsRuntime
 @inject IReceiptPrinterService ReceiptPrinter
 
-<section class="console-shell">
+<section class="console-shell history-shell @(isLoading ? "is-busy" : string.Empty)" aria-busy="@isLoading">
     <section class="history-summary">
         <article class="history-summary-card">
             <span>Autorizadas</span>
@@ -24,7 +24,12 @@
     <section class="settings-panel history-panel">
         <div class="panel-heading">
             <h2>Historial de cargas</h2>
-            <span>@(isLoading ? "Consultando..." : $"{records.Count} registros")</span>
+            <div class="panel-heading-actions">
+                <span>@(isLoading ? "Consultando..." : $"{records.Count} registros")</span>
+                <button class="btn btn-outline-secondary history-search-button" @onclick="RefreshHistoryAsync" disabled="@isLoading">
+                    Refrescar
+                </button>
+            </div>
         </div>
 
         <div class="history-search">
@@ -87,7 +92,8 @@
                                 <td>@($"${record.Amount:N2}")</td>
                                 <td>
                                     <button class="btn btn-outline-secondary history-print-button"
-                                            @onclick="() => PrintRecordAsync(record)">
+                                            @onclick="() => PrintRecordAsync(record)"
+                                            disabled="@isLoading">
                                         Imprimir
                                     </button>
                                 </td>
@@ -151,13 +157,24 @@
             </div>
 
             <div class="ticket-actions">
-                <button class="btn btn-primary action-button" @onclick="PrintSelectedTicketAsync">
+                <button class="btn btn-primary action-button" @onclick="PrintSelectedTicketAsync" disabled="@isLoading">
                     Imprimir ticket
                 </button>
             </div>
         </section>
     }
 </section>
+
+@if (isLoading)
+{
+    <div class="app-modal-backdrop">
+        <section class="app-modal history-loading-alert" role="alertdialog" aria-modal="true" aria-live="assertive">
+            <span class="loading-spinner" aria-hidden="true"></span>
+            <h2>Consultando historial</h2>
+            <p>Espere un momento...</p>
+        </section>
+    </div>
+}
 
 @code {
     private readonly CultureInfo culture = CultureInfo.GetCultureInfo("es-MX");
@@ -179,6 +196,7 @@
     {
         isLoading = true;
         selectedRecord = null;
+        await InvokeAsync(StateHasChanged);
 
         try
         {
@@ -188,6 +206,11 @@
         {
             isLoading = false;
         }
+    }
+
+    private async Task RefreshHistoryAsync()
+    {
+        await LoadHistoryAsync();
     }
 
     private async Task ClearSearchAsync()
