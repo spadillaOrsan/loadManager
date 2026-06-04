@@ -6,15 +6,9 @@
 @inject IAppSettingsProvider SettingsProvider
 @inject IGasStationDatabaseService DatabaseService
 @inject IConnectionValidationState ConnectionState
-
-<PageTitle>Despacho de combustible</PageTitle>
+@inject IJSRuntime JsRuntime
 
 <section class="console-shell">
-    <header class="console-header">
-        <div>
-            <h1>Despacho de combustible</h1>
-        </div>
-    </header>
 
     <nav class="dispatch-stepper" aria-label="Progreso del despacho">
         @foreach (var step in steps)
@@ -36,74 +30,141 @@
     }
     else if (currentStep == 2)
     {
-        <div class="dispatch-instruction @GetSelectedStatusClass()">
-            <span>1.- Seleccione el dispensario</span> 
-        </div>
-
         <div class="selection-workspace @(IsSelectionWorkspaceLoading || isDispatching ? "is-loading" : string.Empty)" aria-busy="@(IsSelectionWorkspaceLoading || isDispatching)">
-            <section class="dispensers-panel">
-                <div class="panel-heading">
-                    <h2>Dispensarios</h2>
-                    <div class="panel-heading-actions">
-                        <span>@(isLoadingDispensers ? "Consultando estatus..." : $"{AvailableDispensersCount} disponibles")</span>
-                        <button class="btn btn-outline-secondary refresh-dispensers-button"
-                                @onclick="RefreshConfiguredDispensersAsync"
-                                disabled="@(isLoadingDispensers || isDispatching)">
-                            Refrescar estatus
-                        </button>
-                    </div>
-                </div>
-
-                @if (dispensers.Count == 0)
-                {
-                    <p class="empty-message">No hay dispensarios disponibles para operar.</p>
-                }
-                else
-                {
-                    <div class="dispensers-grid">
-                        @foreach (var dispenser in dispensers)
-                        {
-                            <button class="dispenser-card @GetDispenserClass(dispenser)"
-                                    @onclick="() => SelectDispenserAsync(dispenser)"
-                                    disabled="@(IsSelectionWorkspaceLoading || isDispatching || !CanSelectDispenser(dispenser))">
-                                <img src="@dispenser.ImagePath" alt="" />
-                                <span class="dispenser-number">@dispenser.Number</span>
-                                <span class="dispenser-status">@dispenser.StatusText</span>
+            <div class="dispatch-stage-track stage-@dispatchFormStage">
+                <section class="dispensers-panel dispatch-stage-card">
+                    <div class="panel-heading">
+                        <h2>Dispensarios</h2>
+                        <div class="panel-heading-actions">
+                            <span>@(isLoadingDispensers ? "Consultando estatus..." : $"{AvailableDispensersCount} disponibles")</span>
+                            <button class="btn btn-outline-secondary refresh-dispensers-button"
+                                    @onclick="RefreshConfiguredDispensersAsync"
+                                    disabled="@(isLoadingDispensers || isDispatching)">
+                                Refrescar estatus
                             </button>
-                        }
+                        </div>
                     </div>
-                }
-            </section>
 
-            @if (SelectedDispenser is not null)
-            {
-                <section class="fuel-panel">
+                    @if (dispensers.Count == 0)
+                    {
+                        <p class="empty-message">No hay dispensarios disponibles para operar.</p>
+                    }
+                    else
+                    {
+                        <div class="dispensers-grid">
+                            @foreach (var dispenser in dispensers)
+                            {
+                                <button class="dispenser-card @GetDispenserClass(dispenser)"
+                                        @onclick="() => SelectDispenserAsync(dispenser)"
+                                        disabled="@(IsSelectionWorkspaceLoading || isDispatching || !CanSelectDispenser(dispenser))">
+                                    <img src="@dispenser.ImagePath" alt="" />
+                                    <span class="dispenser-number">@dispenser.Number</span>
+                                    <span class="dispenser-status">@dispenser.StatusText</span>
+                                </button>
+                            }
+                        </div>
+                    }
+                </section>
+
+                <section class="fuel-panel dispatch-stage-card">
                     <div class="panel-heading">
                         <h2>Producto</h2>
                         <span>@GetProductSummary()</span>
                     </div>
 
-                    <div class="fuel-options">
-                        @foreach (var product in products)
-                        {
-                            <button class="fuel-option @product.CssClass @(selectedProductKey == product.Key ? "is-selected" : string.Empty)"
-                                    @onclick="() => SelectProduct(product)"
-                                    disabled="@(IsSelectionWorkspaceLoading || isDispatching || !CanEditSelectedDispenser)">
-                                <span class="fuel-swatch"></span>
-                                <span class="fuel-option-text">
-                                    <strong>@product.Name</strong>
-                                    <small>@GetProductPriceText(product)</small>
-                                </span>
-                            </button>
-                        }
-                    </div>
+                    @if (SelectedDispenser is null)
+                    {
+                        <p class="empty-message">Seleccione un dispensario para cargar productos.</p>
+                    }
+                    else
+                    {
+                        <div class="fuel-options">
+                            @foreach (var product in products)
+                            {
+                                <button class="fuel-option @product.CssClass @(selectedProductKey == product.Key ? "is-selected" : string.Empty)"
+                                        @onclick="() => SelectProduct(product)"
+                                        disabled="@(IsSelectionWorkspaceLoading || isDispatching || !CanEditSelectedDispenser)">
+                                    <span class="fuel-swatch"></span>
+                                    <span class="fuel-option-text">
+                                        <strong>@product.Name</strong>
+                                        <small>@GetProductPriceText(product)</small>
+                                    </span>
+                                </button>
+                            }
+                        </div>
+                    }
 
                     @if (!string.IsNullOrWhiteSpace(productLoadMessage))
                     {
                         <p class="empty-message">@productLoadMessage</p>
                     }
                 </section>
-            }
+
+                <section class="quantity-panel dispatch-stage-card">
+                    <div class="panel-heading">
+                        <h2>Tipo de despacho</h2>
+                        <span>@(SelectedDispatchType?.Description ?? "Seleccione")</span>
+                    </div>
+
+                    @if (SelectedProduct is null)
+                    {
+                        <p class="empty-message">Seleccione un producto para capturar el tipo de despacho.</p>
+                    }
+                    else
+                    {
+                        <div class="amount-mode-group" role="group" aria-label="Tipo de carga">
+                            @if (isLoadingDispatchTypes)
+                            {
+                                <button class="amount-mode is-selected" disabled>
+                                    Consultando tipos de despacho...
+                                </button>
+                            }
+                            else
+                            {
+                                @foreach (var dispatchType in dispatchTypes)
+                                {
+                                    <button class="amount-mode @(selectedDispatchTypeId == dispatchType.Id ? "is-selected" : string.Empty)"
+                                            @onclick="() => SelectDispatchType(dispatchType)"
+                                            disabled="@(!CanEditSelectedDispenser || isDispatching)">
+                                        @dispatchType.Description
+                                    </button>
+                                }
+                            }
+                        </div>
+
+                        @if (!isLoadingDispatchTypes && dispatchTypes.Count == 0)
+                        {
+                            <p class="empty-message">No se encontraron tipos de despacho activos.</p>
+                        }
+
+                        <label class="amount-input-wrap">
+                            <div class="amount-input">
+                                @if (SelectedDispatchType?.IsMoney == true)
+                                {
+                                    <strong>$</strong>
+                                }
+                                <input type="text"
+                                       @key="amountInputRenderKey"
+                                       inputmode="decimal"
+                                       maxlength="12"
+                                       placeholder="0.00"
+                                       value="@amountValue"
+                                       @oninput="OnAmountChanged"
+                                       @onblur="FormatAmount"
+                                       disabled="@(!CanEditSelectedDispenser || isDispatching || SelectedDispatchType?.IsFull == true)" />
+                                @if (SelectedDispatchType?.IsVolume == true)
+                                {
+                                    <strong>Lt</strong>
+                                }
+                                @if (SelectedDispatchType?.IsFull == true)
+                                {
+                                    <strong>Lt</strong>
+                                }
+                            </div>
+                        </label>
+                    }
+                </section>
+            </div>
 
             @if (IsSelectionWorkspaceLoading)
             {
@@ -114,78 +175,26 @@
             }
         </div>
 
-        @if (SelectedDispenser is not null)
-        {
-            <section class="quantity-panel">
-                <div class="panel-heading">
-                    <h2>Tipo de despacho</h2>
-                    <span>@(SelectedDispatchType?.Description ?? "Seleccione")</span>
-                </div>
-
-                <div class="amount-mode-group" role="group" aria-label="Tipo de carga">
-                    @if (isLoadingDispatchTypes)
-                    {
-                        <button class="amount-mode is-selected" disabled>
-                            Consultando tipos de despacho...
-                        </button>
-                    }
-                    else
-                    {
-                        @foreach (var dispatchType in dispatchTypes)
-                        {
-                            <button class="amount-mode @(selectedDispatchTypeId == dispatchType.Id ? "is-selected" : string.Empty)"
-                                    @onclick="() => SelectDispatchType(dispatchType)"
-                                    disabled="@(!CanEditSelectedDispenser || isDispatching)">
-                                @dispatchType.Description
-                            </button>
-                        }
-                    }
-                </div>
-
-                @if (!isLoadingDispatchTypes && dispatchTypes.Count == 0)
-                {
-                    <p class="empty-message">No se encontraron tipos de despacho activos.</p>
-                }
-
-                <label class="amount-input-wrap">
-                    <div class="amount-input">
-                        @if (SelectedDispatchType?.IsMoney == true)
-                        {
-                            <strong>$</strong>
-                        }
-                        <input type="text"
-                               @key="amountInputRenderKey"
-                               inputmode="decimal"
-                               maxlength="12"
-                               placeholder="0.00"
-                               value="@amountValue"
-                               @oninput="OnAmountChanged"
-                               @onblur="FormatAmount"
-                               disabled="@(!CanEditSelectedDispenser || isDispatching || SelectedDispatchType?.IsFull == true)" />
-                        @if (SelectedDispatchType?.IsVolume == true)
-                        {
-                            <strong>Lt</strong>
-                        }
-                        @if (SelectedDispatchType?.IsFull == true)
-                        {
-                            <strong>Lt</strong>
-                        }
-                    </div>
-                </label>
-            </section>
-
-            <section class="actions-panel">
-                <button class="btn btn-outline-secondary action-button" @onclick="GoBack" disabled="@isDispatching">
-                    Atras
+        <section class="actions-panel dispatch-stage-actions">
+            <button class="btn btn-outline-danger action-button" @onclick="CancelToStart" disabled="@isDispatching">
+                Cancelar
+            </button>
+            <button class="btn btn-outline-secondary action-button" @onclick="GoBack" disabled="@(isDispatching || dispatchFormStage == 1)">
+                ← Atras
+            </button>
+            @if (dispatchFormStage < 3)
+            {
+                <button class="btn btn-primary action-button" @onclick="GoForward" disabled="@(!CanGoForward)">
+                    Siguiente →
                 </button>
-                <button class="btn btn-outline-danger action-button" @onclick="CancelDispatchAsync" disabled="@(!isDispatching)">
-                    Cancelar
-                </button>
+            }
+            else
+            {
                 <button class="btn btn-primary action-button" @onclick="StartDispatchAsync" disabled="@(!CanServe)">
                     @(isDispatching ? "Cargando..." : "Cargar")
                 </button>
-            </section>
-        }
+            }
+        </section>
 
     }
     else if (currentStep == 3)
@@ -250,9 +259,14 @@
                         </div>
                     </div>
 
-                    <button class="btn btn-primary action-button ticket-home-button" @onclick="ReturnToStart">
-                        Volver a inicio
-                    </button>
+                    <div class="ticket-actions">
+                        <button class="btn btn-outline-secondary action-button" @onclick="PrintTicketAsync">
+                            Imprimir ticket
+                        </button>
+                        <button class="btn btn-primary action-button ticket-home-button" @onclick="ReturnToStart">
+                            Volver a inicio
+                        </button>
+                    </div>
                 </div>
             }
             else if (isFueling)
@@ -357,6 +371,7 @@
     private string? selectedDispenser;
     private string? selectedProductKey;
     private int? selectedDispatchTypeId;
+    private int dispatchFormStage = 1;
     private string? amountValue;
     private int amountInputRenderKey;
     private string? productLoadMessage;
@@ -390,7 +405,7 @@
     private readonly List<DispatchStep> steps =
     [
         new(1, "Comenzar"),
-        new(2, "Carga"),
+        new(2, "Cargar"),
         new(3, "Instrucciones")
     ];
 
@@ -415,6 +430,15 @@
     private bool CanGoNext =>
         CanEditSelectedDispenser &&
         SelectedProduct is not null;
+
+    private bool CanGoForward =>
+        !isDispatching &&
+        dispatchFormStage switch
+        {
+            1 => SelectedDispenser is not null && CanEditSelectedDispenser,
+            2 => SelectedProduct is not null,
+            _ => false
+        };
 
     private bool CanServe =>
         !isDispatching &&
@@ -549,6 +573,7 @@
                 }
 
                 await LoadDispatchTypesAsync();
+                dispatchFormStage = 1;
                 currentStep = 2;
             }
             finally
@@ -625,6 +650,7 @@
             await RefreshDispenserSummaryAsync(pageCancellation.Token);
             selectedDispenser = null;
             selectedProductKey = null;
+            dispatchFormStage = 1;
             products.Clear();
             productLoadMessage = null;
             amountValue = null;
@@ -720,6 +746,7 @@
         try
         {
             await LoadProductsForSelectedDispenserAsync(pageCancellation.Token);
+            dispatchFormStage = 2;
         }
         finally
         {
@@ -762,6 +789,7 @@
     {
         selectedProductKey = product.Key;
         hoseNumber = product.Hose;
+        dispatchFormStage = 3;
     }
 
     private void SelectDispatchType(DispatchTypeViewModel dispatchType)
@@ -781,13 +809,38 @@
         if (currentStep == 3)
         {
             currentStep = 2;
+            dispatchFormStage = 3;
             return;
         }
 
         if (currentStep == 2)
         {
+            if (dispatchFormStage > 1)
+            {
+                dispatchFormStage--;
+                return;
+            }
+
             currentStep = 1;
         }
+    }
+
+    private void GoForward()
+    {
+        if (!CanGoForward)
+        {
+            return;
+        }
+
+        if (dispatchFormStage < 3)
+        {
+            dispatchFormStage++;
+        }
+    }
+
+    private void CancelToStart()
+    {
+        ResetDispatchFlow();
     }
 
     private async Task StartDispatchAsync()
@@ -1193,6 +1246,7 @@
         if (isFueling && ShouldPromptForDispatchHoseHang())
         {
             isWaitingForDispatchHoseHang = true;
+            await InvokeAsync(StateHasChanged);
         }
 
         if (detail.StatusCode == "6")
@@ -1211,6 +1265,13 @@
 
         if (isFueling && detail.StatusCode == "2")
         {
+            if (!isWaitingForDispatchHoseHang)
+            {
+                isWaitingForDispatchHoseHang = true;
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
             await CompleteDispatchAsync(responseFrame);
         }
     }
@@ -1271,6 +1332,7 @@
         selectedDispenser = null;
         selectedProductKey = null;
         selectedDispatchTypeId = null;
+        dispatchFormStage = 1;
         amountValue = null;
         amountInputRenderKey++;
         productLoadMessage = null;
@@ -1285,6 +1347,25 @@
     private void ReturnToStart()
     {
         ResetDispatchFlow();
+    }
+
+    private async Task PrintTicketAsync()
+    {
+        if (dispatchTicket is null)
+        {
+            ShowToast("No hay ticket para imprimir.", false);
+            return;
+        }
+
+        try
+        {
+            await JsRuntime.InvokeVoidAsync("uaacPrintTicket");
+            ShowToast("Ticket enviado a impresion.", true);
+        }
+        catch (Exception ex)
+        {
+            ShowToast($"No fue posible imprimir el ticket. {ex.Message}", false);
+        }
     }
 
     private void OnAmountChanged(ChangeEventArgs args)

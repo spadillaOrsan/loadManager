@@ -15,4 +15,6 @@ public interface IGasStationDatabaseService
     Task<IReadOnlyList<DispenserProductOption>> GetDispenserProductsAsync(int dispenser, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<DispatchTypeOption>> GetDispatchTypesAsync(CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<DispatchHistoryRecord>> GetDispatchHistoryAsync(string? folio, CancellationToken cancellationToken = default);
 }

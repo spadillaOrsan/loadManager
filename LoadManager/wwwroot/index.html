@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>LoadManager</title>
+    <title>UAAC</title>
     <base href="/" />
     <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="app.css" />
@@ -22,6 +22,100 @@
         <a href="." class="reload">Reload</a>
         <span class="dismiss">🗙</span>
     </div>
+
+    <script>
+        window.uaacPrintTicket = function () {
+            const ticket = document.querySelector(".ticket-panel");
+            if (!ticket) {
+                throw new Error("No se encontro el ticket en pantalla.");
+            }
+
+            const ticketHtml = ticket.cloneNode(true);
+            const actions = ticketHtml.querySelector(".ticket-actions");
+            if (actions) {
+                actions.remove();
+            }
+
+            const frame = document.createElement("iframe");
+            frame.style.position = "fixed";
+            frame.style.right = "0";
+            frame.style.bottom = "0";
+            frame.style.width = "0";
+            frame.style.height = "0";
+            frame.style.border = "0";
+            document.body.appendChild(frame);
+
+            const doc = frame.contentWindow.document;
+            doc.open();
+            doc.write(`
+                <!doctype html>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <style>
+                        body { color: #111; font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 10px; }
+                        .ticket-panel { display: grid; gap: 10px; width: 100%; }
+                        .liters-display { display: none; }
+                        .ticket-folio { border-bottom: 1px dashed #999; padding: 8px 0; text-align: center; }
+                        .ticket-folio span { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+                        .ticket-folio strong { display: block; font-size: 24px; }
+                        .ticket-grid { display: grid; gap: 6px; }
+                        .ticket-grid div { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px dashed #ddd; padding: 4px 0; }
+                        .ticket-grid span { font-size: 11px; font-weight: 700; text-transform: uppercase; }
+                        .ticket-grid strong { font-size: 13px; text-align: right; }
+                    </style>
+                </head>
+                <body>${ticketHtml.outerHTML}</body>
+                </html>`);
+            doc.close();
+
+            frame.contentWindow.focus();
+            frame.contentWindow.print();
+            setTimeout(() => frame.remove(), 1000);
+        };
+
+        window.uaacPlayEntryClick = function () {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) {
+                return;
+            }
+
+            const context = new AudioContext();
+            const oscillator = context.createOscillator();
+            const gain = context.createGain();
+
+            oscillator.type = "square";
+            oscillator.frequency.value = 720;
+            gain.gain.setValueAtTime(0.08, context.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.12);
+
+            oscillator.connect(gain);
+            gain.connect(context.destination);
+            oscillator.start();
+            oscillator.stop(context.currentTime + 0.12);
+        };
+
+        window.uaacHideKeyboardOnEnter = function () {
+            if (window.__uaacKeyboardHandlerAttached) {
+                return;
+            }
+
+            window.__uaacKeyboardHandlerAttached = true;
+            document.addEventListener("keydown", function (event) {
+                if (event.key !== "Enter" && event.keyCode !== 13) {
+                    return;
+                }
+
+                const active = document.activeElement;
+                if (!active || !["INPUT", "TEXTAREA"].includes(active.tagName)) {
+                    return;
+                }
+
+                event.preventDefault();
+                active.blur();
+            }, true);
+        };
+    </script>
 
     <script src="_framework/blazor.webview.js" autostart="false"></script>
 

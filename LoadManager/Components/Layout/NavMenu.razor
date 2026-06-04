@@ -1,10 +1,15 @@
 ﻿<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">LoadManager</a>
+        <a class="navbar-brand" href="">Administrador de cargas</a>
     </div>
 </div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+<input type="checkbox" id="nav-menu-toggle" title="Navigation menu" class="navbar-toggler" />
+<label for="nav-menu-toggle" class="navbar-toggler-button" aria-label="Abrir menu">
+    <span></span>
+    <span></span>
+    <span></span>
+</label>
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="nav flex-column">
@@ -27,6 +32,17 @@
                     <path d="M12 15h5" />
                 </svg>
                 Tester
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="historial">
+                <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M8 3h8l2 2v16H6V5l2-2Z" />
+                    <path d="M9 8h6" />
+                    <path d="M9 12h6" />
+                    <path d="M9 16h4" />
+                </svg>
+                Historial
             </NavLink>
         </div>
         @* <div class="nav-item px-3">

@@ -14,7 +14,7 @@
 
     <EnableDefaultCssItems>false</EnableDefaultCssItems>
 
-    <ApplicationTitle>LoadManager</ApplicationTitle>
+    <ApplicationTitle>UAAC</ApplicationTitle>
     <ApplicationId>com.companyname.loadmanager</ApplicationId>
 
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
@@ -76,9 +76,9 @@
 
   <ItemGroup>
 
-    <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
+    <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#E30613" />
 
-    <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
+    <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#FFFFFF" BaseSize="280,280" />
 
     <MauiImage Include="Resources\Images\*" />
 

@@ -21,6 +21,7 @@ namespace LoadManager
             builder.Services.AddSingleton<IConsoleLogService, ConsoleLogService>();
             builder.Services.AddSingleton<IGasStationConsoleClient, GasStationConsoleClient>();
             builder.Services.AddSingleton<IGasStationDatabaseService, GasStationDatabaseService>();
+            builder.Services.AddSingleton<IReceiptPrinterService, ReceiptPrinterService>();
             builder.Services.AddSingleton<IConnectionValidationState, ConnectionValidationState>();
 
 #if DEBUG

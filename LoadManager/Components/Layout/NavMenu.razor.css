@@ -1,17 +1,37 @@
 .navbar-toggler {
     appearance: none;
-    cursor: pointer;
-    width: 3.5rem;
-    height: 2.5rem;
-    color: white;
+    opacity: 0;
+    pointer-events: none;
     position: absolute;
-    top: 0.5rem;
-    right: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.55%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") no-repeat center/1.75rem rgba(255, 255, 255, 0.1);
 }
 
-.navbar-toggler:checked {
+.navbar-toggler-button {
+    align-items: center;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-grid;
+    gap: 0.28rem;
+    height: 2.5rem;
+    justify-content: center;
+    padding: 0.45rem;
+    position: absolute;
+    right: 1rem;
+    top: 0.5rem;
+    cursor: pointer;
+    width: 3.5rem;
+}
+
+.navbar-toggler-button span {
+    background: #fff;
+    border-radius: 999px;
+    display: block;
+    height: 2px;
+    width: 1.6rem;
+}
+
+.navbar-toggler:checked + .navbar-toggler-button {
     background-color: rgba(255, 255, 255, 0.5);
 }
 
@@ -107,6 +127,10 @@
 
 @media (min-width: 641px) {
     .navbar-toggler {
+        display: none;
+    }
+
+    .navbar-toggler-button {
         display: none;
     }
 

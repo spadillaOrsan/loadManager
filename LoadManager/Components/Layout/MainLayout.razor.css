@@ -14,6 +14,21 @@ article.content {
 
 .sidebar {
     background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
+    position: relative;
+}
+
+.theme-red .sidebar {
+    background-image: linear-gradient(180deg, #e30613 0%, #8d0008 100%);
+}
+
+.theme-light .sidebar {
+    background-image: linear-gradient(180deg, #ffffff 0%, #f2f6fa 100%);
+    border-right: 1px solid #d8e0e6;
+}
+
+.theme-dark .sidebar {
+    background-image: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+    border-right: 1px solid #243245;
 }
 
 .top-row {
@@ -23,8 +38,192 @@ article.content {
     height: 3.5rem;
     display: flex;
     align-items: center;
+    gap: 0.8rem;
     color: #425466;
     font-weight: 600;
+}
+
+.theme-dark .top-row {
+    background-color: #111827;
+    border-bottom-color: #243245;
+    color: #e5edf6;
+}
+
+.theme-red .top-row {
+    background-color: #e30613;
+    border-bottom-color: #b0000b;
+    color: #ffffff;
+}
+
+.theme-toggle-button {
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid #d8e0e6;
+    border-radius: 999px;
+    color: #17212b;
+    display: inline-flex;
+    height: 2.35rem;
+    justify-content: center;
+    min-width: 2.35rem;
+    padding: 0;
+}
+
+.theme-toggle-button svg {
+    fill: none;
+    height: 1.15rem;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
+    width: 1.15rem;
+}
+
+.theme-dark .theme-toggle-button {
+    background: #1f2937;
+    border-color: #334155;
+    color: #facc15;
+}
+
+.theme-red .theme-toggle-button {
+    background: #ffffff;
+    border-color: rgba(255, 255, 255, 0.55);
+    color: #e30613;
+}
+
+.sidebar-theme-toggle {
+    position: absolute;
+    right: 4.85rem;
+    top: 0.5rem;
+    z-index: 20;
+}
+
+.entry-screen {
+    align-content: center;
+    background: #ffffff;
+    color: #17212b;
+    display: grid;
+    gap: 1rem;
+    inset: 0;
+    justify-items: center;
+    padding: 2rem;
+    position: fixed;
+    text-align: center;
+    z-index: 3000;
+}
+
+.entry-dispenser {
+    align-items: center;
+    background: #ffffff;
+    border: 0;
+    color: #e30613;
+    display: inline-flex;
+    justify-content: center;
+    max-width: 300px;
+    padding: 0;
+    width: min(68vw, 300px);
+}
+
+.entry-dispenser svg {
+    display: block;
+    fill: currentColor;
+    height: auto;
+    width: 100%;
+}
+
+.entry-dispenser .drop {
+    fill: #ffffff;
+}
+
+.entry-dispenser .hose {
+    fill: none;
+    stroke: #111827;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 14;
+}
+
+.entry-dispenser .nozzle {
+    fill: #111827;
+}
+
+.entry-screen strong {
+    color: #111111;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: clamp(1.35rem, 5vw, 2rem);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1.1;
+    margin-top: 0.1rem;
+}
+
+.entry-screen span {
+    color: #17212b;
+    font-size: 1.15rem;
+    font-weight: 900;
+}
+
+.entry-brand-image {
+    display: block;
+    height: auto;
+    max-width: min(66vw, 250px);
+    object-fit: contain;
+    width: 250px;
+}
+
+.theme-red .sidebar ::deep .top-row {
+    background-color: rgba(0, 0, 0, 0.18);
+}
+
+.theme-light .sidebar ::deep .top-row {
+    background-color: #ffffff;
+    border-bottom: 1px solid #d8e0e6;
+}
+
+.theme-dark .sidebar ::deep .top-row {
+    background-color: #111827;
+    border-bottom: 1px solid #243245;
+}
+
+.theme-red .sidebar ::deep .navbar-brand,
+.theme-red .sidebar ::deep .nav-link {
+    color: #ffffff;
+}
+
+.theme-light .sidebar ::deep .navbar-brand,
+.theme-light .sidebar ::deep .nav-link {
+    color: #263442;
+}
+
+.theme-dark .sidebar ::deep .navbar-brand,
+.theme-dark .sidebar ::deep .nav-link {
+    color: #e5edf6;
+}
+
+.theme-red .sidebar ::deep .nav-link.active,
+.theme-red .sidebar ::deep .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.22);
+    color: #ffffff;
+}
+
+.theme-light .sidebar ::deep .nav-link.active,
+.theme-light .sidebar ::deep .nav-link:hover {
+    background-color: #fff0f0;
+    color: #e30613;
+}
+
+.theme-dark .sidebar ::deep .nav-link.active,
+.theme-dark .sidebar ::deep .nav-link:hover {
+    background-color: #1f2937;
+    color: #ffffff;
+}
+
+.theme-light .sidebar ::deep .navbar-toggler-button {
+    background: #ffffff;
+    border-color: #d8e0e6;
+}
+
+.theme-light .sidebar ::deep .navbar-toggler-button span {
+    background: #263442;
 }
 
     .top-row ::deep a, .top-row ::deep .btn-link {
@@ -62,6 +261,10 @@ article.content {
         height: 100vh;
         position: sticky;
         top: 0;
+    }
+
+    .sidebar-theme-toggle {
+        right: 1rem;
     }
 
     .top-row {

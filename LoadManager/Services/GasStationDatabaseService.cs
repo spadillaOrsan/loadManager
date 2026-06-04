@@ -298,6 +298,109 @@ public sealed class GasStationDatabaseService(
         return dispatchTypes;
     }
 
+    public async Task<IReadOnlyList<DispatchHistoryRecord>> GetDispatchHistoryAsync(
+        string? folio,
+        CancellationToken cancellationToken = default)
+    {
+        var records = new List<DispatchHistoryRecord>();
+        var normalizedFolio = string.IsNullOrWhiteSpace(folio) ? null : folio.Trim();
+
+        try
+        {
+            await using var connection = await OpenConnectionAsync(cancellationToken);
+            var hasFolioSequenceColumn = await ColumnExistsAsync(
+                connection,
+                "dbo",
+                "tblBitacora",
+                "intFolioSecuencia",
+                cancellationToken);
+            var folioPredicate = hasFolioSequenceColumn
+                ? "OR CONVERT(varchar(50), b.intFolioSecuencia) LIKE @folioLike"
+                : string.Empty;
+
+            await using var command = new SqlCommand($"""
+                SELECT TOP 150
+                    b.*,
+                    tp.strDescripcion AS ProductoDescripcion,
+                    tp.dblPrecioU AS ProductoPrecio
+                FROM dbo.tblBitacora b
+                LEFT JOIN dbo.tblProductos tp ON tp.intProducto = b.intProducto
+                WHERE @folio IS NULL
+                   OR CONVERT(varchar(50), b.intSecuencia) LIKE @folioLike
+                   {folioPredicate}
+                ORDER BY b.intSecuencia DESC
+                """, connection);
+
+            command.Parameters.AddWithValue("@folio", normalizedFolio is null ? DBNull.Value : normalizedFolio);
+            command.Parameters.AddWithValue("@folioLike", normalizedFolio is null ? DBNull.Value : $"%{normalizedFolio}%");
+
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                records.Add(new DispatchHistoryRecord
+                {
+                    Sequence = GetFirstInt(reader, "intFolioSecuencia", "intSecuencia", "Folio"),
+                    Tpv = GetFirstInt(reader, "intTPV"),
+                    Dispenser = GetFirstInt(reader, "intDispensario"),
+                    Hose = GetFirstInt(reader, "intManguera"),
+                    Product = GetFirstInt(reader, "intProducto"),
+                    ProductDescription = GetFirstString(reader, "ProductoDescripcion", "strProducto"),
+                    DispatchTypeId = GetFirstInt(reader, "intTipoProgramado", "intTipoDespacho", "intTipoCarga"),
+                    ProgrammedAmount = GetFirstDecimal(reader, "dblProgramado", "dblCantidadProgramada"),
+                    Amount = GetFirstDecimal(reader, "dblImporte", "dblMonto", "dblVendido", "dblVenta"),
+                    Liters = GetFirstDecimal(reader, "dblLitros", "dblVolumen", "dblCantidad"),
+                    Price = GetFirstDecimal(reader, "dblPrecioU", "ProductoPrecio", "dblPrecio"),
+                    CreatedAt = GetFirstDateTime(reader, "dtmFecha", "dtFecha", "Fecha", "fecFecha", "dteFecha"),
+                    IsCanceled = GetFirstBool(reader, "bitCancelada", "bitCancelado", "Cancelada", "Cancelado"),
+                    IsClosed = GetFirstBool(reader, "bitCerrada", "bitCerrado", "Cerrada", "Cerrado")
+                });
+            }
+
+            await LogAndReturnAsync(new ConsoleCommandResult
+            {
+                IsSuccess = true,
+                CommandName = "database",
+                RequestFrame = normalizedFolio is null
+                    ? "SELECT TOP 150 historial FROM dbo.tblBitacora"
+                    : $"SELECT historial FROM dbo.tblBitacora WHERE folio LIKE {normalizedFolio}",
+                ResponseFrame = $"{records.Count} registros",
+                UserMessage = "Historial consultado correctamente."
+            }, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            await LogAndReturnAsync(CreateErrorResult(
+                "SELECT historial FROM dbo.tblBitacora",
+                "No se pudo consultar el historial de cargas.",
+                ex), cancellationToken);
+        }
+
+        return records;
+    }
+
+    private static async Task<bool> ColumnExistsAsync(
+        SqlConnection connection,
+        string schema,
+        string table,
+        string column,
+        CancellationToken cancellationToken)
+    {
+        await using var command = new SqlCommand("""
+            SELECT 1
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = @schema
+              AND TABLE_NAME = @table
+              AND COLUMN_NAME = @column
+            """, connection);
+
+        command.Parameters.AddWithValue("@schema", schema);
+        command.Parameters.AddWithValue("@table", table);
+        command.Parameters.AddWithValue("@column", column);
+
+        var value = await command.ExecuteScalarAsync(cancellationToken);
+        return value is not null;
+    }
+
     private static int GetFirstInt(SqlDataReader reader, params string[] names)
     {
         foreach (var name in names)
@@ -322,6 +425,45 @@ public sealed class GasStationDatabaseService(
         }
 
         return string.Empty;
+    }
+
+    private static decimal GetFirstDecimal(SqlDataReader reader, params string[] names)
+    {
+        foreach (var name in names)
+        {
+            if (HasColumn(reader, name) && reader[name] is not DBNull)
+            {
+                return Convert.ToDecimal(reader[name]);
+            }
+        }
+
+        return 0m;
+    }
+
+    private static bool GetFirstBool(SqlDataReader reader, params string[] names)
+    {
+        foreach (var name in names)
+        {
+            if (HasColumn(reader, name) && reader[name] is not DBNull)
+            {
+                return Convert.ToBoolean(reader[name]);
+            }
+        }
+
+        return false;
+    }
+
+    private static DateTime? GetFirstDateTime(SqlDataReader reader, params string[] names)
+    {
+        foreach (var name in names)
+        {
+            if (HasColumn(reader, name) && reader[name] is not DBNull)
+            {
+                return Convert.ToDateTime(reader[name]);
+            }
+        }
+
+        return null;
     }
 
     private static bool HasColumn(SqlDataReader reader, string name)
