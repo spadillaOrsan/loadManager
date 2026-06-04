@@ -58,6 +58,7 @@
   <PropertyGroup Condition="'$(Configuration)' == 'Debug' and $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
 
     <AndroidZipAlign>false</AndroidZipAlign>
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
 
   </PropertyGroup>
 
@@ -75,42 +76,31 @@
 
   <ItemGroup>
 
-    <MauiIcon Include="Resources\AppIcon\appicon.svg"
-              ForegroundFile="Resources\AppIcon\appiconfg.svg"
-              Color="#512BD4" />
+    <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
 
-    <MauiSplashScreen Include="Resources\Splash\splash.svg"
-                      Color="#512BD4"
-                      BaseSize="128,128" />
+    <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
 
     <MauiImage Include="Resources\Images\*" />
 
-    <MauiImage Update="Resources\Images\dotnet_bot.svg"
-               BaseSize="168,208" />
+    <MauiImage Update="Resources\Images\dotnet_bot.svg" BaseSize="168,208" />
 
     <MauiFont Include="Resources\Fonts\*" />
 
-    <MauiAsset Include="Resources\Raw\**"
-               LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+    <MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
 
-    <MauiAsset Include="appsettings.json"
-               LogicalName="appsettings.json" />
+    <MauiAsset Include="appsettings.json" LogicalName="appsettings.json" />
 
   </ItemGroup>
 
   <ItemGroup>
 
-    <PackageReference Include="Microsoft.Maui.Controls"
-                      Version="$(MauiVersion)" />
+    <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.100" />
 
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui"
-                      Version="$(MauiVersion)" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="8.0.100" />
 
-    <PackageReference Include="Microsoft.Extensions.Logging.Debug"
-                      Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
 
-    <PackageReference Include="Microsoft.Data.SqlClient"
-                      Version="6.1.3" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.3" />
 
   </ItemGroup>
 
