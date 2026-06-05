@@ -41,15 +41,6 @@
         </div>
     </nav>
 
-    <button class="nav-settings-button nav-tester-button" type="button" @onclick="OpenTester" title="Tester de comunicacion">
-        <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="3" y="4" width="18" height="16" rx="2" />
-            <path d="m7 9 3 3-3 3" />
-            <path d="M12 15h5" />
-        </svg>
-        <span>Tester</span>
-    </button>
-
     <button class="nav-settings-button" type="button" @onclick="OpenConfigurationGate" title="Configuracion">
         <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
@@ -96,11 +87,6 @@
     private bool showConfigurationGate;
     private string configurationPassword = string.Empty;
     private string? configurationError;
-
-    private void OpenTester()
-    {
-        NavigationManager.NavigateTo("tester");
-    }
 
     private void OpenConfigurationGate()
     {

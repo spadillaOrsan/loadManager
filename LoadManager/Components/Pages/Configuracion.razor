@@ -3,6 +3,7 @@
 @inject IGasStationConsoleClient ConsoleClient
 @inject IGasStationDatabaseService DatabaseService
 @inject IConnectionValidationState ConnectionState
+@inject NavigationManager NavigationManager
 
 <PageTitle>Configuracion</PageTitle>
 
@@ -94,6 +95,9 @@
         </label>
 
         <div class="settings-actions">
+            <button class="btn btn-outline-secondary action-button settings-save-button" type="button" @onclick="OpenTester" disabled="@isSaving">
+                Tester
+            </button>
             <button class="@GetConnectionButtonClass()" @onclick="SaveConnectOrDisconnectAsync" disabled="@isSaving">
                 @GetConnectionButtonText()
             </button>
@@ -230,6 +234,11 @@
         {
             isSaving = false;
         }
+    }
+
+    private void OpenTester()
+    {
+        NavigationManager.NavigateTo("tester");
     }
 
     private async Task<bool> SaveConfigurationOnlyAsync()

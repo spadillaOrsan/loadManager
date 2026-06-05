@@ -167,11 +167,12 @@
 
 @if (isLoading)
 {
-    <div class="app-modal-backdrop">
-        <section class="app-modal history-loading-alert" role="alertdialog" aria-modal="true" aria-live="assertive">
+    <div class="app-modal-backdrop blocking-alert-backdrop">
+        <section class="app-modal hose-alert" role="alertdialog" aria-modal="true" aria-live="assertive">
             <span class="loading-spinner" aria-hidden="true"></span>
-            <h2>Consultando historial</h2>
+            <h2>Consultando registros</h2>
             <p>Espere un momento...</p>
+            <span>La pantalla permanecera bloqueada hasta terminar la consulta.</span>
         </section>
     </div>
 }

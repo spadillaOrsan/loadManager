@@ -102,6 +102,11 @@ a, .btn-link {
     margin: 0;
 }
 
+.tester-back-button {
+    flex: 0 0 auto;
+    min-width: min(100%, 220px);
+}
+
 .dispatch-stepper {
     align-items: center;
     display: grid;

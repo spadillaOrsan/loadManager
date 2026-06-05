@@ -140,14 +140,6 @@
     background: rgba(255, 255, 255, 0.22);
 }
 
-.nav-tester-button {
-    margin-bottom: 0.45rem;
-}
-
-.nav-tester-button + .nav-settings-button {
-    margin-top: 0;
-}
-
 .config-gate {
     display: grid;
     gap: 1rem;
