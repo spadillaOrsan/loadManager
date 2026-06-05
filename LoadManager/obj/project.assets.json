@@ -27825,12 +27825,10 @@
       },
       "frameworks": {
         "net8.0-android34.0": {
-          "framework": "net8.0-android34.0",
           "targetAlias": "net8.0-android",
           "projectReferences": {}
         },
         "net8.0-windows10.0.19041": {
-          "framework": "net8.0-windows10.0.19041",
           "targetAlias": "net8.0-windows10.0.19041.0",
           "projectReferences": {}
         }
@@ -27848,7 +27846,6 @@
     },
     "frameworks": {
       "net8.0-android34.0": {
-        "framework": "net8.0-android34.0",
         "targetAlias": "net8.0-android",
         "dependencies": {
           "Microsoft.AspNetCore.Components.WebView.Maui": {
@@ -27900,7 +27897,6 @@
         "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.421/PortableRuntimeIdentifierGraph.json"
       },
       "net8.0-windows10.0.19041": {
-        "framework": "net8.0-windows10.0.19041",
         "targetAlias": "net8.0-windows10.0.19041.0",
         "dependencies": {
           "Microsoft.AspNetCore.Components.WebView.Maui": {
