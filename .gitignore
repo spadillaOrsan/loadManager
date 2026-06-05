@@ -1,7 +1,13 @@
-﻿.vs/
+.vs/
 bin/
 obj/
 artifacts/
 build-check-*/
 *.user
+*.csproj.user
 *.suo
+*.log
+.idea/
+.vscode/
+Thumbs.db
+.DS_Store
