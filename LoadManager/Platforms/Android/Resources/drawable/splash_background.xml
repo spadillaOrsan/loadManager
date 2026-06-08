@@ -3,9 +3,7 @@
     <item>
         <color android:color="#FFFFFF" />
     </item>
-    <item>
-        <bitmap
-            android:src="@drawable/uaac2splash"
-            android:gravity="center" />
-    </item>
+    <item
+        android:drawable="@drawable/maui_splash_image"
+        android:gravity="center" />
 </layer-list>
