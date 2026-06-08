@@ -1,6 +1,5 @@
 using System.Text;
 using LoadManager.Helpers;
-using LoadManager.Contracts.Models;
 using LoadManager.Models;
 using LoadManager.Services.Interfaces;
 

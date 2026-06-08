@@ -1,5 +1,4 @@
 <Solution>
-  <Project Path="LoadManager.Contracts/LoadManager.Contracts.csproj" />
   <Project Path="LoadManager/LoadManager.csproj" />
   <Project Path="LoadManagerApi/LoadManagerApi.csproj" />
 </Solution>

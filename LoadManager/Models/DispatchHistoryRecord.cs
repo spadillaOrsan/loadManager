@@ -1,4 +1,4 @@
-namespace LoadManager.Contracts.Models;
+namespace LoadManager.Models;
 
 public sealed class DispatchHistoryRecord
 {

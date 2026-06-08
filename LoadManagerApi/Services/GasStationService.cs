@@ -1,6 +1,6 @@
 using LoadManagerApi.Interfaces;
 using LoadManagerApi.Helpers;
-using LoadManager.Contracts.Models;
+using LoadManagerApi.Models;
 using LoadManagerApi.Models;
 using Microsoft.Data.SqlClient;
 using System.Data;

@@ -1,5 +1,5 @@
 using LoadManagerApi.Interfaces;
-using LoadManager.Contracts.Models;
+using LoadManagerApi.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LoadManagerApi.Controllers;

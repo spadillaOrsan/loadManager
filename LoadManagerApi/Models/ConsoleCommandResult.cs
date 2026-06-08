@@ -1,4 +1,4 @@
-namespace LoadManager.Contracts.Models;
+namespace LoadManagerApi.Models;
 
 public sealed class ConsoleCommandResult
 {

@@ -12,10 +12,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\LoadManager.Contracts\LoadManager.Contracts.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Include="Script\*.sql" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

@@ -1,4 +1,3 @@
-using LoadManager.Contracts.Models;
 using LoadManager.Models;
 
 namespace LoadManager.Services.Interfaces;

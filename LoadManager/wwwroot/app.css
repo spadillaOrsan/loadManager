@@ -1853,6 +1853,100 @@ a, .btn-link {
     width: 70%;
 }
 
+/* ===== Configuracion: layout con acordeon ===== */
+.config-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+}
+
+.accordion-list {
+    display: grid;
+    gap: 0.85rem;
+    max-width: 720px;
+    width: 100%;
+}
+
+.accordion-section {
+    background: var(--ua-panel-bg, #fff);
+    border: 1px solid var(--ua-panel-border, #d8e0e6);
+    border-radius: 8px;
+    box-shadow: var(--ua-panel-shadow, 0 10px 28px rgba(23, 33, 43, 0.06));
+    overflow: hidden;
+}
+
+.accordion-header {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    gap: 0.75rem;
+    justify-content: space-between;
+    padding: 1.1rem;
+    text-align: left;
+    width: 100%;
+}
+
+.accordion-header:hover {
+    background: rgba(23, 33, 43, 0.03);
+}
+
+.accordion-title {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+}
+
+.accordion-title h2 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.accordion-title span {
+    color: #6c7a86;
+    font-size: 0.88rem;
+}
+
+.accordion-title .status-indicator {
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    padding: 0.25rem 0.65rem;
+}
+
+.accordion-chevron {
+    fill: none;
+    flex-shrink: 0;
+    height: 1.35rem;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2.2;
+    transition: transform 0.2s ease;
+    width: 1.35rem;
+}
+
+.accordion-chevron.is-open {
+    transform: rotate(180deg);
+}
+
+.accordion-body {
+    display: grid;
+    gap: 1rem;
+    padding: 0 1.1rem 1.1rem;
+}
+
+.config-actions-footer {
+    margin-top: auto;
+    max-width: 720px;
+    padding-top: 1.25rem;
+    width: 100%;
+}
+
 .tester-send-button {
     justify-self: end;
     min-width: 10rem;

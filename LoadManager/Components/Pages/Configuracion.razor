@@ -6,110 +6,140 @@
 
 <PageTitle>Configuracion</PageTitle>
 
-<section class="console-shell">
+<section class="console-shell config-shell">
     <header class="console-header">
         <div>
             <h1>Configuracion</h1>
         </div>
     </header>
 
-    <section class="settings-panel">
-        <div class="panel-heading">
-            <h2>Interfaz tcp/ip</h2>
-            <span class="@GetTcpIndicatorClass()">@GetTcpIndicatorText()</span>
-        </div>
+    <div class="accordion-list">
 
-        <label class="settings-field">
-            <span>IP destino</span>
-            <input type="text" @bind="ipAddress" placeholder="IP del destino" />
-        </label>
-
-        <label class="settings-field">
-            <span>Puerto</span>
-            <input type="number" @bind="port" min="1" max="65535" />
-        </label>
-    </section>
-    <section class="settings-panel">
-        <div class="panel-heading">
-            <h2>URL Service</h2>
-            <span class="@GetDatabaseIndicatorClass()">@GetDatabaseIndicatorText()</span>
-        </div>
-
-        <label class="settings-field">
-            <span>URL de la API</span>
-            <input type="text" @bind="apiBaseUrl" placeholder="URL de LoadManagerApi" />
-        </label>
-
-        <label class="settings-field">
-            <span>Tiempo de espera (segundos)</span>
-            <input type="number" @bind="apiRequestTimeoutSeconds" min="1" />
-        </label>
-
-        <div class="settings-actions">
-            <button class="btn btn-outline-secondary action-button settings-save-button" type="button" @onclick="OpenTester" disabled="@isSaving">
-                Tester
+        <!-- Interfaz TCP/IP -->
+        <section class="accordion-section">
+            <button class="accordion-header" type="button" @onclick="() => ToggleSection(0)">
+                <div class="accordion-title">
+                    <h2>Interfaz TCP/IP</h2>
+                    <span class="@GetTcpIndicatorClass()">@GetTcpIndicatorText()</span>
+                </div>
+                <svg class="accordion-chevron @(openSections[0] ? "is-open" : "")" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 9l6 6 6-6" />
+                </svg>
             </button>
-            <button class="@GetConnectionButtonClass()" @onclick="SaveConnectOrDisconnectAsync" disabled="@isSaving">
-                @GetConnectionButtonText()
+            @if (openSections[0])
+            {
+                <div class="accordion-body">
+                    <label class="settings-field">
+                        <span>IP destino</span>
+                        <input type="text" @bind="ipAddress" placeholder="Ej: 172.20.11.40" />
+                    </label>
+                    <label class="settings-field">
+                        <span>Puerto</span>
+                        <input type="number" @bind="port" min="1" max="65535" placeholder="Ej: 8005" />
+                    </label>
+                </div>
+            }
+        </section>
+
+        <!-- URL Service -->
+        <section class="accordion-section">
+            <button class="accordion-header" type="button" @onclick="() => ToggleSection(1)">
+                <div class="accordion-title">
+                    <h2>URL Service</h2>
+                    <span class="@GetDatabaseIndicatorClass()">@GetDatabaseIndicatorText()</span>
+                </div>
+                <svg class="accordion-chevron @(openSections[1] ? "is-open" : "")" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 9l6 6 6-6" />
+                </svg>
             </button>
-        </div>
-    </section>
-    <section class="settings-panel">
-        <div class="panel-heading">
-            <h2>App Configuracion</h2>
-            <span>Datos generales</span>
-        </div>
+            @if (openSections[1])
+            {
+                <div class="accordion-body">
+                    <label class="settings-field">
+                        <span>Host / URL base</span>
+                        <input type="text" @bind="apiBaseHost" placeholder="Ej: http://172.20.11.198" />
+                    </label>
+                    <label class="settings-field">
+                        <span>Puerto API</span>
+                        <input type="number" @bind="apiPort" min="1" max="65535" placeholder="Ej: 5047" />
+                    </label>
+                    <label class="settings-field">
+                        <span>Tiempo de espera (seg)</span>
+                        <input type="number" @bind="apiRequestTimeoutSeconds" min="1" />
+                    </label>
+                </div>
+            }
+        </section>
 
-        <label class="settings-field">
-            <span>TPV</span>
-            <input type="number" @bind="tpv" min="1" />
-        </label>
+        <!-- App Configuracion -->
+        <section class="accordion-section">
+            <button class="accordion-header" type="button" @onclick="() => ToggleSection(2)">
+                <div class="accordion-title">
+                    <h2>App Configuracion</h2>
+                    <span>Datos generales</span>
+                </div>
+                <svg class="accordion-chevron @(openSections[2] ? "is-open" : "")" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 9l6 6 6-6" />
+                </svg>
+            </button>
+            @if (openSections[2])
+            {
+                <div class="accordion-body">
+                    <label class="settings-field">
+                        <span>TPV</span>
+                        <input type="number" @bind="tpv" min="1" />
+                    </label>
+                    <label class="settings-field">
+                        <span>Usuario</span>
+                        <input type="number" @bind="usuario" min="1" />
+                    </label>
+                    <label class="settings-field">
+                        <span>Tipo de venta</span>
+                        <input type="number" @bind="tipoVenta" min="1" />
+                    </label>
+                    <label class="settings-field">
+                        <span>Tipo de interfaz</span>
+                        <input type="text" @bind="tipoInterfaz" />
+                    </label>
+                    <label class="settings-field">
+                        <span>Limite de importe</span>
+                        <input type="number" @bind="limiteImporte" min="0.01" step="0.01" />
+                    </label>
+                    <label class="settings-field">
+                        <span>Limite de litros</span>
+                        <input type="number" @bind="limiteLitros" min="0.01" step="0.01" />
+                    </label>
+                    <label class="settings-field">
+                        <span>Cantidad para tanque lleno</span>
+                        <input type="number" @bind="cantidadTanqueLleno" min="0.01" step="0.01" />
+                    </label>
+                    <label class="settings-field">
+                        <span>Decimales de cantidad</span>
+                        <input type="number" @bind="quantityDecimals" min="0" max="6" />
+                    </label>
+                    <label class="settings-field">
+                        <span>Tiempo instrucciones (seg)</span>
+                        <input type="number" @bind="authorizationCountdownSeconds" min="1" />
+                    </label>
+                    <label class="settings-field">
+                        <span>Cantidad de dispensarios</span>
+                        <input type="number" @bind="dispenserCount" min="1" />
+                    </label>
+                </div>
+            }
+        </section>
 
-        <label class="settings-field">
-            <span>Usuario</span>
-            <input type="number" @bind="usuario" min="1" />
-        </label>
+    </div>
 
-        <label class="settings-field">
-            <span>Tipo de venta</span>
-            <input type="number" @bind="tipoVenta" min="1" />
-        </label>
-
-        <label class="settings-field">
-            <span>Tipo de interfaz</span>
-            <input type="text" @bind="tipoInterfaz" />
-        </label>
-
-        <label class="settings-field">
-            <span>Limite de importe</span>
-            <input type="number" @bind="limiteImporte" min="0.01" step="0.01" />
-        </label>
-
-        <label class="settings-field">
-            <span>Limite de litros</span>
-            <input type="number" @bind="limiteLitros" min="0.01" step="0.01" />
-        </label>
-
-        <label class="settings-field">
-            <span>Cantidad para tanque lleno</span>
-            <input type="number" @bind="cantidadTanqueLleno" min="0.01" step="0.01" />
-        </label>
-
-        <label class="settings-field">
-            <span>Decimales de cantidad</span>
-            <input type="number" @bind="quantityDecimals" min="0" max="6" />
-        </label>
-
-        <label class="settings-field">
-            <span>Tiempo instrucciones (segundos)</span>
-            <input type="number" @bind="authorizationCountdownSeconds" min="1" />
-        </label>
-
-        <label class="settings-field">
-            <span>Cantidad de dispensarios</span>
-            <input type="number" @bind="dispenserCount" min="1" />
-        </label>
-    </section>
+    <!-- Botones al fondo -->
+    <div class="settings-actions config-actions-footer">
+        <button class="btn btn-outline-secondary action-button" type="button" @onclick="OpenTester" disabled="@isSaving">
+            Tester
+        </button>
+        <button class="@GetConnectionButtonClass()" @onclick="SaveConnectOrDisconnectAsync" disabled="@isSaving">
+            @GetConnectionButtonText()
+        </button>
+    </div>
 </section>
 
 @if (!string.IsNullOrWhiteSpace(toastMessage))
@@ -131,7 +161,8 @@
     private int quantityDecimals;
     private int authorizationCountdownSeconds;
     private int dispenserCount;
-    private string apiBaseUrl = string.Empty;
+    private string apiBaseHost = string.Empty;
+    private int apiPort;
     private int apiRequestTimeoutSeconds;
     private int toastDurationMilliseconds;
     private bool isSaving;
@@ -140,6 +171,10 @@
     private bool? databaseIsConnected;
     private string? toastMessage;
     private string toastCss = "is-success";
+
+    private readonly bool[] openSections = [false, false, false];
+
+    private void ToggleSection(int index) => openSections[index] = !openSections[index];
 
     protected override async Task OnInitializedAsync()
     {
@@ -199,12 +234,29 @@
         quantityDecimals = settings.AppConfiguration.QuantityDecimals;
         authorizationCountdownSeconds = settings.AppConfiguration.AuthorizationCountdownSeconds;
         dispenserCount = settings.AppConfiguration.DispenserCount;
-        apiBaseUrl = settings.Api.BaseUrl;
         apiRequestTimeoutSeconds = settings.Api.RequestTimeoutSeconds;
         toastDurationMilliseconds = settings.AppConfiguration.ToastDurationMilliseconds;
         databaseIsConnected = ConnectionState.DatabaseIsConnected;
         databaseStatus = ConnectionState.DatabaseStatus;
+
+        ParseApiUrl(settings.Api.BaseUrl);
     }
+
+    private void ParseApiUrl(string url)
+    {
+        if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
+        {
+            apiBaseHost = $"{uri.Scheme}://{uri.Host}";
+            apiPort = uri.Port;
+        }
+        else
+        {
+            apiBaseHost = url;
+            apiPort = 5047;
+        }
+    }
+
+    private string BuildApiUrl() => $"{apiBaseHost.TrimEnd('/')}:{apiPort}/";
 
     private async Task SaveConnectOrDisconnectAsync()
     {
@@ -261,26 +313,29 @@
             return false;
         }
 
-        if (!Uri.TryCreate(apiBaseUrl, UriKind.Absolute, out var apiUri)
+        if (string.IsNullOrWhiteSpace(apiBaseHost) || apiPort is <= 0 or > 65535)
+        {
+            ShowToast("Capture un host y puerto validos para la API.", false);
+            return false;
+        }
+
+        var apiUrl = BuildApiUrl();
+        if (!Uri.TryCreate(apiUrl, UriKind.Absolute, out var apiUri)
             || (apiUri.Scheme != Uri.UriSchemeHttp && apiUri.Scheme != Uri.UriSchemeHttps))
         {
             ShowToast("Capture una URL valida para LoadManagerApi.", false);
             return false;
         }
 
-        if (tpv <= 0
-            || usuario <= 0
-            || tipoVenta <= 0
+        if (tpv <= 0 || usuario <= 0 || tipoVenta <= 0
             || string.IsNullOrWhiteSpace(tipoInterfaz)
-            || limiteImporte <= 0
-            || limiteLitros <= 0
-            || cantidadTanqueLleno <= 0
+            || limiteImporte <= 0 || limiteLitros <= 0 || cantidadTanqueLleno <= 0
             || quantityDecimals is < 0 or > 6
             || authorizationCountdownSeconds <= 0
             || dispenserCount <= 0
             || apiRequestTimeoutSeconds <= 0)
         {
-            ShowToast("Revise los valores de configuracion. Deben ser mayores que cero y estar completos.", false);
+            ShowToast("Revise los valores de configuracion.", false);
             return false;
         }
 
@@ -296,22 +351,15 @@
         settings.AppConfiguration.QuantityDecimals = quantityDecimals;
         settings.AppConfiguration.AuthorizationCountdownSeconds = authorizationCountdownSeconds;
         settings.AppConfiguration.DispenserCount = dispenserCount;
-        settings.Api.BaseUrl = apiBaseUrl.TrimEnd('/') + "/";
+        settings.Api.BaseUrl = apiUrl;
         settings.Api.RequestTimeoutSeconds = apiRequestTimeoutSeconds;
 
         await SettingsProvider.SaveSettingsAsync(settings);
         return true;
     }
 
-    private string GetConnectionStatus()
-    {
-        if (ConsoleClient.IsConnected)
-        {
-            return "Conectado";
-        }
-
-        return connectionStatus == "Conectado" ? "Desconectado" : connectionStatus;
-    }
+    private string GetConnectionStatus() =>
+        ConsoleClient.IsConnected ? "Conectado" : (connectionStatus == "Conectado" ? "Desconectado" : connectionStatus);
 
     private void SyncDatabaseState()
     {
@@ -319,43 +367,25 @@
         databaseStatus = ConnectionState.DatabaseStatus;
     }
 
-    private string GetTcpIndicatorText()
-    {
-        return ConsoleClient.IsConnected ? "✓ Conectado" : $"✕ {GetConnectionStatus()}";
-    }
+    private string GetTcpIndicatorText() =>
+        ConsoleClient.IsConnected ? "✓ Conectado" : $"✕ {GetConnectionStatus()}";
 
-    private string GetTcpIndicatorClass()
-    {
-        return ConsoleClient.IsConnected ? "status-indicator is-success" : "status-indicator is-error";
-    }
+    private string GetTcpIndicatorClass() =>
+        ConsoleClient.IsConnected ? "status-indicator is-success" : "status-indicator is-error";
 
     private string GetDatabaseIndicatorText()
     {
-        if (databaseIsConnected == true)
-        {
-            return "✓ Conectado";
-        }
-
-        if (databaseIsConnected == false)
-        {
-            return "✕ Sin conexion";
-        }
-
+        if (databaseIsConnected == true) return "✓ Conectado";
+        if (databaseIsConnected == false) return "✕ Sin conexion";
         return $"✕ {databaseStatus}";
     }
 
-    private string GetDatabaseIndicatorClass()
-    {
-        return databaseIsConnected == true ? "status-indicator is-success" : "status-indicator is-error";
-    }
+    private string GetDatabaseIndicatorClass() =>
+        databaseIsConnected == true ? "status-indicator is-success" : "status-indicator is-error";
 
     private string GetConnectionButtonText()
     {
-        if (isSaving)
-        {
-            return ConsoleClient.IsConnected ? "Desconectando..." : "Guardando...";
-        }
-
+        if (isSaving) return ConsoleClient.IsConnected ? "Desconectando..." : "Guardando...";
         return ConsoleClient.IsConnected ? "Desconectar" : "Guardar y conectar";
     }
 
