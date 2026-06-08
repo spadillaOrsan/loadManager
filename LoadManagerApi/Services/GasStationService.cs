@@ -313,7 +313,7 @@ public sealed class GasStationService(
                 : string.Empty;
 
             await using var command = new SqlCommand($"""
-                SELECT TOP 150
+                SELECT TOP 3
                     b.*,
                     tp.strDescripcion AS ProductoDescripcion,
                     tp.dblPrecioU AS ProductoPrecio
@@ -355,8 +355,8 @@ public sealed class GasStationService(
                 IsSuccess = true,
                 CommandName = "database",
                 RequestFrame = normalizedFolio is null
-                    ? "SELECT TOP 150 historial FROM dbo.tblBitacora"
-                    : $"SELECT historial FROM dbo.tblBitacora WHERE folio LIKE {normalizedFolio}",
+                    ? "SELECT TOP 3 historial FROM dbo.tblBitacora"
+                    : $"SELECT TOP 3 historial FROM dbo.tblBitacora WHERE folio LIKE {normalizedFolio}",
                 ResponseFrame = $"{records.Count} registros",
                 UserMessage = "Historial consultado correctamente."
             }, cancellationToken);

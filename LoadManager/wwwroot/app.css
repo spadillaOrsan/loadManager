@@ -1883,6 +1883,15 @@ a, .btn-link {
     grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.history-shell {
+    max-width: none;
+}
+
+.history-panel {
+    max-width: none;
+    width: 100%;
+}
+
 .history-summary-card {
     background: var(--ua-panel-bg, #fff);
     border: 1px solid var(--ua-panel-border, #d8e0e6);

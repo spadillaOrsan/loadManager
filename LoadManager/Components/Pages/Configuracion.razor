@@ -15,7 +15,7 @@
 
     <section class="settings-panel">
         <div class="panel-heading">
-            <h2>Destino TCP/IP</h2>
+            <h2>Interfaz tcp/ip</h2>
             <span class="@GetTcpIndicatorClass()">@GetTcpIndicatorText()</span>
         </div>
 
@@ -29,7 +29,31 @@
             <input type="number" @bind="port" min="1" max="65535" />
         </label>
     </section>
+    <section class="settings-panel">
+        <div class="panel-heading">
+            <h2>URL Service</h2>
+            <span class="@GetDatabaseIndicatorClass()">@GetDatabaseIndicatorText()</span>
+        </div>
 
+        <label class="settings-field">
+            <span>URL de la API</span>
+            <input type="text" @bind="apiBaseUrl" placeholder="URL de LoadManagerApi" />
+        </label>
+
+        <label class="settings-field">
+            <span>Tiempo de espera (segundos)</span>
+            <input type="number" @bind="apiRequestTimeoutSeconds" min="1" />
+        </label>
+
+        <div class="settings-actions">
+            <button class="btn btn-outline-secondary action-button settings-save-button" type="button" @onclick="OpenTester" disabled="@isSaving">
+                Tester
+            </button>
+            <button class="@GetConnectionButtonClass()" @onclick="SaveConnectOrDisconnectAsync" disabled="@isSaving">
+                @GetConnectionButtonText()
+            </button>
+        </div>
+    </section>
     <section class="settings-panel">
         <div class="panel-heading">
             <h2>App Configuracion</h2>
@@ -85,32 +109,6 @@
             <span>Cantidad de dispensarios</span>
             <input type="number" @bind="dispenserCount" min="1" />
         </label>
-    </section>
-
-    <section class="settings-panel">
-        <div class="panel-heading">
-            <h2>LoadManager API</h2>
-            <span class="@GetDatabaseIndicatorClass()">@GetDatabaseIndicatorText()</span>
-        </div>
-
-        <label class="settings-field">
-            <span>URL de la API</span>
-            <input type="text" @bind="apiBaseUrl" placeholder="URL de LoadManagerApi" />
-        </label>
-
-        <label class="settings-field">
-            <span>Tiempo de espera (segundos)</span>
-            <input type="number" @bind="apiRequestTimeoutSeconds" min="1" />
-        </label>
-
-        <div class="settings-actions">
-            <button class="btn btn-outline-secondary action-button settings-save-button" type="button" @onclick="OpenTester" disabled="@isSaving">
-                Tester
-            </button>
-            <button class="@GetConnectionButtonClass()" @onclick="SaveConnectOrDisconnectAsync" disabled="@isSaving">
-                @GetConnectionButtonText()
-            </button>
-        </div>
     </section>
 </section>
 
