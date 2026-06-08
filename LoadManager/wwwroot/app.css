@@ -1412,6 +1412,24 @@ a, .btn-link {
     color: #a8b3c3;
 }
 
+.theme-dark .today-log-file header strong,
+.theme-dark .hose-alert h2,
+.theme-dark .app-modal-header h2 {
+    color: #f8fafc;
+}
+
+.theme-dark .today-log-file header span,
+.theme-dark .hose-alert p,
+.theme-dark .hose-alert span,
+.theme-dark .app-modal-header span {
+    color: #a8b3c3;
+}
+
+.theme-dark .tester-panel.is-disabled-panel::after {
+    background: rgba(15, 23, 42, 0.82);
+    color: #e5edf6;
+}
+
 .theme-red .ticket-folio strong,
 .theme-red .countdown-display strong {
     color: #e30613;
@@ -2078,7 +2096,7 @@ h1:focus {
         position: sticky;
         top: 0;
         height: env(safe-area-inset-top);
-        background-color: #f7f7f7;
+        background-color: #0f172a;
         width: 100%;
         z-index: 1;
     }
