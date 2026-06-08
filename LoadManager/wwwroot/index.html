@@ -74,27 +74,6 @@
             setTimeout(() => frame.remove(), 1000);
         };
 
-        window.uaacPlayEntryClick = function () {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            if (!AudioContext) {
-                return;
-            }
-
-            const context = new AudioContext();
-            const oscillator = context.createOscillator();
-            const gain = context.createGain();
-
-            oscillator.type = "square";
-            oscillator.frequency.value = 720;
-            gain.gain.setValueAtTime(0.08, context.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.12);
-
-            oscillator.connect(gain);
-            gain.connect(context.destination);
-            oscillator.start();
-            oscillator.stop(context.currentTime + 0.12);
-        };
-
         window.uaacHideKeyboardOnEnter = function () {
             if (window.__uaacKeyboardHandlerAttached) {
                 return;

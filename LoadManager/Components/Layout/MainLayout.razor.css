@@ -97,58 +97,6 @@ article.content {
     z-index: 20;
 }
 
-.entry-screen {
-    background: #ffffff url("images/uaac2.png") center / contain no-repeat;
-    color: #17212b;
-    inset: 0;
-    min-height: 100vh;
-    min-height: 100dvh;
-    overflow: hidden;
-    padding: 0;
-    position: fixed;
-    text-align: center;
-    z-index: 3000;
-}
-
-.entry-dispenser {
-    align-items: center;
-    background: transparent;
-    border: 0;
-    color: #e30613;
-    display: block;
-    height: 100dvh;
-    inset: 0;
-    max-height: 100vh;
-    max-width: none;
-    padding: 0;
-    position: absolute;
-    width: 100vw;
-}
-
-.entry-screen strong {
-    color: #111111;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: clamp(1.35rem, 5vw, 2rem);
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    line-height: 1.1;
-    margin-top: 0.1rem;
-}
-
-.entry-screen span {
-    color: #17212b;
-    font-size: 1.15rem;
-    font-weight: 900;
-}
-
-.entry-brand-image {
-    display: block;
-    height: auto;
-    max-width: min(66vw, 250px);
-    object-fit: contain;
-    width: 250px;
-}
-
 .theme-red .sidebar ::deep .top-row {
     background-color: rgba(0, 0, 0, 0.18);
 }

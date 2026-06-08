@@ -39,17 +39,9 @@
     </main>
 </div>
 
-@if (showWelcome)
-{
-    <div class="entry-screen">
-        <button class="entry-dispenser" type="button" @onclick="EnterApplicationAsync" aria-label="Entrar a UAAC"></button>
-    </div>
-}
 
 @code {
-    private static bool hasEnteredApplication;
     private int themeIndex;
-    private bool showWelcome = !hasEnteredApplication;
 
     private string CurrentThemeClass => themeIndex switch
     {
@@ -61,13 +53,6 @@
     private void ToggleTheme()
     {
         themeIndex = (themeIndex + 1) % 3;
-    }
-
-    private async Task EnterApplicationAsync()
-    {
-        await JsRuntime.InvokeVoidAsync("uaacPlayEntryClick");
-        hasEnteredApplication = true;
-        showWelcome = false;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
