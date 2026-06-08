@@ -923,6 +923,16 @@ a, .btn-link {
     color: #e30613;
 }
 
+/* Todos los estados usan fondo claro: forzar texto oscuro para que el numero
+   sea visible tambien en tema oscuro. */
+.dispenser-card.is-checking,
+.dispenser-card.is-authorized,
+.dispenser-card.is-available,
+.dispenser-card.is-hose-lifted,
+.dispenser-card.is-serving {
+    color: #17212b;
+}
+
 .dispenser-card.is-checking {
     background: #fff;
     border-color: #d8e0e6;
@@ -948,7 +958,30 @@ a, .btn-link {
     border-color: #34a853;
 }
 
-.dispenser-card:not(.is-available):not(.is-hose-lifted):not(.is-checking):not(.is-authorized) {
+.dispenser-card.is-offline {
+    background: #fff;
+    border-color: #d8e0e6;
+    color: #17212b;
+}
+
+.dispenser-card.is-offline .dispenser-number {
+    color: #17212b;
+}
+
+.dispenser-card.is-offline .dispenser-label {
+    color: #6c7a86;
+}
+
+.dispenser-card.is-offline .dispenser-status {
+    color: #8a97a3;
+}
+
+.dispenser-card.is-offline img {
+    filter: grayscale(1);
+    opacity: 0.55;
+}
+
+.dispenser-card:not(.is-available):not(.is-hose-lifted):not(.is-checking):not(.is-authorized):not(.is-offline) {
     background: #fff1f1;
     border-color: #d71920;
 }
@@ -969,7 +1002,7 @@ a, .btn-link {
     color: #5a6977;
 }
 
-.dispenser-card:not(.is-available):not(.is-hose-lifted):not(.is-checking):not(.is-authorized) .dispenser-status {
+.dispenser-card:not(.is-available):not(.is-hose-lifted):not(.is-checking):not(.is-authorized):not(.is-offline) .dispenser-status {
     color: #a31313;
 }
 
@@ -987,6 +1020,14 @@ a, .btn-link {
     max-width: 110px;
     object-fit: contain;
     width: 100%;
+}
+
+.dispenser-label {
+    color: #6c7a86;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
 }
 
 .dispenser-number {
@@ -1699,6 +1740,12 @@ a, .btn-link {
 .blocking-alert-backdrop {
     background: rgba(15, 23, 42, 0.72);
     place-content: center;
+}
+
+/* El modal de bloqueo por falta de comunicacion debe quedar por debajo del
+   menu lateral para permitir ir a Configuracion. */
+.app-modal-backdrop.connection-block-backdrop {
+    z-index: 1000;
 }
 
 .hose-alert {

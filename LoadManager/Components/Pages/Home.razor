@@ -10,24 +10,17 @@
 <section class="console-shell">
 
     <nav class="dispatch-stepper" aria-label="Progreso del despacho">
-        @foreach (var step in steps)
+        @for (var i = 0; i < steps.Count; i++)
         {
+            var step = steps[i];
             <div class="dispatch-step @GetStepClass(step.Index)">
-                <span class="step-marker">@step.Index</span>
+                <span class="step-marker">@(i + 1)</span>
                 <span class="step-label">@step.Name</span>
             </div>
         }
     </nav>
 
-    @if (currentStep == 1)
-    {
-        <section class="start-panel">
-            <button class="btn btn-primary start-button" @onclick="BeginDispatchFlowAsync" disabled="@isStartingFlow">
-                @GetStartButtonText()
-            </button>
-        </section>
-    }
-    else if (currentStep == 2)
+    @if (currentStep == 2)
     {
         <div class="selection-workspace @(IsSelectionWorkspaceLoading || isDispatching ? "is-loading" : string.Empty)" aria-busy="@(IsSelectionWorkspaceLoading || isDispatching)">
             <div class="dispatch-stage-track stage-@dispatchFormStage">
@@ -57,6 +50,7 @@
                                         @onclick="() => SelectDispenserAsync(dispenser)"
                                         disabled="@(IsSelectionWorkspaceLoading || isDispatching || !CanSelectDispenser(dispenser))">
                                     <img src="@dispenser.ImagePath" alt="" />
+                                    <span class="dispenser-label">Dispensario</span>
                                     <span class="dispenser-number">@dispenser.Number</span>
                                     <span class="dispenser-status">@dispenser.StatusText</span>
                                 </button>
@@ -174,10 +168,7 @@
             }
         </div>
 
-        <section class="actions-panel dispatch-stage-actions">
-            <button class="btn btn-outline-danger action-button" @onclick="CancelToStart" disabled="@isDispatching">
-                Cancelar
-            </button>
+        <section class="actions-panel dispatch-stage-actions"> 
             <button class="btn btn-outline-secondary action-button" @onclick="GoBack" disabled="@(isDispatching || dispatchFormStage == 1)">
                 ← Atras
             </button>
@@ -202,6 +193,50 @@
             <div class="panel-heading">
                 <h2>@GetAuthorizationStepTitle()</h2>
                 <span>@GetAuthorizationStepStatus()</span>
+            </div>
+
+            @if (isFueling)
+            {
+                <div class="liters-display" aria-live="polite">
+                    <span class="live-counter-status">Surtiendo</span>
+                    <span>@GetPrimaryLiveCounterLabel()</span>
+                    <strong>@((MarkupString)FormatPrimaryLiveCounter())</strong>
+                    <div class="live-secondary-counter">
+                        <span>@GetSecondaryLiveCounterLabel()</span>
+                        <strong>@((MarkupString)FormatSecondaryLiveCounter())</strong>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="countdown-display" role="timer" aria-live="polite">
+                    <strong>@remainingAuthorizationSeconds</strong>
+                    <span>segundos</span>
+                </div>
+
+                <article class="instruction-card instruction-card-single">
+                    <div class="instruction-item">
+                        <span>1</span>
+                        <strong>Descuelga la manguera</strong>
+                    </div>
+                    <div class="instruction-item">
+                        <span>2</span>
+                        <strong>Coloque en el tanque</strong>
+                    </div>
+                    <div class="instruction-item">
+                        <span>3</span>
+                        <strong>Presione gatillo</strong>
+                    </div>
+                </article>
+            }
+        </section>
+    }
+    else if (currentStep == 4)
+    {
+        <section class="authorization-panel">
+            <div class="panel-heading">
+                <h2>Ticket de despacho</h2>
+                <span>Despacho finalizado</span>
             </div>
 
             @if (dispatchTicket is not null)
@@ -248,7 +283,6 @@
                             <strong>@($"${dispatchTicket.Price:N2}")</strong>
                         </div>
                         <div>
-
                             <span>Litros</span>
                             <strong>@(dispatchTicket.Liters + " Lt")</strong>
                         </div>
@@ -267,40 +301,6 @@
                         </button>
                     </div>
                 </div>
-            }
-            else if (isFueling)
-            {
-                <div class="liters-display" aria-live="polite">
-                    <span class="live-counter-status">Surtiendo</span>
-                    <span>@GetPrimaryLiveCounterLabel()</span>
-                    <strong>@((MarkupString)FormatPrimaryLiveCounter())</strong>
-                    <div class="live-secondary-counter">
-                        <span>@GetSecondaryLiveCounterLabel()</span>
-                        <strong>@((MarkupString)FormatSecondaryLiveCounter())</strong>
-                    </div>
-                </div>
-            }
-            else
-            {
-                <div class="countdown-display" role="timer" aria-live="polite">
-                    <strong>@remainingAuthorizationSeconds</strong>
-                    <span>segundos</span>
-                </div>
-
-                <article class="instruction-card instruction-card-single">
-                    <div class="instruction-item">
-                        <span>1</span>
-                        <strong>Descuelga la manguera</strong>
-                    </div>
-                    <div class="instruction-item">
-                        <span>2</span>
-                        <strong>Coloque en el tanque</strong>
-                    </div>
-                    <div class="instruction-item">
-                        <span>3</span>
-                        <strong>Presione gatillo</strong>
-                    </div>
-                </article>
             }
         </section>
     }
@@ -347,6 +347,35 @@
     </div>
 }
 
+@if (isStartingFlow)
+{
+    <div class="app-modal-backdrop blocking-alert-backdrop">
+        <section class="app-modal hose-alert" role="alertdialog" aria-modal="true" aria-live="assertive">
+            <span class="loading-spinner" aria-hidden="true"></span>
+            <h2>Iniciando modulo</h2>
+            <p>@(string.IsNullOrWhiteSpace(startupStatusMessage) ? "Espere un momento..." : startupStatusMessage)</p>
+            <span>La pantalla permanecera bloqueada hasta terminar la validacion.</span>
+        </section>
+    </div>
+}
+
+@if (connectionBlocked && !isStartingFlow)
+{
+    <div class="app-modal-backdrop blocking-alert-backdrop connection-block-backdrop">
+        <section class="app-modal hose-alert" role="alertdialog" aria-modal="true" aria-live="assertive">
+            <div class="hose-alert-icon">!</div>
+            <h2>Sin comunicacion</h2>
+            <p>@connectionBlockedMessage</p>
+            <span>Revise que los dispositivos se encuentren conectados y la configuracion correctamente. Use el menu para ir a Configuracion.</span>
+            <div class="settings-actions" style="margin-top:1rem;">
+                <button class="btn btn-primary action-button" @onclick="RetryConnectionAsync">
+                    Reintentar
+                </button>
+            </div>
+        </section>
+    </div>
+}
+
 @code {
     private const string CheckingImage = "images/dispensers/inactivo.png";
     private const string AvailableImage = "images/dispensers/autorizado.png";
@@ -363,7 +392,9 @@
     private bool isStartingFlow;
     private bool isLoadingDispatchTypes;
     private bool databaseIsReady;
-    private int currentStep = 1;
+    private int currentStep = 2;
+    private bool connectionBlocked;
+    private string connectionBlockedMessage = "No hay comunicacion con la base de datos o la interfaz TCP/IP.";
     private string? selectedDispenser;
     private string? selectedProductKey;
     private int? selectedDispatchTypeId;
@@ -406,9 +437,9 @@
     private readonly List<DispenserViewModel> dispensers = [];
     private readonly List<DispatchStep> steps =
     [
-        new(1, "Comenzar"),
         new(2, "Cargar"),
-        new(3, "Instrucciones")
+        new(3, "Instrucciones"),
+        new(4, "Ticket")
     ];
 
     private readonly List<FuelProductViewModel> products = [];
@@ -448,18 +479,6 @@
         SelectedDispatchType is not null &&
         (SelectedDispatchType.IsFull || (TryGetAmount(out var amount) && amount > 0));
 
-    private string GetStartButtonText()
-    {
-        if (!isStartingFlow)
-        {
-            return "Comenzar";
-        }
-
-        return string.IsNullOrWhiteSpace(startupStatusMessage)
-            ? "Validando..."
-            : startupStatusMessage;
-    }
-
     protected override async Task OnInitializedAsync()
     {
         var settings = await SettingsProvider.GetSettingsAsync(pageCancellation.Token);
@@ -474,6 +493,10 @@
         hoseRestorePollingMilliseconds = settings.AppConfiguration.HoseRestorePollingMilliseconds;
         toastDurationMilliseconds = settings.AppConfiguration.ToastDurationMilliseconds;
         configuredDispenserCount = settings.AppConfiguration.DispenserCount;
+
+        // El paso 1 (boton "Comenzar") se elimino: la validacion de comunicacion
+        // se ejecuta automaticamente al entrar al modulo.
+        await BeginDispatchFlowAsync();
     }
 
     private async Task LoadDispatchTypesAsync()
@@ -505,12 +528,28 @@
         }
 
         isStartingFlow = true;
+        connectionBlocked = false;
         StopAuthorizationCountdown();
         databaseIsReady = false;
-        startupStatusMessage = "Validando comunicacion...";
+        startupStatusMessage = "Validando configuracion...";
+        await InvokeAsync(StateHasChanged);
 
         try
         {
+            var currentSettings = await SettingsProvider.GetSettingsAsync(pageCancellation.Token);
+
+            // 1) Validar que existan los datos de configuracion
+            if (!HasRequiredConfiguration(currentSettings))
+            {
+                startupStatusMessage = "Configuracion incompleta.";
+                connectionBlockedMessage = "Capture los datos de configuracion (IP, puerto e interfaz, URL del servicio).";
+                connectionBlocked = true;
+                return;
+            }
+
+            startupStatusMessage = "Validando TCP/IP y base de datos...";
+            await InvokeAsync(StateHasChanged);
+
             var databaseTask = ConsoleClient.CheckDatabaseConnectionAsync(pageCancellation.Token);
             var tcpTask = ConsoleClient.IsConnected
                 ? Task.FromResult(new ConsoleAvailabilityResult
@@ -522,9 +561,9 @@
 
             await Task.WhenAll(databaseTask, tcpTask);
 
+            // 2) Validar base de datos
             var databaseResult = await databaseTask;
             ConnectionState.SetDatabaseResult(databaseResult);
-            ShowToast(databaseResult.UserMessage, databaseResult.IsSuccess);
 
             if (!databaseResult.IsSuccess)
             {
@@ -533,33 +572,46 @@
                     await ConsoleClient.DisconnectAsync();
                 }
 
-                startupStatusMessage = "No hay comunicacion.";
-                ShowToast("No hay comunicacion con TCP/IP o base de datos.", false);
+                startupStatusMessage = "Sin comunicacion.";
+                connectionBlockedMessage = "Revise la conexion con la base de datos (BD).";
+                connectionBlocked = true;
                 return;
             }
 
             databaseIsReady = true;
+
+            // 3) Validar interfaz TCP/IP
             var tcpResult = await tcpTask;
-            ShowToast(tcpResult.UserMessage, tcpResult.IsAvailable);
 
             if (!tcpResult.IsAvailable)
             {
                 databaseIsReady = false;
-                startupStatusMessage = "No hay comunicacion.";
-                ShowToast("No hay comunicacion con TCP/IP o base de datos.", false);
+                startupStatusMessage = "Sin comunicacion.";
+                connectionBlockedMessage = "Revise la conexion TCP/IP.";
+                connectionBlocked = true;
                 return;
             }
 
             isLoadingDispensers = true;
             isLoadingDispatchTypes = true;
-            startupStatusMessage = "Consultando dispensarios disponibles...";
+            startupStatusMessage = "Validando dispensarios...";
+            await InvokeAsync(StateHasChanged);
 
             try
             {
-                var currentSettings = await SettingsProvider.GetSettingsAsync(pageCancellation.Token);
                 configuredDispenserCount = currentSettings.AppConfiguration.DispenserCount;
                 LoadConfiguredDispensers();
                 await RefreshDispenserSummaryAsync(pageCancellation.Token);
+
+                // 4) Validar que al menos un dispensario tenga comunicacion
+                if (!HasAnyDispenserCommunication())
+                {
+                    startupStatusMessage = "Sin comunicacion.";
+                    connectionBlockedMessage = "Revise la conexion de los dispensarios.";
+                    connectionBlocked = true;
+                    return;
+                }
+
                 blockedHoseDispenser = GetFirstLiftedHoseDispenser();
                 if (HasLiftedHose() || await HasLiftedHoseFromDetailAsync(pageCancellation.Token))
                 {
@@ -568,6 +620,8 @@
                     return;
                 }
 
+                startupStatusMessage = "Consultando tipos de despacho...";
+                await InvokeAsync(StateHasChanged);
                 await LoadDispatchTypesAsync();
                 dispatchFormStage = 1;
                 currentStep = 2;
@@ -587,12 +641,34 @@
         {
             databaseIsReady = false;
             startupStatusMessage = "No hay comunicacion.";
-            ShowToast($"No hay comunicacion con TCP/IP o base de datos. {ex.Message}", false);
+            connectionBlockedMessage = $"No hay comunicacion con la base de datos o la interfaz TCP/IP. {ex.Message}";
+            connectionBlocked = true;
         }
         finally
         {
             isStartingFlow = false;
+            await InvokeAsync(StateHasChanged);
         }
+    }
+
+    private async Task RetryConnectionAsync()
+    {
+        await BeginDispatchFlowAsync();
+    }
+
+    private static bool HasRequiredConfiguration(AppSettings settings)
+    {
+        return !string.IsNullOrWhiteSpace(settings.GasStationConsole.IpAddress)
+            && settings.GasStationConsole.Port is > 0 and <= 65535
+            && !string.IsNullOrWhiteSpace(settings.AppConfiguration.TipoInterfaz)
+            && !string.IsNullOrWhiteSpace(settings.Api.BaseUrl)
+            && Uri.TryCreate(settings.Api.BaseUrl, UriKind.Absolute, out _);
+    }
+
+    private bool HasAnyDispenserCommunication()
+    {
+        return dispensers.Any(dispenser =>
+            dispenser.StatusCode is "1" or "2" or "3" or "4" or "6");
     }
 
     private async Task RefreshDispenserSummaryAsync(CancellationToken cancellationToken)
@@ -832,11 +908,6 @@
         }
     }
 
-    private void CancelToStart()
-    {
-        ResetDispatchFlow();
-    }
-
     private async Task StartDispatchAsync()
     {
         if (!CanServe)
@@ -1001,6 +1072,14 @@
     {
         foreach (var dispenser in dispensers)
         {
+            // Solo consultar dispensarios que realmente comunican. Los que estan
+            // "Sin comunicacion" (estatus 100 o sin respuesta) no se consultan para
+            // evitar una llamada TCP por cada dispensario configurado.
+            if (!dispenser.IsAvailable)
+            {
+                continue;
+            }
+
             var result = await ConsoleClient.SendDispenserDetailAsync(
                 DispenserFrameHelper.ToCommandNumber(dispenser.Number),
                 cancellationToken);
@@ -1311,6 +1390,7 @@
             liveDispenserStatus = "2";
             StopAuthorizationCountdown(clearAuthorization: false);
             StopFuelingMonitor();
+            currentStep = 4;
             ShowToast("Despacho finalizado. Revise los datos del ticket.", true);
             await InvokeAsync(StateHasChanged);
         }
@@ -1571,8 +1651,9 @@
         }
 
         dispenser.StatusCode = statusCode;
+        dispenser.LastResponse = string.IsNullOrWhiteSpace(statusCode) ? "sin-com" : statusCode;
         dispenser.IsAvailable = false;
-        dispenser.StatusText = string.IsNullOrWhiteSpace(statusCode) ? "No disponible" : $"Estatus {statusCode}";
+        dispenser.StatusText = "Sin comunicacion";
         dispenser.ImagePath = OfflineImage;
     }
 
@@ -1822,6 +1903,10 @@
         else if (dispenser.IsAvailable)
         {
             classes.Add("is-available");
+        }
+        else
+        {
+            classes.Add("is-offline");
         }
 
         if (selectedDispenser == dispenser.Number)
