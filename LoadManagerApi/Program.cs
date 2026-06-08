@@ -12,8 +12,20 @@ builder.Services.Configure<FileLogOptions>(builder.Configuration.GetSection("Fil
 builder.Services.AddSingleton<IAppLogService, AppLogService>();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new() { Title = "LoadManager API", Version = "v1" });
+});
 
 var app = builder.Build();
+
+app.UseSwagger();
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "LoadManager API v1");
+    options.RoutePrefix = string.Empty;
+});
 
 app.UseMiddleware<HttpTransactionLoggingMiddleware>();
 app.UseExceptionHandler();
