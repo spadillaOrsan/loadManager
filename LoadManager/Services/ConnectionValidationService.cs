@@ -1,9 +1,9 @@
-using LoadManager.Models;
+using LoadManager.Contracts.Models;
 using LoadManager.Services.Interfaces;
 
 namespace LoadManager.Services;
 
-public sealed class ConnectionValidationState : IConnectionValidationState
+public sealed class ConnectionValidationService : IConnectionValidationService
 {
     public bool? DatabaseIsConnected { get; private set; }
 

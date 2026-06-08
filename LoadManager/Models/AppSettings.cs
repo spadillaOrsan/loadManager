@@ -6,7 +6,7 @@ public sealed class AppSettings
 
     public AppConfigurationOptions AppConfiguration { get; set; } = new();
 
-    public DatabaseOptions Database { get; set; } = new();
+    public ApiOptions Api { get; set; } = new();
 
     public ConsoleLogOptions ConsoleLogs { get; set; } = new();
 }

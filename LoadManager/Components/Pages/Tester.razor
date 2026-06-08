@@ -1,6 +1,7 @@
 @page "/tester"
 @using System.Globalization
-@inject IGasStationConsoleClient ConsoleClient
+@inject IGasStationService ConsoleClient
+@inject IAppSettingsService SettingsProvider
 @inject NavigationManager NavigationManager
 
 <PageTitle>Tester de comunicacion (@ConnectionStatusText)</PageTitle>
@@ -142,13 +143,16 @@
     private bool isSendingGraphic;
     private string graphicCommand = "AUTH";
     private int graphicDispenser = 1;
-    private int graphicTpv = 88;
+    private int graphicTpv;
     private int graphicHose = 1;
     private int graphicProduct = 1;
-    private string graphicInterfaceType = "G";
+    private string graphicInterfaceType = string.Empty;
     private string graphicLoadType = "1";
     private string graphicAmount = "10.00";
     private string graphicFolio = "376517";
+    private decimal fullTankProgrammedAmount;
+    private int quantityDecimals;
+    private int toastDurationMilliseconds;
     private string? toastMessage;
     private string toastCss = "is-success";
     private readonly List<string> responseLines = [];
@@ -182,6 +186,16 @@
     private bool CanSendGraphic =>
         !isSendingGraphic &&
         !string.IsNullOrWhiteSpace(GeneratedGraphicFrame);
+
+    protected override async Task OnInitializedAsync()
+    {
+        var settings = await SettingsProvider.GetSettingsAsync();
+        graphicTpv = settings.AppConfiguration.Tpv;
+        graphicInterfaceType = settings.AppConfiguration.TipoInterfaz;
+        fullTankProgrammedAmount = settings.AppConfiguration.CantidadTanqueLleno;
+        quantityDecimals = settings.AppConfiguration.QuantityDecimals;
+        toastDurationMilliseconds = settings.AppConfiguration.ToastDurationMilliseconds;
+    }
 
     private async Task SendGraphicCommandAsync()
     {
@@ -231,7 +245,7 @@
     private string GetInterfaceType()
     {
         return string.IsNullOrWhiteSpace(graphicInterfaceType)
-            ? "G"
+            ? string.Empty
             : graphicInterfaceType.Trim();
     }
 
@@ -255,14 +269,18 @@
             return;
         }
 
-        graphicAmount = amount.ToString("N2", CultureInfo.GetCultureInfo("en-US"));
+        graphicAmount = amount.ToString(
+            $"N{quantityDecimals}",
+            CultureInfo.GetCultureInfo("en-US"));
     }
 
     private string NormalizeAmountForFrame()
     {
         if (graphicLoadType == "3")
         {
-            return "9990";
+            return fullTankProgrammedAmount.ToString(
+                $"F{quantityDecimals}",
+                CultureInfo.InvariantCulture);
         }
 
         return TryGetGraphicAmount(out var amount)
@@ -329,7 +347,7 @@
 
     private async Task ClearToastAsync()
     {
-        await Task.Delay(3500);
+        await Task.Delay(toastDurationMilliseconds);
         toastMessage = null;
         await InvokeAsync(StateHasChanged);
     }

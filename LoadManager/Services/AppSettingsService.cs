@@ -6,7 +6,7 @@ using LoadManager.Services.Interfaces;
 
 namespace LoadManager.Services;
 
-public sealed class AppSettingsProvider : IAppSettingsProvider
+public sealed class AppSettingsService : IAppSettingsService
 {
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
@@ -24,18 +24,20 @@ public sealed class AppSettingsProvider : IAppSettingsProvider
             return settings;
         }
 
+        await using var defaultStream = await FileSystem.OpenAppPackageFileAsync("appsettings.json");
+        using var defaultReader = new StreamReader(defaultStream);
+        var defaultSettings = DeserializeSettings(await defaultReader.ReadToEndAsync(cancellationToken));
+
         var userSettingsPath = AppSettingsPathHelper.GetUserSettingsPath();
         if (File.Exists(userSettingsPath))
         {
             var userJson = await File.ReadAllTextAsync(userSettingsPath, cancellationToken);
-            settings = DeserializeSettings(userJson);
+            settings = MergeMissingSettings(DeserializeSettings(userJson), defaultSettings);
 
             return settings;
         }
 
-        await using var stream = await FileSystem.OpenAppPackageFileAsync("appsettings.json");
-        using var reader = new StreamReader(stream);
-        settings = DeserializeSettings(await reader.ReadToEndAsync(cancellationToken));
+        settings = defaultSettings;
 
         return settings;
     }
@@ -80,6 +82,53 @@ public sealed class AppSettingsProvider : IAppSettingsProvider
         return jsonNode.Deserialize<AppSettings>(SerializerOptions) ?? new AppSettings();
     }
 
+    private static AppSettings MergeMissingSettings(AppSettings current, AppSettings defaults)
+    {
+        current.GasStationConsole.IpAddress = UseText(current.GasStationConsole.IpAddress, defaults.GasStationConsole.IpAddress);
+        current.GasStationConsole.Port = UsePositive(current.GasStationConsole.Port, defaults.GasStationConsole.Port);
+        current.GasStationConsole.ConnectionTimeoutMilliseconds = UsePositive(current.GasStationConsole.ConnectionTimeoutMilliseconds, defaults.GasStationConsole.ConnectionTimeoutMilliseconds);
+        current.GasStationConsole.ReadTimeoutMilliseconds = UsePositive(current.GasStationConsole.ReadTimeoutMilliseconds, defaults.GasStationConsole.ReadTimeoutMilliseconds);
+        current.GasStationConsole.ReceiveBufferSize = UsePositive(current.GasStationConsole.ReceiveBufferSize, defaults.GasStationConsole.ReceiveBufferSize);
+        current.GasStationConsole.MaxSendAttempts = UsePositive(current.GasStationConsole.MaxSendAttempts, defaults.GasStationConsole.MaxSendAttempts);
+        current.GasStationConsole.EncodingName = UseText(current.GasStationConsole.EncodingName, defaults.GasStationConsole.EncodingName);
+        if (current.GasStationConsole.Commands.Count == 0)
+        {
+            current.GasStationConsole.Commands = new Dictionary<string, string>(defaults.GasStationConsole.Commands);
+        }
+
+        current.AppConfiguration.Tpv = UsePositive(current.AppConfiguration.Tpv, defaults.AppConfiguration.Tpv);
+        current.AppConfiguration.Usuario = UsePositive(current.AppConfiguration.Usuario, defaults.AppConfiguration.Usuario);
+        current.AppConfiguration.TipoVenta = UsePositive(current.AppConfiguration.TipoVenta, defaults.AppConfiguration.TipoVenta);
+        current.AppConfiguration.TipoInterfaz = UseText(current.AppConfiguration.TipoInterfaz, defaults.AppConfiguration.TipoInterfaz);
+        current.AppConfiguration.LimiteImporte = UsePositive(current.AppConfiguration.LimiteImporte, defaults.AppConfiguration.LimiteImporte);
+        current.AppConfiguration.LimiteLitros = UsePositive(current.AppConfiguration.LimiteLitros, defaults.AppConfiguration.LimiteLitros);
+        current.AppConfiguration.CantidadTanqueLleno = UsePositive(current.AppConfiguration.CantidadTanqueLleno, defaults.AppConfiguration.CantidadTanqueLleno);
+        current.AppConfiguration.QuantityDecimals = current.AppConfiguration.QuantityDecimals >= 0
+            ? current.AppConfiguration.QuantityDecimals
+            : defaults.AppConfiguration.QuantityDecimals;
+        current.AppConfiguration.AuthorizationCountdownSeconds = UsePositive(current.AppConfiguration.AuthorizationCountdownSeconds, defaults.AppConfiguration.AuthorizationCountdownSeconds);
+        current.AppConfiguration.AuthorizationWarningSeconds = UsePositive(current.AppConfiguration.AuthorizationWarningSeconds, defaults.AppConfiguration.AuthorizationWarningSeconds);
+        current.AppConfiguration.AuthorizationPollingMilliseconds = UsePositive(current.AppConfiguration.AuthorizationPollingMilliseconds, defaults.AppConfiguration.AuthorizationPollingMilliseconds);
+        current.AppConfiguration.FuelingPollingMilliseconds = UsePositive(current.AppConfiguration.FuelingPollingMilliseconds, defaults.AppConfiguration.FuelingPollingMilliseconds);
+        current.AppConfiguration.HoseRestorePollingMilliseconds = UsePositive(current.AppConfiguration.HoseRestorePollingMilliseconds, defaults.AppConfiguration.HoseRestorePollingMilliseconds);
+        current.AppConfiguration.ToastDurationMilliseconds = UsePositive(current.AppConfiguration.ToastDurationMilliseconds, defaults.AppConfiguration.ToastDurationMilliseconds);
+        current.AppConfiguration.DispenserCount = UsePositive(current.AppConfiguration.DispenserCount, defaults.AppConfiguration.DispenserCount);
+        current.AppConfiguration.ConfigurationPasswordHash = UseText(current.AppConfiguration.ConfigurationPasswordHash, defaults.AppConfiguration.ConfigurationPasswordHash);
+
+        current.Api.BaseUrl = UseText(current.Api.BaseUrl, defaults.Api.BaseUrl);
+        current.Api.RequestTimeoutSeconds = UsePositive(current.Api.RequestTimeoutSeconds, defaults.Api.RequestTimeoutSeconds);
+        current.ConsoleLogs.BasePath = UseText(current.ConsoleLogs.BasePath, defaults.ConsoleLogs.BasePath);
+
+        return current;
+    }
+
+    private static int UsePositive(int value, int fallback) => value > 0 ? value : fallback;
+
+    private static decimal UsePositive(decimal value, decimal fallback) => value > 0 ? value : fallback;
+
+    private static string UseText(string value, string fallback) =>
+        string.IsNullOrWhiteSpace(value) ? fallback : value;
+
     private static void EnsureConfigurationPasswordHash(JsonNode jsonNode)
     {
         var appConfiguration = jsonNode["AppConfiguration"] as JsonObject;
@@ -99,54 +148,64 @@ public sealed class AppSettingsProvider : IAppSettingsProvider
     {
         EncryptString(jsonNode, "GasStationConsole", "IpAddress");
         EncryptNumber(jsonNode, "GasStationConsole", "Port");
+        EncryptNumber(jsonNode, "GasStationConsole", "ConnectionTimeoutMilliseconds");
         EncryptNumber(jsonNode, "GasStationConsole", "ReadTimeoutMilliseconds");
+        EncryptNumber(jsonNode, "GasStationConsole", "ReceiveBufferSize");
+        EncryptNumber(jsonNode, "GasStationConsole", "MaxSendAttempts");
         EncryptString(jsonNode, "GasStationConsole", "EncodingName");
         EncryptDictionaryValues(jsonNode, "GasStationConsole", "Commands");
 
         EncryptNumber(jsonNode, "AppConfiguration", "Tpv");
         EncryptNumber(jsonNode, "AppConfiguration", "Usuario");
+        EncryptNumber(jsonNode, "AppConfiguration", "TipoVenta");
         EncryptString(jsonNode, "AppConfiguration", "TipoInterfaz");
         EncryptNumber(jsonNode, "AppConfiguration", "LimiteImporte");
         EncryptNumber(jsonNode, "AppConfiguration", "LimiteLitros");
+        EncryptNumber(jsonNode, "AppConfiguration", "CantidadTanqueLleno");
         EncryptNumber(jsonNode, "AppConfiguration", "QuantityDecimals");
         EncryptNumber(jsonNode, "AppConfiguration", "AuthorizationCountdownSeconds");
+        EncryptNumber(jsonNode, "AppConfiguration", "AuthorizationWarningSeconds");
+        EncryptNumber(jsonNode, "AppConfiguration", "AuthorizationPollingMilliseconds");
+        EncryptNumber(jsonNode, "AppConfiguration", "FuelingPollingMilliseconds");
+        EncryptNumber(jsonNode, "AppConfiguration", "HoseRestorePollingMilliseconds");
+        EncryptNumber(jsonNode, "AppConfiguration", "ToastDurationMilliseconds");
         EncryptNumber(jsonNode, "AppConfiguration", "DispenserCount");
         EncryptString(jsonNode, "AppConfiguration", "ConfigurationPasswordHash");
 
-        EncryptString(jsonNode, "Database", "Server");
-        EncryptString(jsonNode, "Database", "Database");
-        EncryptString(jsonNode, "Database", "UserId");
-        EncryptString(jsonNode, "Database", "Password");
-        EncryptBoolean(jsonNode, "Database", "TrustServerCertificate");
-        EncryptBoolean(jsonNode, "Database", "Encrypt");
-        EncryptNumber(jsonNode, "Database", "ConnectionTimeoutSeconds");
+        EncryptString(jsonNode, "Api", "BaseUrl");
+        EncryptNumber(jsonNode, "Api", "RequestTimeoutSeconds");
     }
 
     private static void DecryptSettingsNode(JsonNode jsonNode)
     {
         DecryptString(jsonNode, "GasStationConsole", "IpAddress");
         DecryptNumber(jsonNode, "GasStationConsole", "Port");
+        DecryptNumber(jsonNode, "GasStationConsole", "ConnectionTimeoutMilliseconds");
         DecryptNumber(jsonNode, "GasStationConsole", "ReadTimeoutMilliseconds");
+        DecryptNumber(jsonNode, "GasStationConsole", "ReceiveBufferSize");
+        DecryptNumber(jsonNode, "GasStationConsole", "MaxSendAttempts");
         DecryptString(jsonNode, "GasStationConsole", "EncodingName");
         DecryptDictionaryValues(jsonNode, "GasStationConsole", "Commands");
 
         DecryptNumber(jsonNode, "AppConfiguration", "Tpv");
         DecryptNumber(jsonNode, "AppConfiguration", "Usuario");
+        DecryptNumber(jsonNode, "AppConfiguration", "TipoVenta");
         DecryptString(jsonNode, "AppConfiguration", "TipoInterfaz");
         DecryptNumber(jsonNode, "AppConfiguration", "LimiteImporte");
         DecryptNumber(jsonNode, "AppConfiguration", "LimiteLitros");
+        DecryptNumber(jsonNode, "AppConfiguration", "CantidadTanqueLleno");
         DecryptNumber(jsonNode, "AppConfiguration", "QuantityDecimals");
         DecryptNumber(jsonNode, "AppConfiguration", "AuthorizationCountdownSeconds");
+        DecryptNumber(jsonNode, "AppConfiguration", "AuthorizationWarningSeconds");
+        DecryptNumber(jsonNode, "AppConfiguration", "AuthorizationPollingMilliseconds");
+        DecryptNumber(jsonNode, "AppConfiguration", "FuelingPollingMilliseconds");
+        DecryptNumber(jsonNode, "AppConfiguration", "HoseRestorePollingMilliseconds");
+        DecryptNumber(jsonNode, "AppConfiguration", "ToastDurationMilliseconds");
         DecryptNumber(jsonNode, "AppConfiguration", "DispenserCount");
         DecryptString(jsonNode, "AppConfiguration", "ConfigurationPasswordHash");
 
-        DecryptString(jsonNode, "Database", "Server");
-        DecryptString(jsonNode, "Database", "Database");
-        DecryptString(jsonNode, "Database", "UserId");
-        DecryptString(jsonNode, "Database", "Password");
-        DecryptBoolean(jsonNode, "Database", "TrustServerCertificate");
-        DecryptBoolean(jsonNode, "Database", "Encrypt");
-        DecryptNumber(jsonNode, "Database", "ConnectionTimeoutSeconds");
+        DecryptString(jsonNode, "Api", "BaseUrl");
+        DecryptNumber(jsonNode, "Api", "RequestTimeoutSeconds");
     }
 
     private static void EncryptString(JsonNode jsonNode, string section, string property)

@@ -1,14 +1,17 @@
-using LoadManager.Models;
-using LoadManager.Services.Interfaces;
+using LoadManagerApi.Interfaces;
+using LoadManagerApi.Helpers;
+using LoadManager.Contracts.Models;
+using LoadManagerApi.Models;
 using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Text.Json;
 
-namespace LoadManager.Services;
+namespace LoadManagerApi.Services;
 
-public sealed class GasStationDatabaseService(
-    IAppSettingsProvider settingsProvider,
-    IConsoleLogService consoleLogService) : IGasStationDatabaseService
+public sealed class GasStationService(
+    IConfiguration configuration,
+    IDatabaseScriptService databaseScriptService,
+    IAppLogService logService) : IGasStationService
 {
     private static readonly string[] RequiredObjects =
     [
@@ -25,18 +28,12 @@ public sealed class GasStationDatabaseService(
         "dbo.sp_bitacora_app"
     ];
 
-    private static readonly (string ObjectName, string ScriptPath)[] StoredProcedureScripts =
-    [
-        ("dbo.sp_folio_app", "Script/sp_folio_app.sql"),
-        ("dbo.sp_bitacora_app", "Script/sp_bitacora_app.sql")
-    ];
-
     public async Task<ConsoleCommandResult> CheckConnectionAsync(CancellationToken cancellationToken = default)
     {
         try
         {
             await using var connection = await OpenConnectionAsync(cancellationToken);
-            await EnsureRequiredStoredProceduresAsync(connection, cancellationToken);
+            await databaseScriptService.EnsureRequiredStoredProceduresAsync(connection, cancellationToken);
             var missingObjects = await GetMissingRequiredObjectsAsync(connection, cancellationToken);
             if (missingObjects.Count > 0)
             {
@@ -78,7 +75,7 @@ public sealed class GasStationDatabaseService(
         try
         {
             await using var connection = await OpenConnectionAsync(cancellationToken);
-            await EnsureRequiredStoredProceduresAsync(connection, cancellationToken);
+            await databaseScriptService.EnsureRequiredStoredProceduresAsync(connection, cancellationToken);
 
             var requestJson = JsonSerializer.Serialize(new
             {
@@ -241,7 +238,7 @@ public sealed class GasStationDatabaseService(
             var fallbackId = 1;
             while (await reader.ReadAsync(cancellationToken))
             {
-                var id = GetFirstInt(
+                var id = SqlDataReaderHelper.GetFirstInt(
                     reader,
                     "intTipoDespacho",
                     "intTipoProgramado",
@@ -255,7 +252,7 @@ public sealed class GasStationDatabaseService(
                     id = fallbackId;
                 }
 
-                var description = GetFirstString(
+                var description = SqlDataReaderHelper.GetFirstString(
                     reader,
                     "strDescripcion",
                     "strTipoDespacho",
@@ -336,20 +333,20 @@ public sealed class GasStationDatabaseService(
             {
                 records.Add(new DispatchHistoryRecord
                 {
-                    Sequence = GetFirstInt(reader, "intFolioSecuencia", "intSecuencia", "Folio"),
-                    Tpv = GetFirstInt(reader, "intTPV"),
-                    Dispenser = GetFirstInt(reader, "intDispensario"),
-                    Hose = GetFirstInt(reader, "intManguera"),
-                    Product = GetFirstInt(reader, "intProducto"),
-                    ProductDescription = GetFirstString(reader, "ProductoDescripcion", "strProducto"),
-                    DispatchTypeId = GetFirstInt(reader, "intTipoProgramado", "intTipoDespacho", "intTipoCarga"),
-                    ProgrammedAmount = GetFirstDecimal(reader, "dblProgramado", "dblCantidadProgramada"),
-                    Amount = GetFirstDecimal(reader, "dblImporte", "dblMonto", "dblVendido", "dblVenta"),
-                    Liters = GetFirstDecimal(reader, "dblLitros", "dblVolumen", "dblCantidad"),
-                    Price = GetFirstDecimal(reader, "dblPrecioU", "ProductoPrecio", "dblPrecio"),
-                    CreatedAt = GetFirstDateTime(reader, "dtmFecha", "dtFecha", "Fecha", "fecFecha", "dteFecha"),
-                    IsCanceled = GetFirstBool(reader, "bitCancelada", "bitCancelado", "Cancelada", "Cancelado"),
-                    IsClosed = GetFirstBool(reader, "bitCerrada", "bitCerrado", "Cerrada", "Cerrado")
+                    Sequence = SqlDataReaderHelper.GetFirstInt(reader, "intFolioSecuencia", "intSecuencia", "Folio"),
+                    Tpv = SqlDataReaderHelper.GetFirstInt(reader, "intTPV"),
+                    Dispenser = SqlDataReaderHelper.GetFirstInt(reader, "intDispensario"),
+                    Hose = SqlDataReaderHelper.GetFirstInt(reader, "intManguera"),
+                    Product = SqlDataReaderHelper.GetFirstInt(reader, "intProducto"),
+                    ProductDescription = SqlDataReaderHelper.GetFirstString(reader, "ProductoDescripcion", "strProducto"),
+                    DispatchTypeId = SqlDataReaderHelper.GetFirstInt(reader, "intTipoProgramado", "intTipoDespacho", "intTipoCarga"),
+                    ProgrammedAmount = SqlDataReaderHelper.GetFirstDecimal(reader, "dblProgramado", "dblCantidadProgramada"),
+                    Amount = SqlDataReaderHelper.GetFirstDecimal(reader, "dblImporte", "dblMonto", "dblVendido", "dblVenta"),
+                    Liters = SqlDataReaderHelper.GetFirstDecimal(reader, "dblLitros", "dblVolumen", "dblCantidad"),
+                    Price = SqlDataReaderHelper.GetFirstDecimal(reader, "dblPrecioU", "ProductoPrecio", "dblPrecio"),
+                    CreatedAt = SqlDataReaderHelper.GetFirstDateTime(reader, "dtmFecha", "dtFecha", "Fecha", "fecFecha", "dteFecha"),
+                    IsCanceled = SqlDataReaderHelper.GetFirstBool(reader, "bitCancelada", "bitCancelado", "Cancelada", "Cancelado"),
+                    IsClosed = SqlDataReaderHelper.GetFirstBool(reader, "bitCerrada", "bitCerrado", "Cerrada", "Cerrado")
                 });
             }
 
@@ -398,106 +395,16 @@ public sealed class GasStationDatabaseService(
         return value is not null;
     }
 
-    private static int GetFirstInt(SqlDataReader reader, params string[] names)
-    {
-        foreach (var name in names)
-        {
-            if (HasColumn(reader, name) && reader[name] is not DBNull)
-            {
-                return Convert.ToInt32(reader[name]);
-            }
-        }
-
-        return 0;
-    }
-
-    private static string GetFirstString(SqlDataReader reader, params string[] names)
-    {
-        foreach (var name in names)
-        {
-            if (HasColumn(reader, name) && reader[name] is not DBNull)
-            {
-                return Convert.ToString(reader[name]) ?? string.Empty;
-            }
-        }
-
-        return string.Empty;
-    }
-
-    private static decimal GetFirstDecimal(SqlDataReader reader, params string[] names)
-    {
-        foreach (var name in names)
-        {
-            if (HasColumn(reader, name) && reader[name] is not DBNull)
-            {
-                return Convert.ToDecimal(reader[name]);
-            }
-        }
-
-        return 0m;
-    }
-
-    private static bool GetFirstBool(SqlDataReader reader, params string[] names)
-    {
-        foreach (var name in names)
-        {
-            if (HasColumn(reader, name) && reader[name] is not DBNull)
-            {
-                return Convert.ToBoolean(reader[name]);
-            }
-        }
-
-        return false;
-    }
-
-    private static DateTime? GetFirstDateTime(SqlDataReader reader, params string[] names)
-    {
-        foreach (var name in names)
-        {
-            if (HasColumn(reader, name) && reader[name] is not DBNull)
-            {
-                return Convert.ToDateTime(reader[name]);
-            }
-        }
-
-        return null;
-    }
-
-    private static bool HasColumn(SqlDataReader reader, string name)
-    {
-        for (var index = 0; index < reader.FieldCount; index++)
-        {
-            if (string.Equals(reader.GetName(index), name, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     private async Task<SqlConnection> OpenConnectionAsync(CancellationToken cancellationToken)
     {
-        var settings = await settingsProvider.GetSettingsAsync(cancellationToken);
-        var database = settings.Database;
-
-        if (string.IsNullOrWhiteSpace(database.Server) || string.IsNullOrWhiteSpace(database.Database))
+        var connectionString = configuration.GetConnectionString("GasStationDatabase");
+        if (string.IsNullOrWhiteSpace(connectionString))
         {
-            throw new InvalidOperationException("Capture servidor y base de datos en el modulo de configuracion.");
+            throw new InvalidOperationException(
+                "No existe ConnectionStrings:GasStationDatabase en la configuracion de LoadManagerApi.");
         }
 
-        var builder = new SqlConnectionStringBuilder
-        {
-            DataSource = database.Server,
-            InitialCatalog = database.Database,
-            UserID = database.UserId,
-            Password = database.Password,
-            Encrypt = database.Encrypt,
-            TrustServerCertificate = database.TrustServerCertificate,
-            ConnectTimeout = database.ConnectionTimeoutSeconds
-        };
-
-        var connection = new SqlConnection(builder.ConnectionString);
+        var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
         return connection;
     }
@@ -531,74 +438,35 @@ public sealed class GasStationDatabaseService(
             .ToArray();
     }
 
-    private async Task EnsureRequiredStoredProceduresAsync(
-        SqlConnection connection,
-        CancellationToken cancellationToken)
-    {
-        foreach (var (objectName, scriptPath) in StoredProcedureScripts)
-        {
-            if (await DatabaseObjectExistsAsync(connection, objectName, cancellationToken))
-            {
-                continue;
-            }
-
-            var script = await ReadPackagedScriptAsync(scriptPath, cancellationToken);
-            await using var command = new SqlCommand(script, connection)
-            {
-                CommandType = CommandType.Text
-            };
-
-            await command.ExecuteNonQueryAsync(cancellationToken);
-
-            await LogAndReturnAsync(new ConsoleCommandResult
-            {
-                IsSuccess = true,
-                CommandName = "database",
-                RequestFrame = $"CREATE {objectName} FROM {scriptPath}",
-                ResponseFrame = "OK",
-                UserMessage = $"Se creo el procedimiento requerido {objectName}."
-            }, cancellationToken);
-        }
-    }
-
-    private static async Task<bool> DatabaseObjectExistsAsync(
-        SqlConnection connection,
-        string objectName,
-        CancellationToken cancellationToken)
-    {
-        await using var command = new SqlCommand(
-            "SELECT CASE WHEN OBJECT_ID(@objectName, 'P') IS NULL THEN 0 ELSE 1 END",
-            connection);
-        command.Parameters.Add("@objectName", SqlDbType.NVarChar, 256).Value = objectName;
-
-        return Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken)) == 1;
-    }
-
-    private static async Task<string> ReadPackagedScriptAsync(
-        string scriptPath,
-        CancellationToken cancellationToken)
-    {
-        await using var stream = await FileSystem.OpenAppPackageFileAsync(scriptPath);
-        using var reader = new StreamReader(stream);
-        return await reader.ReadToEndAsync(cancellationToken);
-    }
-
     private async Task<ConsoleCommandResult> LogAndReturnAsync(
         ConsoleCommandResult result,
         CancellationToken cancellationToken)
     {
-        var logPath = await consoleLogService.WriteAsync(result, cancellationToken);
-
-        return new ConsoleCommandResult
+        if (result.IsSuccess)
         {
-            IsSuccess = result.IsSuccess,
-            UserMessage = result.UserMessage,
-            CommandName = result.CommandName,
-            RequestFrame = result.RequestFrame,
-            ResponseFrame = result.ResponseFrame,
-            TechnicalMessage = result.TechnicalMessage,
-            LogPath = logPath
-        };
+            await logService.WriteAsync(new ApiLogEntry
+            {
+                Level = "Success",
+                Service = nameof(GasStationService),
+                Message = result.UserMessage,
+                RequestBody = result.RequestFrame,
+                ResponseBody = result.ResponseFrame
+            }, cancellationToken);
+        }
+        else
+        {
+            await logService.WriteAsync(new ApiLogEntry
+            {
+                Level = "Error",
+                Service = nameof(GasStationService),
+                Message = result.UserMessage,
+                RequestBody = result.RequestFrame,
+                ResponseBody = result.ResponseFrame,
+                Exception = result.TechnicalMessage
+            }, cancellationToken);
+        }
+
+        return result;
     }
 
     private static ConsoleCommandResult CreateErrorResult(

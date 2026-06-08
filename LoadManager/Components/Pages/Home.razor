@@ -2,10 +2,9 @@
 @page "/despacho"
 @implements IAsyncDisposable
 @using System.Globalization
-@inject IGasStationConsoleClient ConsoleClient
-@inject IAppSettingsProvider SettingsProvider
-@inject IGasStationDatabaseService DatabaseService
-@inject IConnectionValidationState ConnectionState
+@inject IGasStationService ConsoleClient
+@inject IAppSettingsService SettingsProvider
+@inject IConnectionValidationService ConnectionState
 @inject IJSRuntime JsRuntime
 
 <section class="console-shell">
@@ -353,8 +352,6 @@
     private const string AvailableImage = "images/dispensers/autorizado.png";
     private const string HoseLiftedImage = "images/dispensers/llamando.png";
     private const string OfflineImage = "images/dispensers/fuera-de-linea.png";
-    private const decimal FullTankProgrammedAmount = 9990m;
-
     private readonly CancellationTokenSource pageCancellation = new();
     private CancellationTokenSource? dispatchCancellation;
     private CancellationTokenSource? authorizationCountdownCancellation;
@@ -374,11 +371,17 @@
     private string? amountValue;
     private int amountInputRenderKey;
     private string? productLoadMessage;
-    private decimal amountLimit = 9999m;
-    private decimal litersLimit = 500m;
-    private int quantityDecimals = 2;
-    private int authorizationCountdownSeconds = 45;
-    private int configuredDispenserCount = 2;
+    private decimal amountLimit;
+    private decimal litersLimit;
+    private decimal fullTankProgrammedAmount;
+    private int quantityDecimals;
+    private int authorizationCountdownSeconds;
+    private int authorizationWarningSeconds;
+    private int authorizationPollingMilliseconds;
+    private int fuelingPollingMilliseconds;
+    private int hoseRestorePollingMilliseconds;
+    private int toastDurationMilliseconds;
+    private int configuredDispenserCount;
     private int remainingAuthorizationSeconds;
     private int? authorizedDispenserForCountdown;
     private bool countdownWarningShown;
@@ -460,28 +463,24 @@
     protected override async Task OnInitializedAsync()
     {
         var settings = await SettingsProvider.GetSettingsAsync(pageCancellation.Token);
-        amountLimit = settings.AppConfiguration.LimiteImporte > 0
-            ? settings.AppConfiguration.LimiteImporte
-            : 9999m;
-        litersLimit = settings.AppConfiguration.LimiteLitros > 0
-            ? settings.AppConfiguration.LimiteLitros
-            : 500m;
-        quantityDecimals = settings.AppConfiguration.QuantityDecimals >= 0
-            ? settings.AppConfiguration.QuantityDecimals
-            : 2;
-        authorizationCountdownSeconds = settings.AppConfiguration.AuthorizationCountdownSeconds > 0
-            ? settings.AppConfiguration.AuthorizationCountdownSeconds
-            : 45;
-        configuredDispenserCount = settings.AppConfiguration.DispenserCount > 0
-            ? settings.AppConfiguration.DispenserCount
-            : 2;
+        amountLimit = settings.AppConfiguration.LimiteImporte;
+        litersLimit = settings.AppConfiguration.LimiteLitros;
+        fullTankProgrammedAmount = settings.AppConfiguration.CantidadTanqueLleno;
+        quantityDecimals = settings.AppConfiguration.QuantityDecimals;
+        authorizationCountdownSeconds = settings.AppConfiguration.AuthorizationCountdownSeconds;
+        authorizationWarningSeconds = settings.AppConfiguration.AuthorizationWarningSeconds;
+        authorizationPollingMilliseconds = settings.AppConfiguration.AuthorizationPollingMilliseconds;
+        fuelingPollingMilliseconds = settings.AppConfiguration.FuelingPollingMilliseconds;
+        hoseRestorePollingMilliseconds = settings.AppConfiguration.HoseRestorePollingMilliseconds;
+        toastDurationMilliseconds = settings.AppConfiguration.ToastDurationMilliseconds;
+        configuredDispenserCount = settings.AppConfiguration.DispenserCount;
     }
 
     private async Task LoadDispatchTypesAsync()
     {
         dispatchTypes.Clear();
 
-        var databaseTypes = await DatabaseService.GetDispatchTypesAsync(pageCancellation.Token);
+        var databaseTypes = await ConsoleClient.GetDispatchTypesAsync(pageCancellation.Token);
         foreach (var type in databaseTypes)
         {
             dispatchTypes.Add(new DispatchTypeViewModel(type.Id, type.Description));
@@ -512,7 +511,7 @@
 
         try
         {
-            var databaseTask = DatabaseService.CheckConnectionAsync(pageCancellation.Token);
+            var databaseTask = ConsoleClient.CheckDatabaseConnectionAsync(pageCancellation.Token);
             var tcpTask = ConsoleClient.IsConnected
                 ? Task.FromResult(new ConsoleAvailabilityResult
                 {
@@ -558,9 +557,7 @@
             try
             {
                 var currentSettings = await SettingsProvider.GetSettingsAsync(pageCancellation.Token);
-                configuredDispenserCount = currentSettings.AppConfiguration.DispenserCount > 0
-                    ? currentSettings.AppConfiguration.DispenserCount
-                    : 2;
+                configuredDispenserCount = currentSettings.AppConfiguration.DispenserCount;
                 LoadConfiguredDispensers();
                 await RefreshDispenserSummaryAsync(pageCancellation.Token);
                 blockedHoseDispenser = GetFirstLiftedHoseDispenser();
@@ -641,9 +638,7 @@
         try
         {
             var settings = await SettingsProvider.GetSettingsAsync(pageCancellation.Token);
-            configuredDispenserCount = settings.AppConfiguration.DispenserCount > 0
-                ? settings.AppConfiguration.DispenserCount
-                : 2;
+            configuredDispenserCount = settings.AppConfiguration.DispenserCount;
 
             LoadConfiguredDispensers();
             await RefreshDispenserSummaryAsync(pageCancellation.Token);
@@ -679,7 +674,7 @@
             if (int.TryParse(commandNumber, out var dispenserNumber) &&
                 int.TryParse(statusCode, out var parsedStatus))
             {
-                _ = DatabaseService.UpdateDispenserStatusAsync(dispenserNumber, parsedStatus, cancellationToken);
+                _ = ConsoleClient.UpdateDispenserStatusAsync(dispenserNumber, parsedStatus, cancellationToken);
             }
         }
     }
@@ -737,7 +732,7 @@
 
         if (SelectedDispatchType?.IsFull == true)
         {
-            amountValue = FormatQuantity(FullTankProgrammedAmount);
+            amountValue = FormatQuantity(fullTankProgrammedAmount);
         }
 
         isSelectingDispenser = true;
@@ -764,7 +759,7 @@
             return;
         }
 
-        var dispenserProducts = await DatabaseService.GetDispenserProductsAsync(dispenserNumber, cancellationToken);
+        var dispenserProducts = await ConsoleClient.GetDispenserProductsAsync(dispenserNumber, cancellationToken);
         foreach (var product in dispenserProducts)
         {
             products.Add(new FuelProductViewModel(
@@ -796,7 +791,7 @@
         selectedDispatchTypeId = dispatchType.Id;
         if (dispatchType.IsFull)
         {
-            amountValue = FormatQuantity(FullTankProgrammedAmount);
+            amountValue = FormatQuantity(fullTankProgrammedAmount);
             return;
         }
 
@@ -892,6 +887,7 @@
             var authorizationRequest = new FuelAuthorizationRequest
             {
                 Tpv = settings.AppConfiguration.Tpv,
+                TipoVenta = settings.AppConfiguration.TipoVenta,
                 Dispensario = dispenser,
                 Manguera = hoseNumber,
                 Producto = selectedFuel.ProductCode,
@@ -900,14 +896,12 @@
                 Programado = amount
             };
 
-            var folio = await DatabaseService.RegisterAuthorizationAsync(
+            var folio = await ConsoleClient.RegisterAuthorizationAsync(
                 authorizationRequest,
                 dispatchCancellation.Token);
             currentDispatchFolio = folio;
 
-            var interfaceType = string.IsNullOrWhiteSpace(settings.AppConfiguration.TipoInterfaz)
-                ? "G"
-                : settings.AppConfiguration.TipoInterfaz.Trim();
+            var interfaceType = settings.AppConfiguration.TipoInterfaz.Trim();
             var requestFrame = BuildAuthorizationFrame(settings.AppConfiguration.Tpv, dispenser, hoseNumber, amount, loadType, folio, interfaceType);
             ShowInfoToast("Enviando peticion...");
             await InvokeAsync(StateHasChanged);
@@ -1049,7 +1043,7 @@
         {
             while (isHoseLiftedBlockVisible)
             {
-                await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+                await Task.Delay(hoseRestorePollingMilliseconds, cancellationToken);
                 await RefreshDispenserSummaryAsync(cancellationToken);
 
                 if (!HasLiftedHose(blockedHoseDispenser))
@@ -1119,7 +1113,7 @@
 
             while (remainingAuthorizationSeconds > 0)
             {
-                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+                await Task.Delay(authorizationPollingMilliseconds, cancellationToken);
                 remainingAuthorizationSeconds--;
                 await QueryAuthorizedDispenserDetailAsync(cancellationToken);
 
@@ -1128,7 +1122,9 @@
                     break;
                 }
 
-                var warningThreshold = Math.Min(10, Math.Max(1, authorizationCountdownSeconds / 4));
+                var warningThreshold = Math.Min(
+                    authorizationWarningSeconds,
+                    Math.Max(1, authorizationCountdownSeconds / 4));
                 if (!countdownWarningShown && remainingAuthorizationSeconds <= warningThreshold)
                 {
                     countdownWarningShown = true;
@@ -1182,7 +1178,7 @@
         {
             while (isFueling && currentStep == 3 && dispatchTicket is null)
             {
-                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+                await Task.Delay(fuelingPollingMilliseconds, cancellationToken);
                 await QueryAuthorizedDispenserDetailAsync(cancellationToken);
             }
         }
@@ -1979,7 +1975,7 @@
     {
         try
         {
-            await Task.Delay(3500, pageCancellation.Token);
+            await Task.Delay(toastDurationMilliseconds, pageCancellation.Token);
         }
         catch (OperationCanceledException)
         {

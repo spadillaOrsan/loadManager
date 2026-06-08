@@ -1,0 +1,19 @@
+@LoadManagerApi_HostAddress = http://localhost:5047
+
+GET {{LoadManagerApi_HostAddress}}/api/database/health
+Accept: application/json
+
+###
+
+GET {{LoadManagerApi_HostAddress}}/api/dispatch-types
+Accept: application/json
+
+###
+
+GET {{LoadManagerApi_HostAddress}}/api/dispensers/1/products
+Accept: application/json
+
+###
+
+GET {{LoadManagerApi_HostAddress}}/api/history
+Accept: application/json

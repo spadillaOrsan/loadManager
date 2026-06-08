@@ -1,8 +1,7 @@
 @page "/configuracion"
-@inject IAppSettingsProvider SettingsProvider
-@inject IGasStationConsoleClient ConsoleClient
-@inject IGasStationDatabaseService DatabaseService
-@inject IConnectionValidationState ConnectionState
+@inject IAppSettingsService SettingsProvider
+@inject IGasStationService ConsoleClient
+@inject IConnectionValidationService ConnectionState
 @inject NavigationManager NavigationManager
 
 <PageTitle>Configuracion</PageTitle>
@@ -22,7 +21,7 @@
 
         <label class="settings-field">
             <span>IP destino</span>
-            <input type="text" @bind="ipAddress" placeholder="172.20.11.40" />
+            <input type="text" @bind="ipAddress" placeholder="IP del destino" />
         </label>
 
         <label class="settings-field">
@@ -48,6 +47,36 @@
         </label>
 
         <label class="settings-field">
+            <span>Tipo de venta</span>
+            <input type="number" @bind="tipoVenta" min="1" />
+        </label>
+
+        <label class="settings-field">
+            <span>Tipo de interfaz</span>
+            <input type="text" @bind="tipoInterfaz" />
+        </label>
+
+        <label class="settings-field">
+            <span>Limite de importe</span>
+            <input type="number" @bind="limiteImporte" min="0.01" step="0.01" />
+        </label>
+
+        <label class="settings-field">
+            <span>Limite de litros</span>
+            <input type="number" @bind="limiteLitros" min="0.01" step="0.01" />
+        </label>
+
+        <label class="settings-field">
+            <span>Cantidad para tanque lleno</span>
+            <input type="number" @bind="cantidadTanqueLleno" min="0.01" step="0.01" />
+        </label>
+
+        <label class="settings-field">
+            <span>Decimales de cantidad</span>
+            <input type="number" @bind="quantityDecimals" min="0" max="6" />
+        </label>
+
+        <label class="settings-field">
             <span>Tiempo instrucciones (segundos)</span>
             <input type="number" @bind="authorizationCountdownSeconds" min="1" />
         </label>
@@ -60,38 +89,18 @@
 
     <section class="settings-panel">
         <div class="panel-heading">
-            <h2>Base de datos</h2>
+            <h2>LoadManager API</h2>
             <span class="@GetDatabaseIndicatorClass()">@GetDatabaseIndicatorText()</span>
         </div>
 
         <label class="settings-field">
-            <span>Servidor</span>
-            <input type="text" @bind="dbServer" placeholder="172.2.1.100" />
+            <span>URL de la API</span>
+            <input type="text" @bind="apiBaseUrl" placeholder="URL de LoadManagerApi" />
         </label>
 
         <label class="settings-field">
-            <span>Base de datos</span>
-            <input type="text" @bind="dbName" placeholder="dbctg" />
-        </label>
-
-        <label class="settings-field">
-            <span>Usuario SQL</span>
-            <input type="text" @bind="dbUser" />
-        </label>
-
-        <label class="settings-field">
-            <span>Password SQL</span>
-            <input type="password" @bind="dbPassword" />
-        </label>
-
-        <label class="settings-field settings-check">
-            <span>Encriptar conexion</span>
-            <input type="checkbox" @bind="dbEncrypt" />
-        </label>
-
-        <label class="settings-field settings-check">
-            <span>Confiar certificado</span>
-            <input type="checkbox" @bind="dbTrustServerCertificate" />
+            <span>Tiempo de espera (segundos)</span>
+            <input type="number" @bind="apiRequestTimeoutSeconds" min="1" />
         </label>
 
         <div class="settings-actions">
@@ -114,16 +123,19 @@
     private AppSettings? settings;
     private string ipAddress = string.Empty;
     private int port;
-    private int tpv = 88;
-    private int usuario = 1;
-    private int authorizationCountdownSeconds = 45;
-    private int dispenserCount = 2;
-    private string dbServer = string.Empty;
-    private string dbName = string.Empty;
-    private string dbUser = string.Empty;
-    private string dbPassword = string.Empty;
-    private bool dbEncrypt;
-    private bool dbTrustServerCertificate = true;
+    private int tpv;
+    private int usuario;
+    private int tipoVenta;
+    private string tipoInterfaz = string.Empty;
+    private decimal limiteImporte;
+    private decimal limiteLitros;
+    private decimal cantidadTanqueLleno;
+    private int quantityDecimals;
+    private int authorizationCountdownSeconds;
+    private int dispenserCount;
+    private string apiBaseUrl = string.Empty;
+    private int apiRequestTimeoutSeconds;
+    private int toastDurationMilliseconds;
     private bool isSaving;
     private string connectionStatus = "Sin validar";
     private string databaseStatus = "Sin validar";
@@ -140,7 +152,10 @@
             {
                 IpAddress = current.GasStationConsole.IpAddress,
                 Port = current.GasStationConsole.Port,
+                ConnectionTimeoutMilliseconds = current.GasStationConsole.ConnectionTimeoutMilliseconds,
                 ReadTimeoutMilliseconds = current.GasStationConsole.ReadTimeoutMilliseconds,
+                ReceiveBufferSize = current.GasStationConsole.ReceiveBufferSize,
+                MaxSendAttempts = current.GasStationConsole.MaxSendAttempts,
                 EncodingName = current.GasStationConsole.EncodingName,
                 Commands = new Dictionary<string, string>(current.GasStationConsole.Commands)
             },
@@ -148,29 +163,29 @@
             {
                 Tpv = current.AppConfiguration.Tpv,
                 Usuario = current.AppConfiguration.Usuario,
+                TipoVenta = current.AppConfiguration.TipoVenta,
                 TipoInterfaz = current.AppConfiguration.TipoInterfaz,
                 LimiteImporte = current.AppConfiguration.LimiteImporte,
                 LimiteLitros = current.AppConfiguration.LimiteLitros,
+                CantidadTanqueLleno = current.AppConfiguration.CantidadTanqueLleno,
                 QuantityDecimals = current.AppConfiguration.QuantityDecimals,
                 AuthorizationCountdownSeconds = current.AppConfiguration.AuthorizationCountdownSeconds,
+                AuthorizationWarningSeconds = current.AppConfiguration.AuthorizationWarningSeconds,
+                AuthorizationPollingMilliseconds = current.AppConfiguration.AuthorizationPollingMilliseconds,
+                FuelingPollingMilliseconds = current.AppConfiguration.FuelingPollingMilliseconds,
+                HoseRestorePollingMilliseconds = current.AppConfiguration.HoseRestorePollingMilliseconds,
+                ToastDurationMilliseconds = current.AppConfiguration.ToastDurationMilliseconds,
                 DispenserCount = current.AppConfiguration.DispenserCount,
                 ConfigurationPasswordHash = current.AppConfiguration.ConfigurationPasswordHash
             },
-            Database = new DatabaseOptions
+            Api = new ApiOptions
             {
-                Server = current.Database.Server,
-                Database = current.Database.Database,
-                UserId = current.Database.UserId,
-                Password = current.Database.Password,
-                Encrypt = current.Database.Encrypt,
-                TrustServerCertificate = current.Database.TrustServerCertificate,
-                ConnectionTimeoutSeconds = current.Database.ConnectionTimeoutSeconds
+                BaseUrl = current.Api.BaseUrl,
+                RequestTimeoutSeconds = current.Api.RequestTimeoutSeconds
             },
             ConsoleLogs = new ConsoleLogOptions
             {
-                BasePath = current.ConsoleLogs.BasePath,
-                SuccessFolderName = current.ConsoleLogs.SuccessFolderName,
-                ErrorFolderName = current.ConsoleLogs.ErrorFolderName
+                BasePath = current.ConsoleLogs.BasePath
             }
         };
 
@@ -178,18 +193,17 @@
         port = settings.GasStationConsole.Port;
         tpv = settings.AppConfiguration.Tpv;
         usuario = settings.AppConfiguration.Usuario;
-        authorizationCountdownSeconds = settings.AppConfiguration.AuthorizationCountdownSeconds > 0
-            ? settings.AppConfiguration.AuthorizationCountdownSeconds
-            : 45;
-        dispenserCount = settings.AppConfiguration.DispenserCount > 0
-            ? settings.AppConfiguration.DispenserCount
-            : 2;
-        dbServer = settings.Database.Server;
-        dbName = settings.Database.Database;
-        dbUser = settings.Database.UserId;
-        dbPassword = settings.Database.Password;
-        dbEncrypt = settings.Database.Encrypt;
-        dbTrustServerCertificate = settings.Database.TrustServerCertificate;
+        tipoVenta = settings.AppConfiguration.TipoVenta;
+        tipoInterfaz = settings.AppConfiguration.TipoInterfaz;
+        limiteImporte = settings.AppConfiguration.LimiteImporte;
+        limiteLitros = settings.AppConfiguration.LimiteLitros;
+        cantidadTanqueLleno = settings.AppConfiguration.CantidadTanqueLleno;
+        quantityDecimals = settings.AppConfiguration.QuantityDecimals;
+        authorizationCountdownSeconds = settings.AppConfiguration.AuthorizationCountdownSeconds;
+        dispenserCount = settings.AppConfiguration.DispenserCount;
+        apiBaseUrl = settings.Api.BaseUrl;
+        apiRequestTimeoutSeconds = settings.Api.RequestTimeoutSeconds;
+        toastDurationMilliseconds = settings.AppConfiguration.ToastDurationMilliseconds;
         databaseIsConnected = ConnectionState.DatabaseIsConnected;
         databaseStatus = ConnectionState.DatabaseStatus;
     }
@@ -220,14 +234,14 @@
             var result = await ConsoleClient.ConnectAsync();
             connectionStatus = result.IsAvailable ? "Conectado" : "Sin conexion";
 
-            var databaseResult = await DatabaseService.CheckConnectionAsync();
+            var databaseResult = await ConsoleClient.CheckDatabaseConnectionAsync();
             ConnectionState.SetDatabaseResult(databaseResult);
             SyncDatabaseState();
 
             var allConnected = result.IsAvailable && databaseResult.IsSuccess;
             var message = allConnected
-                ? "TCP/IP y base de datos conectados correctamente."
-                : "Revise la conexion TCP/IP o la base de datos.";
+                ? "TCP/IP, API y base de datos conectados correctamente."
+                : "Revise la conexion TCP/IP, la API o la base de datos.";
             ShowToast(message, allConnected);
         }
         finally
@@ -249,22 +263,43 @@
             return false;
         }
 
+        if (!Uri.TryCreate(apiBaseUrl, UriKind.Absolute, out var apiUri)
+            || (apiUri.Scheme != Uri.UriSchemeHttp && apiUri.Scheme != Uri.UriSchemeHttps))
+        {
+            ShowToast("Capture una URL valida para LoadManagerApi.", false);
+            return false;
+        }
+
+        if (tpv <= 0
+            || usuario <= 0
+            || tipoVenta <= 0
+            || string.IsNullOrWhiteSpace(tipoInterfaz)
+            || limiteImporte <= 0
+            || limiteLitros <= 0
+            || cantidadTanqueLleno <= 0
+            || quantityDecimals is < 0 or > 6
+            || authorizationCountdownSeconds <= 0
+            || dispenserCount <= 0
+            || apiRequestTimeoutSeconds <= 0)
+        {
+            ShowToast("Revise los valores de configuracion. Deben ser mayores que cero y estar completos.", false);
+            return false;
+        }
+
         settings.GasStationConsole.IpAddress = ipAddress.Trim();
         settings.GasStationConsole.Port = port;
         settings.AppConfiguration.Tpv = tpv;
         settings.AppConfiguration.Usuario = usuario;
-        settings.AppConfiguration.AuthorizationCountdownSeconds = authorizationCountdownSeconds > 0
-            ? authorizationCountdownSeconds
-            : 45;
-        settings.AppConfiguration.DispenserCount = dispenserCount > 0
-            ? dispenserCount
-            : 2;
-        settings.Database.Server = dbServer.Trim();
-        settings.Database.Database = dbName.Trim();
-        settings.Database.UserId = dbUser.Trim();
-        settings.Database.Password = dbPassword;
-        settings.Database.Encrypt = dbEncrypt;
-        settings.Database.TrustServerCertificate = dbTrustServerCertificate;
+        settings.AppConfiguration.TipoVenta = tipoVenta;
+        settings.AppConfiguration.TipoInterfaz = tipoInterfaz.Trim();
+        settings.AppConfiguration.LimiteImporte = limiteImporte;
+        settings.AppConfiguration.LimiteLitros = limiteLitros;
+        settings.AppConfiguration.CantidadTanqueLleno = cantidadTanqueLleno;
+        settings.AppConfiguration.QuantityDecimals = quantityDecimals;
+        settings.AppConfiguration.AuthorizationCountdownSeconds = authorizationCountdownSeconds;
+        settings.AppConfiguration.DispenserCount = dispenserCount;
+        settings.Api.BaseUrl = apiBaseUrl.TrimEnd('/') + "/";
+        settings.Api.RequestTimeoutSeconds = apiRequestTimeoutSeconds;
 
         await SettingsProvider.SaveSettingsAsync(settings);
         return true;
@@ -341,7 +376,7 @@
 
     private async Task ClearToastAsync()
     {
-        await Task.Delay(3500);
+        await Task.Delay(toastDurationMilliseconds);
         toastMessage = null;
         await InvokeAsync(StateHasChanged);
     }

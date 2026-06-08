@@ -1,8 +1,9 @@
+using LoadManager.Contracts.Models;
 using LoadManager.Models;
 
 namespace LoadManager.Services.Interfaces;
 
-public interface IGasStationConsoleClient
+public interface IGasStationService
 {
     bool IsConnected { get; }
 
@@ -21,4 +22,26 @@ public interface IGasStationConsoleClient
     Task<ConsoleCommandResult> SendDispenserDetailAsync(string dispenserNumber, CancellationToken cancellationToken = default);
 
     Task<ConsoleCommandResult> SendDispenserStatusAsync(string dispenserNumber, CancellationToken cancellationToken = default);
+
+    Task<ConsoleCommandResult> CheckDatabaseConnectionAsync(CancellationToken cancellationToken = default);
+
+    Task<int> RegisterAuthorizationAsync(
+        FuelAuthorizationRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task UpdateDispenserStatusAsync(
+        int dispenser,
+        int status,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<DispenserProductOption>> GetDispenserProductsAsync(
+        int dispenser,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<DispatchTypeOption>> GetDispatchTypesAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<DispatchHistoryRecord>> GetDispatchHistoryAsync(
+        string? folio,
+        CancellationToken cancellationToken = default);
 }

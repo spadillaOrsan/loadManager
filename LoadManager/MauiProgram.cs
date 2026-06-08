@@ -17,12 +17,12 @@ namespace LoadManager
                 });
 
             builder.Services.AddMauiBlazorWebView();
-            builder.Services.AddSingleton<IAppSettingsProvider, AppSettingsProvider>();
+            builder.Services.AddSingleton<IAppSettingsService, AppSettingsService>();
             builder.Services.AddSingleton<IConsoleLogService, ConsoleLogService>();
-            builder.Services.AddSingleton<IGasStationConsoleClient, GasStationConsoleClient>();
-            builder.Services.AddSingleton<IGasStationDatabaseService, GasStationDatabaseService>();
+            builder.Services.AddSingleton<HttpClient>();
+            builder.Services.AddSingleton<IGasStationService, GasStationService>();
             builder.Services.AddSingleton<IReceiptPrinterService, ReceiptPrinterService>();
-            builder.Services.AddSingleton<IConnectionValidationState, ConnectionValidationState>();
+            builder.Services.AddSingleton<IConnectionValidationService, ConnectionValidationService>();
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();

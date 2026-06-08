@@ -1,10 +1,10 @@
-namespace LoadManager.Models;
+namespace LoadManager.Contracts.Models;
 
 public sealed class FuelAuthorizationRequest
 {
     public int Tpv { get; init; }
 
-    public int TipoVenta { get; init; } = 1;
+    public int TipoVenta { get; init; }
 
     public int Dispensario { get; init; }
 
@@ -12,7 +12,7 @@ public sealed class FuelAuthorizationRequest
 
     public int Producto { get; init; }
 
-    public int Usuario { get; init; } = 1;
+    public int Usuario { get; init; }
 
     public string Tarjeta { get; init; } = string.Empty;
 

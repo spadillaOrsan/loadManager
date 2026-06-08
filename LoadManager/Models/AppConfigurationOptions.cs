@@ -2,21 +2,35 @@ namespace LoadManager.Models;
 
 public sealed class AppConfigurationOptions
 {
-    public int Tpv { get; set; } = 88;
+    public int Tpv { get; set; }
 
-    public int Usuario { get; set; } = 1;
+    public int Usuario { get; set; }
 
-    public string TipoInterfaz { get; set; } = "G";
+    public int TipoVenta { get; set; }
 
-    public decimal LimiteImporte { get; set; } = 9999m;
+    public string TipoInterfaz { get; set; } = string.Empty;
 
-    public decimal LimiteLitros { get; set; } = 500m;
+    public decimal LimiteImporte { get; set; }
 
-    public int QuantityDecimals { get; set; } = 2;
+    public decimal LimiteLitros { get; set; }
 
-    public int AuthorizationCountdownSeconds { get; set; } = 45;
+    public decimal CantidadTanqueLleno { get; set; }
 
-    public int DispenserCount { get; set; } = 2;
+    public int QuantityDecimals { get; set; }
+
+    public int AuthorizationCountdownSeconds { get; set; }
+
+    public int AuthorizationWarningSeconds { get; set; }
+
+    public int AuthorizationPollingMilliseconds { get; set; }
+
+    public int FuelingPollingMilliseconds { get; set; }
+
+    public int HoseRestorePollingMilliseconds { get; set; }
+
+    public int ToastDurationMilliseconds { get; set; }
+
+    public int DispenserCount { get; set; }
 
     public string ConfigurationPasswordHash { get; set; } = string.Empty;
 }

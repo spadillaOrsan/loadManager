@@ -2,8 +2,8 @@
 @implements IAsyncDisposable
 @using System.Globalization
 @using System.Text
-@inject IGasStationConsoleClient ConsoleClient
-@inject IAppSettingsProvider SettingsProvider
+@inject IGasStationService ConsoleClient
+@inject IAppSettingsService SettingsProvider
 
 <PageTitle>Estado de dispensario</PageTitle>
 
@@ -165,6 +165,13 @@
     private string? lastResponse;
     private string? toastMessage;
     private string toastCss = "is-success";
+    private int toastDurationMilliseconds;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var settings = await SettingsProvider.GetSettingsAsync(pageCancellation.Token);
+        toastDurationMilliseconds = settings.AppConfiguration.ToastDurationMilliseconds;
+    }
 
     private async Task LoadDispensersFromSummaryAsync()
     {
@@ -264,13 +271,10 @@
     private async Task QueryDispenserAsync(DispenserStatusViewModel dispenser, string requestFrame)
     {
         lastRequest = requestFrame;
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(pageCancellation.Token);
-        timeout.CancelAfter(TimeSpan.FromSeconds(30));
-
         ConsoleCommandResult result;
         try
         {
-            result = await ConsoleClient.SendRawFrameAsync(lastRequest, timeout.Token);
+            result = await ConsoleClient.SendRawFrameAsync(lastRequest, pageCancellation.Token);
         }
         catch (OperationCanceledException)
         {
@@ -328,8 +332,7 @@
                 ? options.BasePath
                 : Path.Combine(AppContext.BaseDirectory, options.BasePath);
 
-            await LoadLogFolderAsync(basePath, options.SuccessFolderName, "Success", today);
-            await LoadLogFolderAsync(basePath, options.ErrorFolderName, "Error", today);
+            await LoadLogFolderAsync(basePath, today);
             todayLogFiles.Sort((left, right) => right.LastWriteTime.CompareTo(left.LastWriteTime));
         }
         catch (OperationCanceledException)
@@ -341,12 +344,12 @@
         }
     }
 
-    private async Task LoadLogFolderAsync(string basePath, string statusFolder, string title, DateTime date)
+    private async Task LoadLogFolderAsync(string basePath, DateTime date)
     {
         var folderPath = Path.Combine(
             basePath,
-            statusFolder,
-            date.ToString("yyyy-MM", CultureInfo.InvariantCulture),
+            date.ToString("yyyy", CultureInfo.InvariantCulture),
+            date.ToString("MM", CultureInfo.InvariantCulture),
             date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
 
         if (!Directory.Exists(folderPath))
@@ -359,7 +362,7 @@
             var content = await File.ReadAllTextAsync(filePath, Encoding.UTF8, pageCancellation.Token);
             var lastWriteTime = File.GetLastWriteTime(filePath);
             todayLogFiles.Add(new LogFileViewModel(
-                $"{title} - {Path.GetFileName(filePath)}",
+                Path.GetFileName(filePath),
                 filePath,
                 string.IsNullOrWhiteSpace(content) ? "(archivo sin contenido)" : FormatNewestLogEntriesFirst(content),
                 lastWriteTime));
@@ -480,7 +483,7 @@
     {
         try
         {
-            await Task.Delay(3500, pageCancellation.Token);
+            await Task.Delay(toastDurationMilliseconds, pageCancellation.Token);
         }
         catch (OperationCanceledException)
         {

@@ -6,9 +6,15 @@ public sealed class GasStationConsoleOptions
 
     public int Port { get; set; }
 
-    public int ReadTimeoutMilliseconds { get; set; } = 10000;
+    public int ConnectionTimeoutMilliseconds { get; set; }
 
-    public string EncodingName { get; set; } = "ASCII";
+    public int ReadTimeoutMilliseconds { get; set; }
+
+    public int ReceiveBufferSize { get; set; }
+
+    public int MaxSendAttempts { get; set; }
+
+    public string EncodingName { get; set; } = string.Empty;
 
     public Dictionary<string, string> Commands { get; set; } = [];
 }

@@ -39,6 +39,18 @@ html, body {
     --ua-muted: #667684;
 }
 
+.theme-black {
+    --ua-panel-bg: #101010;
+    --ua-panel-border: #353535;
+    --ua-panel-shadow: 0 14px 32px rgba(0, 0, 0, 0.55);
+    --ua-field-bg: #050505;
+    --ua-text: #ffffff;
+    --ua-muted: #d0d0d0;
+    background: #000000;
+    color: #ffffff;
+    min-height: 100vh;
+}
+
 .theme-dark main {
     background: #0f172a;
 }
@@ -49,6 +61,98 @@ html, body {
 
 .theme-light main {
     background: #f4f7f9;
+}
+
+.theme-black main {
+    background: #000000;
+}
+
+.theme-black .command-panel,
+.theme-black .response-panel,
+.theme-black .diagnostics-panel,
+.theme-black .start-panel,
+.theme-black .connection-panel,
+.theme-black .settings-panel,
+.theme-black .tester-panel,
+.theme-black .selected-status-panel,
+.theme-black .dispensers-panel,
+.theme-black .fuel-panel,
+.theme-black .amount-panel,
+.theme-black .quantity-panel,
+.theme-black .actions-panel,
+.theme-black .authorization-panel,
+.theme-black .ticket-panel,
+.theme-black .instruction-card,
+.theme-black .app-modal,
+.theme-black .dispenser-card,
+.theme-black .fuel-option,
+.theme-black .amount-mode,
+.theme-black .ticket-grid div,
+.theme-black .ticket-folio,
+.theme-black .countdown-display {
+    background: #101010;
+    border-color: #353535;
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.55);
+    color: #ffffff;
+}
+
+.theme-black .console-header h1,
+.theme-black .panel-heading h2,
+.theme-black .panel-heading span,
+.theme-black .startup-status,
+.theme-black .connection-panel strong,
+.theme-black .connection-panel span,
+.theme-black .settings-field span,
+.theme-black .selected-status-panel strong,
+.theme-black .selected-status-panel span,
+.theme-black .selected-status-panel small,
+.theme-black .empty-message,
+.theme-black .dispatch-instruction strong,
+.theme-black .dispatch-instruction span,
+.theme-black .dispatch-instruction small,
+.theme-black .ticket-grid strong,
+.theme-black .ticket-grid span,
+.theme-black .ticket-folio strong,
+.theme-black .ticket-folio span,
+.theme-black .fueling-note,
+.theme-black .dispenser-status,
+.theme-black .fuel-option-text strong,
+.theme-black .fuel-option-text small,
+.theme-black .instruction-item strong {
+    color: #ffffff;
+}
+
+.theme-black .amount-input,
+.theme-black .amount-input input,
+.theme-black .settings-field input,
+.theme-black .settings-field select,
+.theme-black .settings-field textarea,
+.theme-black .tester-field input,
+.theme-black .tester-field select,
+.theme-black .tester-field textarea {
+    background: #050505;
+    border-color: #555555;
+    color: #ffffff;
+}
+
+.theme-black input::placeholder,
+.theme-black textarea::placeholder {
+    color: #a8a8a8;
+}
+
+.theme-black .dispatch-step {
+    color: #d0d0d0;
+}
+
+.theme-black .dispatch-step::before,
+.theme-black .dispatch-step::after {
+    background: #444444;
+}
+
+.theme-black .step-marker {
+    background: #151515;
+    border-color: #555555;
+    color: #ffffff;
 }
 
 *, *::before, *::after {

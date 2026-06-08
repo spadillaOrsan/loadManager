@@ -2,7 +2,7 @@ using LoadManager.Models;
 
 namespace LoadManager.Services.Interfaces;
 
-public interface IAppSettingsProvider
+public interface IAppSettingsService
 {
     Task<AppSettings> GetSettingsAsync(CancellationToken cancellationToken = default);
 

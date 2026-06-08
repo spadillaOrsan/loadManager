@@ -1,8 +1,8 @@
-using LoadManager.Models;
+using LoadManager.Contracts.Models;
 
 namespace LoadManager.Services.Interfaces;
 
-public interface IConnectionValidationState
+public interface IConnectionValidationService
 {
     bool? DatabaseIsConnected { get; }
 

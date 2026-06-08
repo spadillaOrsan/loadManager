@@ -1,26 +1,11 @@
 @page "/historial"
 @using System.Globalization
 @using System.Net
-@inject IGasStationDatabaseService DatabaseService
+@inject IGasStationService GasStationService
 @inject IJSRuntime JsRuntime
 @inject IReceiptPrinterService ReceiptPrinter
 
 <section class="console-shell history-shell @(isLoading ? "is-busy" : string.Empty)" aria-busy="@isLoading">
-    <section class="history-summary">
-        <article class="history-summary-card">
-            <span>Autorizadas</span>
-            <strong>@AuthorizedCount</strong>
-        </article>
-        <article class="history-summary-card">
-            <span>Canceladas</span>
-            <strong>@CanceledCount</strong>
-        </article>
-        <article class="history-summary-card">
-            <span>Cerradas</span>
-            <strong>@ClosedCount</strong>
-        </article>
-    </section>
-
     <section class="settings-panel history-panel">
         <div class="panel-heading">
             <h2>Historial de cargas</h2>
@@ -201,7 +186,7 @@
 
         try
         {
-            records = (await DatabaseService.GetDispatchHistoryAsync(folioSearch)).ToList();
+            records = (await GasStationService.GetDispatchHistoryAsync(folioSearch)).ToList();
         }
         finally
         {
