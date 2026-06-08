@@ -20,10 +20,6 @@ public sealed class FuelAuthorizationRequest
 
     public decimal Programado { get; init; }
 
-    public int Folio { get; init; }
-
-    public int FolioSecuencia { get; init; }
-
     public string Cliente { get; init; } = string.Empty;
 
     public string BandaMagnetica { get; init; } = string.Empty;

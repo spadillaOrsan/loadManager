@@ -1,7 +1,8 @@
-using System.Data;
 using LoadManager.Models;
 using LoadManager.Services.Interfaces;
 using Microsoft.Data.SqlClient;
+using System.Data;
+using System.Text.Json;
 
 namespace LoadManager.Services;
 
@@ -15,8 +16,19 @@ public sealed class GasStationDatabaseService(
         "dbo.tblProductos",
         "dbo.tblTipoDespacho",
         "dbo.tblDispensarios",
-        "dbo.sp_UA_foliosecuencia_app",
-        "dbo.sp_UA_Bitacora_APP"
+        "dbo.tblParametros",
+        "dbo.tblBitacora",
+        "dbo.tblTiposVenta",
+        "dbo.tblUsuarioIsla",
+        "dbo.tblConsultasUG",
+        "dbo.sp_folio_app",
+        "dbo.sp_bitacora_app"
+    ];
+
+    private static readonly (string ObjectName, string ScriptPath)[] StoredProcedureScripts =
+    [
+        ("dbo.sp_folio_app", "Script/sp_folio_app.sql"),
+        ("dbo.sp_bitacora_app", "Script/sp_bitacora_app.sql")
     ];
 
     public async Task<ConsoleCommandResult> CheckConnectionAsync(CancellationToken cancellationToken = default)
@@ -24,6 +36,7 @@ public sealed class GasStationDatabaseService(
         try
         {
             await using var connection = await OpenConnectionAsync(cancellationToken);
+            await EnsureRequiredStoredProceduresAsync(connection, cancellationToken);
             var missingObjects = await GetMissingRequiredObjectsAsync(connection, cancellationToken);
             if (missingObjects.Count > 0)
             {
@@ -58,26 +71,60 @@ public sealed class GasStationDatabaseService(
         }
     }
 
-    public async Task<int> GetNextFolioAsync(CancellationToken cancellationToken = default)
+    public async Task<int> RegisterAuthorizationAsync(
+        FuelAuthorizationRequest request,
+        CancellationToken cancellationToken = default)
     {
         try
         {
             await using var connection = await OpenConnectionAsync(cancellationToken);
-            await using var command = new SqlCommand("sp_UA_foliosecuencia_app", connection)
+            await EnsureRequiredStoredProceduresAsync(connection, cancellationToken);
+
+            var requestJson = JsonSerializer.Serialize(new
+            {
+                intTPV = request.Tpv,
+                intTipoVenta = request.TipoVenta,
+                intDispensario = request.Dispensario,
+                intManguera = request.Manguera,
+                intProducto = request.Producto,
+                intUsuario = request.Usuario,
+                strTarjeta = request.Tarjeta,
+                intTipoProgramado = request.TipoProgramado,
+                dblProgramado = request.Programado,
+                strCliente = request.Cliente,
+                strBandaMagnetica = request.BandaMagnetica,
+                strVehiculo = request.Vehiculo,
+                strOdometro = request.Odometro,
+                strPie1 = string.Empty,
+                strPie2 = string.Empty,
+                strPie3 = string.Empty,
+                strPie4 = string.Empty,
+                strTotalizador = "0.0",
+                strTipoTransaccion = "D"
+            });
+
+            await using var command = new SqlCommand("dbo.sp_bitacora_app", connection)
             {
                 CommandType = CommandType.StoredProcedure
             };
 
+            command.Parameters.Add("@Json", SqlDbType.NVarChar, -1).Value = requestJson;
+
             var value = await command.ExecuteScalarAsync(cancellationToken);
+            if (value is null || value is DBNull)
+            {
+                throw new InvalidOperationException("El procedimiento no devolvio el folio generado.");
+            }
+
             var folio = Convert.ToInt32(value);
 
             await LogAndReturnAsync(new ConsoleCommandResult
             {
                 IsSuccess = true,
                 CommandName = "database",
-                RequestFrame = "EXEC sp_UA_foliosecuencia_app",
-                ResponseFrame = folio.ToString(),
-                UserMessage = "Folio generado correctamente."
+                RequestFrame = $"EXEC dbo.sp_bitacora_app @Json={{TPV:{request.Tpv}, TipoVenta:{request.TipoVenta}, Dispensario:{request.Dispensario}, Manguera:{request.Manguera}, Producto:{request.Producto}, TipoProgramado:{request.TipoProgramado}, Programado:{request.Programado}}}",
+                ResponseFrame = $"Folio: {folio}",
+                UserMessage = "Folio y bitacora registrados correctamente."
             }, cancellationToken);
 
             return folio;
@@ -85,58 +132,8 @@ public sealed class GasStationDatabaseService(
         catch (Exception ex)
         {
             await LogAndReturnAsync(CreateErrorResult(
-                "EXEC sp_UA_foliosecuencia_app",
-                "No se pudo obtener el folio de autorizacion.",
-                ex), cancellationToken);
-            throw;
-        }
-    }
-
-    public async Task RegisterAuthorizationAsync(FuelAuthorizationRequest request, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            await using var connection = await OpenConnectionAsync(cancellationToken);
-            await using var command = new SqlCommand("sp_UA_Bitacora_APP", connection)
-            {
-                CommandType = CommandType.StoredProcedure
-            };
-
-            command.Parameters.AddWithValue("@intTPV", request.Tpv);
-            command.Parameters.AddWithValue("@intTipoVenta", request.TipoVenta);
-            command.Parameters.AddWithValue("@intDispensario", request.Dispensario);
-            command.Parameters.AddWithValue("@intManguera", request.Manguera);
-            command.Parameters.AddWithValue("@intProducto", request.Producto);
-            command.Parameters.AddWithValue("@intUsuario", request.Usuario);
-            command.Parameters.AddWithValue("@strTarjeta", request.Tarjeta);
-            command.Parameters.AddWithValue("@intTipoProgramado", request.TipoProgramado);
-            command.Parameters.AddWithValue("@dblProgramado", request.Programado);
-            command.Parameters.AddWithValue("@intFolioSecuencia", request.FolioSecuencia);
-            command.Parameters.AddWithValue("@strCliente", request.Cliente);
-            command.Parameters.AddWithValue("@strBandaMagnetica", request.BandaMagnetica);
-            command.Parameters.AddWithValue("@strVehiculo", request.Vehiculo);
-            command.Parameters.AddWithValue("@strOdometro", request.Odometro);
-            command.Parameters.AddWithValue("@strPie1", string.Empty);
-            command.Parameters.AddWithValue("@strPie2", string.Empty);
-            command.Parameters.AddWithValue("@strPie3", string.Empty);
-            command.Parameters.AddWithValue("@strPie4", string.Empty);
-
-            await command.ExecuteNonQueryAsync(cancellationToken);
-
-            await LogAndReturnAsync(new ConsoleCommandResult
-            {
-                IsSuccess = true,
-                CommandName = "database",
-                RequestFrame = $"EXEC sp_UA_Bitacora_APP @intTPV={request.Tpv}, @intDispensario={request.Dispensario}, @intManguera={request.Manguera}, @intProducto={request.Producto}, @dblProgramado={request.Programado}, @intFolioSecuencia={request.FolioSecuencia}",
-                ResponseFrame = "OK",
-                UserMessage = "Bitacora registrada correctamente."
-            }, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            await LogAndReturnAsync(CreateErrorResult(
-                "EXEC sp_UA_Bitacora_APP",
-                "No se pudo registrar la bitacora de autorizacion.",
+                "EXEC dbo.sp_bitacora_app",
+                "No se pudo generar el folio ni registrar la bitacora de autorizacion.",
                 ex), cancellationToken);
             throw;
         }
@@ -532,6 +529,58 @@ public sealed class GasStationDatabaseService(
         return RequiredObjects
             .Where(requiredObject => !foundObjects.Contains(requiredObject))
             .ToArray();
+    }
+
+    private async Task EnsureRequiredStoredProceduresAsync(
+        SqlConnection connection,
+        CancellationToken cancellationToken)
+    {
+        foreach (var (objectName, scriptPath) in StoredProcedureScripts)
+        {
+            if (await DatabaseObjectExistsAsync(connection, objectName, cancellationToken))
+            {
+                continue;
+            }
+
+            var script = await ReadPackagedScriptAsync(scriptPath, cancellationToken);
+            await using var command = new SqlCommand(script, connection)
+            {
+                CommandType = CommandType.Text
+            };
+
+            await command.ExecuteNonQueryAsync(cancellationToken);
+
+            await LogAndReturnAsync(new ConsoleCommandResult
+            {
+                IsSuccess = true,
+                CommandName = "database",
+                RequestFrame = $"CREATE {objectName} FROM {scriptPath}",
+                ResponseFrame = "OK",
+                UserMessage = $"Se creo el procedimiento requerido {objectName}."
+            }, cancellationToken);
+        }
+    }
+
+    private static async Task<bool> DatabaseObjectExistsAsync(
+        SqlConnection connection,
+        string objectName,
+        CancellationToken cancellationToken)
+    {
+        await using var command = new SqlCommand(
+            "SELECT CASE WHEN OBJECT_ID(@objectName, 'P') IS NULL THEN 0 ELSE 1 END",
+            connection);
+        command.Parameters.Add("@objectName", SqlDbType.NVarChar, 256).Value = objectName;
+
+        return Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken)) == 1;
+    }
+
+    private static async Task<string> ReadPackagedScriptAsync(
+        string scriptPath,
+        CancellationToken cancellationToken)
+    {
+        await using var stream = await FileSystem.OpenAppPackageFileAsync(scriptPath);
+        using var reader = new StreamReader(stream);
+        return await reader.ReadToEndAsync(cancellationToken);
     }
 
     private async Task<ConsoleCommandResult> LogAndReturnAsync(

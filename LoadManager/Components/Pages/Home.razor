@@ -889,8 +889,6 @@
             }
             var amount = GetAmountOrZero();
             var loadType = SelectedDispatchType!.AuthorizationLoadType;
-            var folio = await DatabaseService.GetNextFolioAsync(dispatchCancellation.Token);
-            currentDispatchFolio = folio;
             var authorizationRequest = new FuelAuthorizationRequest
             {
                 Tpv = settings.AppConfiguration.Tpv,
@@ -899,11 +897,13 @@
                 Producto = selectedFuel.ProductCode,
                 Usuario = settings.AppConfiguration.Usuario,
                 TipoProgramado = loadType,
-                Programado = amount,
-                FolioSecuencia = folio
+                Programado = amount
             };
 
-            await DatabaseService.RegisterAuthorizationAsync(authorizationRequest, dispatchCancellation.Token);
+            var folio = await DatabaseService.RegisterAuthorizationAsync(
+                authorizationRequest,
+                dispatchCancellation.Token);
+            currentDispatchFolio = folio;
 
             var interfaceType = string.IsNullOrWhiteSpace(settings.AppConfiguration.TipoInterfaz)
                 ? "G"

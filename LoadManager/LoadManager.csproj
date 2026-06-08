@@ -90,6 +90,8 @@
 
     <MauiAsset Include="appsettings.json" LogicalName="appsettings.json" />
 
+    <MauiAsset Include="Script\*.sql" LogicalName="Script/%(Filename)%(Extension)" />
+
   </ItemGroup>
 
   <ItemGroup>
