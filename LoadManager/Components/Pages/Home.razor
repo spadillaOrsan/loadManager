@@ -1235,12 +1235,24 @@
     {
         try
         {
+            // El tiempo restante se calcula con reloj real (deadline), no por iteracion,
+            // para que cada segundo del contador dure un segundo real sin importar lo que
+            // tarde la consulta TCP de estatus.
+            var deadline = DateTime.UtcNow.AddSeconds(authorizationCountdownSeconds);
+            remainingAuthorizationSeconds = authorizationCountdownSeconds;
             await InvokeAsync(StateHasChanged);
 
-            while (remainingAuthorizationSeconds > 0)
+            while (true)
             {
-                await Task.Delay(authorizationPollingMilliseconds, cancellationToken);
-                remainingAuthorizationSeconds--;
+                remainingAuthorizationSeconds = Math.Max(
+                    0,
+                    (int)Math.Ceiling((deadline - DateTime.UtcNow).TotalSeconds));
+
+                if (remainingAuthorizationSeconds <= 0)
+                {
+                    break;
+                }
+
                 await QueryAuthorizedDispenserDetailAsync(cancellationToken);
 
                 if (isFueling || dispatchTicket is not null)
@@ -1258,7 +1270,18 @@
                 }
 
                 await InvokeAsync(StateHasChanged);
+
+                var remainingMs = (int)(deadline - DateTime.UtcNow).TotalMilliseconds;
+                if (remainingMs <= 0)
+                {
+                    break;
+                }
+
+                await Task.Delay(Math.Max(1, Math.Min(authorizationPollingMilliseconds, remainingMs)), cancellationToken);
             }
+
+            remainingAuthorizationSeconds = 0;
+            await InvokeAsync(StateHasChanged);
 
             if (isFueling || dispatchTicket is not null)
             {
