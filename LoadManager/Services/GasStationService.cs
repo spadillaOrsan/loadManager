@@ -330,6 +330,30 @@ public sealed class GasStationService(
 
     private static string GetMacAddress()
     {
+        // En Android la MAC suele estar restringida via NetworkInterface; se intenta
+        // primero leer el archivo de la interfaz (wlan0/eth0) y luego el API estandar.
+        foreach (var iface in new[] { "wlan0", "eth0" })
+        {
+            try
+            {
+                var path = $"/sys/class/net/{iface}/address";
+                if (File.Exists(path))
+                {
+                    var mac = File.ReadAllText(path).Trim().ToUpperInvariant();
+                    if (!string.IsNullOrWhiteSpace(mac)
+                        && mac != "00:00:00:00:00:00"
+                        && mac != "02:00:00:00:00:00")
+                    {
+                        return mac;
+                    }
+                }
+            }
+            catch
+            {
+                // Interfaz no accesible.
+            }
+        }
+
         try
         {
             foreach (var networkInterface in System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces())
@@ -347,7 +371,11 @@ public sealed class GasStationService(
                 var bytes = networkInterface.GetPhysicalAddress().GetAddressBytes();
                 if (bytes.Length == 6)
                 {
-                    return string.Join(":", bytes.Select(value => value.ToString("X2")));
+                    var mac = string.Join(":", bytes.Select(value => value.ToString("X2")));
+                    if (mac != "00:00:00:00:00:00" && mac != "02:00:00:00:00:00")
+                    {
+                        return mac;
+                    }
                 }
             }
         }

@@ -450,8 +450,8 @@
     private readonly List<DispenserViewModel> dispensers = [];
     private readonly List<DispatchStep> steps =
     [
-        new(2, "Cargar"),
-        new(3, "Instrucciones"),
+        new(2, "Instrucciones"),
+        new(3, "Despachar"),
         new(4, "Ticket")
     ];
 
@@ -1233,11 +1233,13 @@
 
     private async Task RunAuthorizationCountdownAsync(CancellationToken cancellationToken)
     {
+        // El sondeo TCP del estatus corre en segundo plano para NO bloquear el contador;
+        // asi el contador baja suave 1 a 1 (5,4,3,2,1) por reloj real.
+        using var pollCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        var pollTask = PollAuthorizedDispenserAsync(pollCancellation.Token);
+
         try
         {
-            // El tiempo restante se calcula con reloj real (deadline), no por iteracion,
-            // para que cada segundo del contador dure un segundo real sin importar lo que
-            // tarde la consulta TCP de estatus.
             var deadline = DateTime.UtcNow.AddSeconds(authorizationCountdownSeconds);
             remainingAuthorizationSeconds = authorizationCountdownSeconds;
             await InvokeAsync(StateHasChanged);
@@ -1247,15 +1249,9 @@
                 remainingAuthorizationSeconds = Math.Max(
                     0,
                     (int)Math.Ceiling((deadline - DateTime.UtcNow).TotalSeconds));
+                await InvokeAsync(StateHasChanged);
 
-                if (remainingAuthorizationSeconds <= 0)
-                {
-                    break;
-                }
-
-                await QueryAuthorizedDispenserDetailAsync(cancellationToken);
-
-                if (isFueling || dispatchTicket is not null)
+                if (isFueling || dispatchTicket is not null || remainingAuthorizationSeconds <= 0)
                 {
                     break;
                 }
@@ -1269,15 +1265,9 @@
                     await InvokeAsync(() => ShowInfoToast($"La carga se cancelara en {remainingAuthorizationSeconds} segundos si no inicia."));
                 }
 
-                await InvokeAsync(StateHasChanged);
-
-                var remainingMs = (int)(deadline - DateTime.UtcNow).TotalMilliseconds;
-                if (remainingMs <= 0)
-                {
-                    break;
-                }
-
-                await Task.Delay(Math.Max(1, Math.Min(authorizationPollingMilliseconds, remainingMs)), cancellationToken);
+                // Esperar hasta el siguiente segundo entero para un conteo suave.
+                var msToNextSecond = (int)((deadline - DateTime.UtcNow).TotalMilliseconds % 1000);
+                await Task.Delay(msToNextSecond <= 0 ? 1000 : msToNextSecond, cancellationToken);
             }
 
             remainingAuthorizationSeconds = 0;
@@ -1301,6 +1291,40 @@
                 countdownWarningShown = false;
                 StateHasChanged();
             });
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        finally
+        {
+            pollCancellation.Cancel();
+            try
+            {
+                await pollTask;
+            }
+            catch
+            {
+                // El sondeo se detuvo al cancelar.
+            }
+        }
+    }
+
+    private async Task PollAuthorizedDispenserAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested && !isFueling && dispatchTicket is null)
+            {
+                await QueryAuthorizedDispenserDetailAsync(cancellationToken);
+
+                if (isFueling || dispatchTicket is not null)
+                {
+                    await InvokeAsync(StateHasChanged);
+                    break;
+                }
+
+                await Task.Delay(authorizationPollingMilliseconds, cancellationToken);
+            }
         }
         catch (OperationCanceledException)
         {

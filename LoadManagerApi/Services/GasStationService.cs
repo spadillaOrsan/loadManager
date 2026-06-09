@@ -146,12 +146,14 @@ public sealed class GasStationService(
         CancellationToken cancellationToken)
     {
         var now = DateTime.Now;
-        var fileName = $"AUTH_LOG_{now:yyyyMMddHHmmss}.txt";
+        // Un solo archivo por dia: cada intento agrega una linea.
+        var fileName = $"AUTH_LOG_{now:yyyyMMdd}.txt";
         var content =
-            $"[{now:yyyy-MM-dd HH:mm:ss}] INTENTO DE CONEXION NO AUTORIZADO" + Environment.NewLine +
-            $"IP={ip}" + Environment.NewLine +
-            $"MAC={mac}" + Environment.NewLine +
-            $"Dispositivo={device}" + Environment.NewLine;
+            $"[{now:yyyy-MM-dd HH:mm:ss}] INTENTO NO AUTORIZADO" +
+            $" | IP={(string.IsNullOrWhiteSpace(ip) ? "(desconocida)" : ip)}" +
+            $" | MAC={(string.IsNullOrWhiteSpace(mac) ? "(desconocida)" : mac)}" +
+            $" | Dispositivo={(string.IsNullOrWhiteSpace(device) ? "(desconocido)" : device)}" +
+            Environment.NewLine;
 
         await logService.WriteFileAsync(fileName, content, cancellationToken);
     }
