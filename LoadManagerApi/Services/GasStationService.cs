@@ -70,9 +70,13 @@ public sealed class GasStationService(
 
     public async Task<DeviceAuthorizationResult> CheckDeviceAuthorizationAsync(
         string ipAddress,
+        string macAddress,
+        string deviceName,
         CancellationToken cancellationToken = default)
     {
         var ip = (ipAddress ?? string.Empty).Trim();
+        var mac = (macAddress ?? string.Empty).Trim();
+        var device = (deviceName ?? string.Empty).Trim();
 
         try
         {
@@ -82,20 +86,21 @@ public sealed class GasStationService(
                 connection);
             command.Parameters.AddWithValue("@ip", ip);
 
-            string? deviceName = null;
+            string? registeredName = null;
             var authorized = false;
 
             await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
             {
                 if (await reader.ReadAsync(cancellationToken))
                 {
-                    deviceName = SqlDataReaderHelper.GetFirstString(reader, "strNombre");
+                    registeredName = SqlDataReaderHelper.GetFirstString(reader, "strNombre");
                     authorized = SqlDataReaderHelper.GetFirstBool(reader, "bitAutorizada");
                 }
             }
 
+            var resolvedName = string.IsNullOrWhiteSpace(registeredName) ? device : registeredName;
             var message = authorized
-                ? $"Equipo autorizado ({deviceName})."
+                ? $"Equipo autorizado ({resolvedName})."
                 : "El equipo no tiene autorizacion.";
 
             // Se registra el resultado (autorizado o no) en el mismo metodo.
@@ -103,16 +108,23 @@ public sealed class GasStationService(
             {
                 IsSuccess = authorized,
                 CommandName = "device-authorization",
-                RequestFrame = $"SELECT tblConexionesAutorizadas WHERE strIP = {ip}",
-                ResponseFrame = $"Autorizado={authorized}; Nombre={deviceName}",
+                RequestFrame = $"SELECT tblConexionesAutorizadas WHERE strIP = {ip} | MAC={mac} | Equipo={device}",
+                ResponseFrame = $"Autorizado={authorized}; Nombre={resolvedName}",
                 UserMessage = message
             }, cancellationToken);
+
+            // Si el equipo NO esta autorizado, se deja un archivo de auditoria con
+            // MAC, IP y nombre del equipo que intento conectarse.
+            if (!authorized)
+            {
+                await WriteUnauthorizedAttemptFileAsync(ip, mac, device, cancellationToken);
+            }
 
             return new DeviceAuthorizationResult
             {
                 IsAuthorized = authorized,
                 IpAddress = ip,
-                DeviceName = deviceName ?? string.Empty,
+                DeviceName = resolvedName,
                 Message = message
             };
         }
@@ -127,9 +139,27 @@ public sealed class GasStationService(
             {
                 IsAuthorized = false,
                 IpAddress = ip,
+                DeviceName = device,
                 Message = "No se pudo validar la autorizacion del equipo."
             };
         }
+    }
+
+    private async Task WriteUnauthorizedAttemptFileAsync(
+        string ip,
+        string mac,
+        string device,
+        CancellationToken cancellationToken)
+    {
+        var now = DateTime.Now;
+        var fileName = $"AUTH_LOG_{now:yyyyMMddHHmmss}.txt";
+        var content =
+            $"[{now:yyyy-MM-dd HH:mm:ss}] INTENTO DE CONEXION NO AUTORIZADO" + Environment.NewLine +
+            $"IP={ip}" + Environment.NewLine +
+            $"MAC={mac}" + Environment.NewLine +
+            $"Dispositivo={device}" + Environment.NewLine;
+
+        await logService.WriteFileAsync(fileName, content, cancellationToken);
     }
 
     public async Task<int> RegisterAuthorizationAsync(

@@ -249,6 +249,42 @@ a, .btn-link {
     background: #6c7a86;
 }
 
+/* Modal de dispositivo no autorizado: campana roja tipo alerta */
+.device-unauthorized h2 {
+    color: #d71920;
+    letter-spacing: 0.04em;
+}
+
+.device-unauthorized-bell {
+    align-items: center;
+    background: #fff1f1;
+    border: 3px solid #d71920;
+    border-radius: 999px;
+    display: flex;
+    height: 5rem;
+    justify-content: center;
+    width: 5rem;
+    animation: bellShake 1s ease-in-out infinite;
+}
+
+.device-unauthorized-bell svg {
+    fill: none;
+    height: 2.6rem;
+    stroke: #d71920;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
+    width: 2.6rem;
+}
+
+@keyframes bellShake {
+    0%, 100% { transform: rotate(0deg); }
+    20% { transform: rotate(-12deg); }
+    40% { transform: rotate(10deg); }
+    60% { transform: rotate(-6deg); }
+    80% { transform: rotate(4deg); }
+}
+
 /* Pie de la tabla de historial: contador alineado a la derecha */
 .history-table-footer {
     color: #6c7a86;

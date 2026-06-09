@@ -6,6 +6,8 @@ public interface IGasStationService
 {
     Task<DeviceAuthorizationResult> CheckDeviceAuthorizationAsync(
         string ipAddress,
+        string macAddress,
+        string deviceName,
         CancellationToken cancellationToken = default);
 
     Task<ConsoleCommandResult> CheckConnectionAsync(CancellationToken cancellationToken = default);

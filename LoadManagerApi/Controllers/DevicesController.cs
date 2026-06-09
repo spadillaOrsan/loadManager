@@ -15,13 +15,19 @@ public sealed class DevicesController(IGasStationService gasStationService) : Co
     [HttpGet("authorization")]
     public async Task<ActionResult<DeviceAuthorizationResult>> CheckAuthorizationAsync(
         [FromQuery] string? ip,
+        [FromQuery] string? mac,
+        [FromQuery] string? device,
         CancellationToken cancellationToken)
     {
         var ipAddress = string.IsNullOrWhiteSpace(ip)
             ? HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString() ?? string.Empty
             : ip.Trim();
 
-        var result = await gasStationService.CheckDeviceAuthorizationAsync(ipAddress, cancellationToken);
+        var result = await gasStationService.CheckDeviceAuthorizationAsync(
+            ipAddress,
+            mac ?? string.Empty,
+            device ?? string.Empty,
+            cancellationToken);
         return Ok(result);
     }
 }

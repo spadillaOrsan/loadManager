@@ -246,9 +246,17 @@ public sealed class GasStationService(
         CancellationToken cancellationToken = default)
     {
         var ip = GetLocalIpAddress();
-        var requestPath = string.IsNullOrWhiteSpace(ip)
+        var mac = GetMacAddress();
+        var device = GetDeviceName();
+
+        var query = new List<string>();
+        if (!string.IsNullOrWhiteSpace(ip)) query.Add($"ip={Uri.EscapeDataString(ip)}");
+        if (!string.IsNullOrWhiteSpace(mac)) query.Add($"mac={Uri.EscapeDataString(mac)}");
+        if (!string.IsNullOrWhiteSpace(device)) query.Add($"device={Uri.EscapeDataString(device)}");
+
+        var requestPath = query.Count == 0
             ? "api/devices/authorization"
-            : $"api/devices/authorization?ip={Uri.EscapeDataString(ip)}";
+            : $"api/devices/authorization?{string.Join("&", query)}";
 
         try
         {
@@ -318,6 +326,50 @@ public sealed class GasStationService(
         }
 
         return string.Empty;
+    }
+
+    private static string GetMacAddress()
+    {
+        try
+        {
+            foreach (var networkInterface in System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (networkInterface.OperationalStatus != System.Net.NetworkInformation.OperationalStatus.Up)
+                {
+                    continue;
+                }
+
+                if (networkInterface.NetworkInterfaceType == System.Net.NetworkInformation.NetworkInterfaceType.Loopback)
+                {
+                    continue;
+                }
+
+                var bytes = networkInterface.GetPhysicalAddress().GetAddressBytes();
+                if (bytes.Length == 6)
+                {
+                    return string.Join(":", bytes.Select(value => value.ToString("X2")));
+                }
+            }
+        }
+        catch
+        {
+            // MAC no disponible en este dispositivo.
+        }
+
+        return string.Empty;
+    }
+
+    private static string GetDeviceName()
+    {
+        try
+        {
+            var info = Microsoft.Maui.Devices.DeviceInfo.Current;
+            return $"{info.Manufacturer} {info.Model}".Trim();
+        }
+        catch
+        {
+            return string.Empty;
+        }
     }
 
     public async Task<int> RegisterAuthorizationAsync(

@@ -17,6 +17,25 @@ public sealed class AppLogService(
         CancellationToken cancellationToken = default)
     {
         var now = DateTime.Now;
+        var filePath = Path.Combine(GetDailyDirectory(now), $"log_{now:yyyyMMdd}.txt");
+        var content = BuildContent(entry, now);
+
+        await AppendAsync(filePath, content, cancellationToken);
+        return filePath;
+    }
+
+    public async Task<string> WriteFileAsync(
+        string fileName,
+        string content,
+        CancellationToken cancellationToken = default)
+    {
+        var filePath = Path.Combine(GetDailyDirectory(DateTime.Now), fileName);
+        await AppendAsync(filePath, content, cancellationToken);
+        return filePath;
+    }
+
+    private string GetDailyDirectory(DateTime now)
+    {
         var solutionRoot = SolutionPathHelper.GetSolutionRoot(environment.ContentRootPath);
         var basePath = Path.IsPathRooted(options.Value.BasePath)
             ? options.Value.BasePath
@@ -26,10 +45,13 @@ public sealed class AppLogService(
             now.ToString("yyyy"),
             now.ToString("MM"),
             now.ToString("yyyy-MM-dd"));
-        var filePath = Path.Combine(directory, $"log_{now:yyyyMMdd}.txt");
-        var content = BuildContent(entry, now);
 
         Directory.CreateDirectory(directory);
+        return directory;
+    }
+
+    private static async Task AppendAsync(string filePath, string content, CancellationToken cancellationToken)
+    {
         await FileLock.WaitAsync(cancellationToken);
         try
         {
@@ -39,8 +61,6 @@ public sealed class AppLogService(
         {
             FileLock.Release();
         }
-
-        return filePath;
     }
 
     private static string BuildContent(ApiLogEntry entry, DateTime createdAt)

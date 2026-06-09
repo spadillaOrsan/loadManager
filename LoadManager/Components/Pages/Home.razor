@@ -353,6 +353,23 @@
     </div>
 }
 
+@if (deviceNotAuthorized)
+{
+    <div class="app-modal-backdrop blocking-alert-backdrop">
+        <section class="app-modal hose-alert device-unauthorized" role="alertdialog" aria-modal="true" aria-live="assertive">
+            <div class="device-unauthorized-bell" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9Z" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+            </div>
+            <h2>DISPOSITIVO NO AUTORIZADO</h2>
+            <p>Revisar con el dpto. correspondiente.</p>
+            <span>La aplicacion se cerrara en @deviceAuthRemainingSeconds segundos.</span>
+        </section>
+    </div>
+}
+
 @if (connectionBlocked && !isStartingFlow)
 {
     <div class="app-modal-backdrop blocking-alert-backdrop connection-block-backdrop">
@@ -389,6 +406,8 @@
     private int currentStep = 2;
     private bool connectionBlocked;
     private string connectionBlockedMessage = "No hay comunicacion con la base de datos o la interfaz TCP/IP.";
+    private bool deviceNotAuthorized;
+    private int deviceAuthRemainingSeconds = 10;
     private string? selectedDispenser;
     private string? selectedProductKey;
     private int? selectedDispatchTypeId;
@@ -539,9 +558,11 @@
             var deviceAuthorization = await ConsoleClient.CheckDeviceAuthorizationAsync(pageCancellation.Token);
             if (!deviceAuthorization.IsAuthorized)
             {
-                startupStatusMessage = "Equipo no autorizado.";
-                connectionBlockedMessage = "El equipo no tiene autorizacion para operar.";
-                connectionBlocked = true;
+                // Equipo no autorizado: modal especial, sin reintentar, cierra la app
+                // tras la cuenta regresiva. El intento ya quedo registrado en el API.
+                startupStatusMessage = null;
+                deviceNotAuthorized = true;
+                _ = RunDeviceNotAuthorizedCountdownAsync();
                 return;
             }
 
@@ -648,6 +669,48 @@
     private async Task RetryConnectionAsync()
     {
         await BeginDispatchFlowAsync();
+    }
+
+    private async Task RunDeviceNotAuthorizedCountdownAsync()
+    {
+        deviceAuthRemainingSeconds = 10;
+
+        try
+        {
+            while (deviceAuthRemainingSeconds > 0)
+            {
+                await InvokeAsync(StateHasChanged);
+                await Task.Delay(TimeSpan.FromSeconds(1), pageCancellation.Token);
+                deviceAuthRemainingSeconds--;
+            }
+
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        CloseApplication();
+    }
+
+    private static void CloseApplication()
+    {
+        Microsoft.Maui.ApplicationModel.MainThread.BeginInvokeOnMainThread(() =>
+        {
+            try
+            {
+                Microsoft.Maui.Controls.Application.Current?.Quit();
+            }
+            catch
+            {
+                // Si Quit no esta disponible, se fuerza el cierre del proceso.
+            }
+
+#if ANDROID
+            Android.OS.Process.KillProcess(Android.OS.Process.MyPid());
+#endif
+        });
     }
 
     private static bool HasRequiredConfiguration(AppSettings settings)

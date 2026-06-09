@@ -23,11 +23,13 @@ public sealed class GasStationServiceLoggingDecorator(
 
     public Task<DeviceAuthorizationResult> CheckDeviceAuthorizationAsync(
         string ipAddress,
+        string macAddress,
+        string deviceName,
         CancellationToken cancellationToken = default) =>
         InvokeAsync(
             nameof(CheckDeviceAuthorizationAsync),
-            $"ip={ipAddress}",
-            () => inner.CheckDeviceAuthorizationAsync(ipAddress, cancellationToken),
+            $"ip={ipAddress}; mac={macAddress}; equipo={deviceName}",
+            () => inner.CheckDeviceAuthorizationAsync(ipAddress, macAddress, deviceName, cancellationToken),
             result => $"Autorizado={result.IsAuthorized}; {result.DeviceName}",
             cancellationToken);
 
