@@ -81,24 +81,18 @@ public sealed class GasStationService(
         try
         {
             await using var connection = await OpenConnectionAsync(cancellationToken);
+
+            // El equipo esta autorizado si existe al menos una fila con su IP y bitAutorizada = 1.
             await using var command = new SqlCommand(
-                "SELECT TOP 1 strNombre, bitAutorizada FROM dbo.tblConexionesAutorizadas WHERE strIP = @ip",
+                "SELECT COUNT(*) FROM dbo.tblConexionesAutorizadas WHERE strIP = @ip AND bitAutorizada = 1",
                 connection);
             command.Parameters.AddWithValue("@ip", ip);
 
-            string? registeredName = null;
-            var authorized = false;
+            var count = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken));
+            var authorized = count > 0;
 
-            await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
-            {
-                if (await reader.ReadAsync(cancellationToken))
-                {
-                    registeredName = SqlDataReaderHelper.GetFirstString(reader, "strNombre");
-                    authorized = SqlDataReaderHelper.GetFirstBool(reader, "bitAutorizada");
-                }
-            }
-
-            var resolvedName = string.IsNullOrWhiteSpace(registeredName) ? device : registeredName;
+            // El nombre se toma del que envia el equipo (para auditoria/registro).
+            var resolvedName = device;
             var message = authorized
                 ? $"Equipo autorizado ({resolvedName})."
                 : "El equipo no tiene autorizacion.";
