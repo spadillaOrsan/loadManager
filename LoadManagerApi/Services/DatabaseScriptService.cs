@@ -9,67 +9,63 @@ public sealed class DatabaseScriptService(
     IWebHostEnvironment environment,
     IAppLogService logService) : IDatabaseScriptService
 {
+    // Solo se asegura sp_folio_app (compatible con compat 100). La bitacora usa el SP
+    // existente sp_Bitacora_APP con parametros individuales, porque el script @Json
+    // requiere OPENJSON (compatibilidad 130+) y la BD esta en compat 100.
     private static readonly (string ObjectName, string ScriptPath)[] StoredProcedureScripts =
     [
-        ("dbo.sp_folio_app", "Script/sp_folio_app.sql"),
-        ("dbo.sp_bitacora_app", "Script/sp_bitacora_app.sql")
+        ("dbo.sp_folio_app", "Script/sp_folio_app.sql")
     ];
+
+    // Los scripts son CREATE OR ALTER: se aplican una sola vez por arranque del
+    // proceso para reemplazar la version existente sin penalizar cada llamada.
+    private static bool ensured;
+    private static readonly SemaphoreSlim EnsureLock = new(1, 1);
 
     public async Task EnsureRequiredStoredProceduresAsync(
         SqlConnection connection,
         CancellationToken cancellationToken = default)
     {
-        foreach (var (objectName, scriptPath) in StoredProcedureScripts)
+        if (ensured)
         {
-            await logService.WriteAsync(new ApiLogEntry
-            {
-                Level = "Info",
-                Service = nameof(DatabaseScriptService),
-                Message = "Validando procedimiento almacenado requerido.",
-                RequestBody = $"Objeto={objectName} | Script={scriptPath}"
-            }, cancellationToken);
+            return;
+        }
 
-            if (await DatabaseObjectExistsAsync(connection, objectName, cancellationToken))
+        await EnsureLock.WaitAsync(cancellationToken);
+        try
+        {
+            if (ensured)
             {
+                return;
+            }
+
+            foreach (var (objectName, scriptPath) in StoredProcedureScripts)
+            {
+                // Siempre se ejecuta el script (CREATE OR ALTER): si ya existe un SP
+                // con ese nombre, se reemplaza por la version de la carpeta Script.
+                var script = await ReadScriptAsync(scriptPath, cancellationToken);
+                await using var command = new SqlCommand(script, connection)
+                {
+                    CommandType = CommandType.Text
+                };
+
+                await command.ExecuteNonQueryAsync(cancellationToken);
                 await logService.WriteAsync(new ApiLogEntry
                 {
                     Level = "Success",
                     Service = nameof(DatabaseScriptService),
-                    Message = "El procedimiento almacenado ya existe.",
+                    Message = "Procedimiento almacenado aplicado (CREATE OR ALTER).",
+                    RequestBody = $"Objeto={objectName} | Script={scriptPath}",
                     ResponseBody = objectName
                 }, cancellationToken);
-                continue;
             }
 
-            var script = await ReadScriptAsync(scriptPath, cancellationToken);
-            await using var command = new SqlCommand(script, connection)
-            {
-                CommandType = CommandType.Text
-            };
-
-            await command.ExecuteNonQueryAsync(cancellationToken);
-            await logService.WriteAsync(new ApiLogEntry
-            {
-                Level = "Success",
-                Service = nameof(DatabaseScriptService),
-                Message = "Se creo el procedimiento almacenado requerido.",
-                RequestBody = script,
-                ResponseBody = $"Objeto={objectName} | Script={scriptPath}"
-            }, cancellationToken);
+            ensured = true;
         }
-    }
-
-    private static async Task<bool> DatabaseObjectExistsAsync(
-        SqlConnection connection,
-        string objectName,
-        CancellationToken cancellationToken)
-    {
-        await using var command = new SqlCommand(
-            "SELECT CASE WHEN OBJECT_ID(@objectName, 'P') IS NULL THEN 0 ELSE 1 END",
-            connection);
-        command.Parameters.Add("@objectName", SqlDbType.NVarChar, 256).Value = objectName;
-
-        return Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken)) == 1;
+        finally
+        {
+            EnsureLock.Release();
+        }
     }
 
     private Task<string> ReadScriptAsync(

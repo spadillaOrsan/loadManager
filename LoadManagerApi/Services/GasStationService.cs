@@ -68,6 +68,70 @@ public sealed class GasStationService(
         }
     }
 
+    public async Task<DeviceAuthorizationResult> CheckDeviceAuthorizationAsync(
+        string ipAddress,
+        CancellationToken cancellationToken = default)
+    {
+        var ip = (ipAddress ?? string.Empty).Trim();
+
+        try
+        {
+            await using var connection = await OpenConnectionAsync(cancellationToken);
+            await using var command = new SqlCommand(
+                "SELECT TOP 1 strNombre, bitAutorizada FROM dbo.tblConexionesAutorizadas WHERE strIP = @ip",
+                connection);
+            command.Parameters.AddWithValue("@ip", ip);
+
+            string? deviceName = null;
+            var authorized = false;
+
+            await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
+            {
+                if (await reader.ReadAsync(cancellationToken))
+                {
+                    deviceName = SqlDataReaderHelper.GetFirstString(reader, "strNombre");
+                    authorized = SqlDataReaderHelper.GetFirstBool(reader, "bitAutorizada");
+                }
+            }
+
+            var message = authorized
+                ? $"Equipo autorizado ({deviceName})."
+                : "El equipo no tiene autorizacion.";
+
+            // Se registra el resultado (autorizado o no) en el mismo metodo.
+            await LogAndReturnAsync(new ConsoleCommandResult
+            {
+                IsSuccess = authorized,
+                CommandName = "device-authorization",
+                RequestFrame = $"SELECT tblConexionesAutorizadas WHERE strIP = {ip}",
+                ResponseFrame = $"Autorizado={authorized}; Nombre={deviceName}",
+                UserMessage = message
+            }, cancellationToken);
+
+            return new DeviceAuthorizationResult
+            {
+                IsAuthorized = authorized,
+                IpAddress = ip,
+                DeviceName = deviceName ?? string.Empty,
+                Message = message
+            };
+        }
+        catch (Exception ex)
+        {
+            await LogAndReturnAsync(CreateErrorResult(
+                $"SELECT tblConexionesAutorizadas WHERE strIP = {ip}",
+                "No se pudo validar la autorizacion del equipo.",
+                ex), cancellationToken);
+
+            return new DeviceAuthorizationResult
+            {
+                IsAuthorized = false,
+                IpAddress = ip,
+                Message = "No se pudo validar la autorizacion del equipo."
+            };
+        }
+    }
+
     public async Task<int> RegisterAuthorizationAsync(
         FuelAuthorizationRequest request,
         CancellationToken cancellationToken = default)
@@ -77,59 +141,68 @@ public sealed class GasStationService(
             await using var connection = await OpenConnectionAsync(cancellationToken);
             await databaseScriptService.EnsureRequiredStoredProceduresAsync(connection, cancellationToken);
 
-            var requestJson = JsonSerializer.Serialize(new
-            {
-                intTPV = request.Tpv,
-                intTipoVenta = request.TipoVenta,
-                intDispensario = request.Dispensario,
-                intManguera = request.Manguera,
-                intProducto = request.Producto,
-                intUsuario = request.Usuario,
-                strTarjeta = request.Tarjeta,
-                intTipoProgramado = request.TipoProgramado,
-                dblProgramado = request.Programado,
-                strCliente = request.Cliente,
-                strBandaMagnetica = request.BandaMagnetica,
-                strVehiculo = request.Vehiculo,
-                strOdometro = request.Odometro,
-                strPie1 = string.Empty,
-                strPie2 = string.Empty,
-                strPie3 = string.Empty,
-                strPie4 = string.Empty,
-                strTotalizador = "0.0",
-                strTipoTransaccion = "D"
-            });
-
-            await using var command = new SqlCommand("dbo.sp_bitacora_app", connection)
+            // 1) Generar el folio de secuencia (sp_folio_app devuelve @intFolioSecuencia OUTPUT).
+            long folio;
+            await using (var folioCommand = new SqlCommand("dbo.sp_folio_app", connection)
             {
                 CommandType = CommandType.StoredProcedure
-            };
-
-            command.Parameters.Add("@Json", SqlDbType.NVarChar, -1).Value = requestJson;
-
-            var value = await command.ExecuteScalarAsync(cancellationToken);
-            if (value is null || value is DBNull)
+            })
             {
-                throw new InvalidOperationException("El procedimiento no devolvio el folio generado.");
+                var folioParameter = folioCommand.Parameters.Add("@intFolioSecuencia", SqlDbType.BigInt);
+                folioParameter.Direction = ParameterDirection.Output;
+                await folioCommand.ExecuteNonQueryAsync(cancellationToken);
+
+                if (folioParameter.Value is null || folioParameter.Value is DBNull)
+                {
+                    throw new InvalidOperationException("sp_folio_app no devolvio el folio generado.");
+                }
+
+                folio = Convert.ToInt64(folioParameter.Value);
             }
 
-            var folio = Convert.ToInt32(value);
+            // 2) Registrar la bitacora con parametros individuales (compatible con compat 100).
+            await using (var command = new SqlCommand("dbo.sp_Bitacora_APP", connection)
+            {
+                CommandType = CommandType.StoredProcedure
+            })
+            {
+                command.Parameters.AddWithValue("@intTPV", request.Tpv);
+                command.Parameters.AddWithValue("@intTipoVenta", request.TipoVenta);
+                command.Parameters.AddWithValue("@intDispensario", request.Dispensario);
+                command.Parameters.AddWithValue("@intManguera", request.Manguera);
+                command.Parameters.AddWithValue("@intProducto", request.Producto);
+                command.Parameters.AddWithValue("@intUsuario", request.Usuario);
+                command.Parameters.AddWithValue("@strTarjeta", request.Tarjeta ?? string.Empty);
+                command.Parameters.AddWithValue("@intTipoProgramado", request.TipoProgramado);
+                command.Parameters.AddWithValue("@dblProgramado", request.Programado);
+                command.Parameters.AddWithValue("@intFolioSecuencia", folio);
+                command.Parameters.AddWithValue("@strCliente", request.Cliente ?? string.Empty);
+                command.Parameters.AddWithValue("@strBandaMagnetica", request.BandaMagnetica ?? string.Empty);
+                command.Parameters.AddWithValue("@strVehiculo", request.Vehiculo ?? string.Empty);
+                command.Parameters.AddWithValue("@strOdometro", request.Odometro ?? string.Empty);
+                command.Parameters.AddWithValue("@strPie1", "Adm.Cargas");
+                command.Parameters.AddWithValue("@strPie2", string.Empty);
+                command.Parameters.AddWithValue("@strPie3", string.Empty);
+                command.Parameters.AddWithValue("@strPie4", string.Empty);
+
+                await command.ExecuteNonQueryAsync(cancellationToken);
+            }
 
             await LogAndReturnAsync(new ConsoleCommandResult
             {
                 IsSuccess = true,
                 CommandName = "database",
-                RequestFrame = $"EXEC dbo.sp_bitacora_app @Json={{TPV:{request.Tpv}, TipoVenta:{request.TipoVenta}, Dispensario:{request.Dispensario}, Manguera:{request.Manguera}, Producto:{request.Producto}, TipoProgramado:{request.TipoProgramado}, Programado:{request.Programado}}}",
+                RequestFrame = $"EXEC dbo.sp_Bitacora_APP @intTPV={request.Tpv}, @intDispensario={request.Dispensario}, @intManguera={request.Manguera}, @intProducto={request.Producto}, @intTipoProgramado={request.TipoProgramado}, @dblProgramado={request.Programado}, @intFolioSecuencia={folio}",
                 ResponseFrame = $"Folio: {folio}",
                 UserMessage = "Folio y bitacora registrados correctamente."
             }, cancellationToken);
 
-            return folio;
+            return (int)folio;
         }
         catch (Exception ex)
         {
             await LogAndReturnAsync(CreateErrorResult(
-                "EXEC dbo.sp_bitacora_app",
+                "EXEC dbo.sp_folio_app + dbo.sp_Bitacora_APP",
                 "No se pudo generar el folio ni registrar la bitacora de autorizacion.",
                 ex), cancellationToken);
             throw;

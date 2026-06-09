@@ -242,6 +242,84 @@ public sealed class GasStationService(
         }
     }
 
+    public async Task<DeviceAuthorizationResult> CheckDeviceAuthorizationAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var ip = GetLocalIpAddress();
+        var requestPath = string.IsNullOrWhiteSpace(ip)
+            ? "api/devices/authorization"
+            : $"api/devices/authorization?ip={Uri.EscapeDataString(ip)}";
+
+        try
+        {
+            using var response = await SendApiAsync(
+                HttpMethod.Get,
+                requestPath,
+                content: null,
+                cancellationToken);
+            await EnsureApiSuccessAsync(response, cancellationToken);
+
+            var result = await response.Content.ReadFromJsonAsync<DeviceAuthorizationResult>(
+                JsonOptions,
+                cancellationToken);
+
+            return result ?? new DeviceAuthorizationResult
+            {
+                IsAuthorized = false,
+                IpAddress = ip,
+                Message = "La API no devolvio un resultado de autorizacion valido."
+            };
+        }
+        catch (Exception ex)
+        {
+            await LogAndReturnAsync(CreateApiErrorResult(
+                $"GET {requestPath}",
+                "No fue posible validar la autorizacion del equipo.",
+                ex.ToString()), cancellationToken);
+
+            return new DeviceAuthorizationResult
+            {
+                IsAuthorized = false,
+                IpAddress = ip,
+                Message = "No fue posible validar la autorizacion del equipo."
+            };
+        }
+    }
+
+    private static string GetLocalIpAddress()
+    {
+        try
+        {
+            foreach (var networkInterface in System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (networkInterface.OperationalStatus != System.Net.NetworkInformation.OperationalStatus.Up)
+                {
+                    continue;
+                }
+
+                if (networkInterface.NetworkInterfaceType == System.Net.NetworkInformation.NetworkInterfaceType.Loopback)
+                {
+                    continue;
+                }
+
+                foreach (var address in networkInterface.GetIPProperties().UnicastAddresses)
+                {
+                    if (address.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork
+                        && !System.Net.IPAddress.IsLoopback(address.Address))
+                    {
+                        return address.Address.ToString();
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Si no se puede determinar la IP, la API usara la IP remota de la llamada.
+        }
+
+        return string.Empty;
+    }
+
     public async Task<int> RegisterAuthorizationAsync(
         FuelAuthorizationRequest request,
         CancellationToken cancellationToken = default)

@@ -24,6 +24,8 @@ public interface IGasStationService
 
     Task<ConsoleCommandResult> CheckDatabaseConnectionAsync(CancellationToken cancellationToken = default);
 
+    Task<DeviceAuthorizationResult> CheckDeviceAuthorizationAsync(CancellationToken cancellationToken = default);
+
     Task<int> RegisterAuthorizationAsync(
         FuelAuthorizationRequest request,
         CancellationToken cancellationToken = default);

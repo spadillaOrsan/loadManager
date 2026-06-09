@@ -1164,6 +1164,16 @@ a, .btn-link {
     box-shadow: 0 8px 22px rgba(227, 6, 19, 0.14);
 }
 
+/* Al seleccionar, el fondo se aclara: forzar texto oscuro para que sea legible
+   tambien en tema oscuro. */
+.fuel-option.is-selected .fuel-option-text strong {
+    color: #17212b;
+}
+
+.fuel-option.is-selected .fuel-option-text small {
+    color: #5a6977;
+}
+
 .fuel-swatch {
     border-radius: 999px;
     display: inline-block;

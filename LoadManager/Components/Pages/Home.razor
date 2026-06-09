@@ -532,6 +532,19 @@
                 return;
             }
 
+            // 2) Primera validacion: el equipo debe estar autorizado (por su IP).
+            startupStatusMessage = "Validando autorizacion del equipo...";
+            await InvokeAsync(StateHasChanged);
+
+            var deviceAuthorization = await ConsoleClient.CheckDeviceAuthorizationAsync(pageCancellation.Token);
+            if (!deviceAuthorization.IsAuthorized)
+            {
+                startupStatusMessage = "Equipo no autorizado.";
+                connectionBlockedMessage = "El equipo no tiene autorizacion para operar.";
+                connectionBlocked = true;
+                return;
+            }
+
             startupStatusMessage = "Validando TCP/IP y base de datos...";
             await InvokeAsync(StateHasChanged);
 
@@ -597,13 +610,9 @@
                     return;
                 }
 
+                // Si hay una manguera descolgada NO se bloquea el inicio: el dispensario
+                // simplemente se muestra con su estatus (manguera levantada) y su color.
                 blockedHoseDispenser = GetFirstLiftedHoseDispenser();
-                if (HasLiftedHose() || await HasLiftedHoseFromDetailAsync(pageCancellation.Token))
-                {
-                    await ShowHoseLiftedBlockAsync("Hay una manguera descolgada. Cuelgue la manguera para continuar.", blockedHoseDispenser);
-                    startupStatusMessage = null;
-                    return;
-                }
 
                 startupStatusMessage = "Consultando tipos de despacho...";
                 await InvokeAsync(StateHasChanged);
@@ -970,13 +979,15 @@
         }
         catch (Exception ex)
         {
+            // El detalle tecnico (incluida la peticion HTTP) se guarda en el log
+            // por el servicio; al usuario solo se le muestra un mensaje claro.
             lastResult = new ConsoleCommandResult
             {
                 IsSuccess = false,
                 UserMessage = "No fue posible enviar la autorizacion.",
-                TechnicalMessage = ex.Message
+                TechnicalMessage = ex.ToString()
             };
-            ShowToast($"No fue posible enviar la autorizacion. {ex.Message}", false);
+            ShowToast("No fue posible enviar la autorizacion. Intente nuevamente.", false);
         }
         finally
         {
@@ -1989,16 +2000,18 @@
 
     private static (string Message, bool IsSuccess) GetAuthorizationToastMessage(ConsoleCommandResult result)
     {
+        // Mensajes amigables para el usuario. La trama cruda de respuesta queda
+        // registrada en el log por el servicio, no se muestra en el toast.
         var responseFrame = result.ResponseFrame ?? string.Empty;
         if (responseFrame.Contains("NoAutorizado", StringComparison.OrdinalIgnoreCase) ||
             responseFrame.Contains("No autorizado", StringComparison.OrdinalIgnoreCase))
         {
-            return ($"No autorizado: {responseFrame}", false);
+            return ("Despacho no autorizado.", false);
         }
 
         if (responseFrame.Contains("Autorizado", StringComparison.OrdinalIgnoreCase))
         {
-            return ($"Autorizado: {responseFrame}", true);
+            return ("Despacho autorizado.", true);
         }
 
         if (!result.IsSuccess)
@@ -2006,9 +2019,7 @@
             return (result.UserMessage, false);
         }
 
-        return (string.IsNullOrWhiteSpace(responseFrame)
-            ? result.UserMessage
-            : responseFrame, result.IsSuccess);
+        return ("Peticion enviada correctamente.", result.IsSuccess);
     }
 
     private async Task SendTotalizersForLogAsync(int dispenser, CancellationToken cancellationToken)

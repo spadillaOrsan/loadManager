@@ -4,6 +4,10 @@ namespace LoadManagerApi.Interfaces;
 
 public interface IGasStationService
 {
+    Task<DeviceAuthorizationResult> CheckDeviceAuthorizationAsync(
+        string ipAddress,
+        CancellationToken cancellationToken = default);
+
     Task<ConsoleCommandResult> CheckConnectionAsync(CancellationToken cancellationToken = default);
 
     Task<int> RegisterAuthorizationAsync(

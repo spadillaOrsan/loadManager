@@ -6,7 +6,15 @@ using LoadManagerApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
-builder.Services.AddScoped<IGasStationService, GasStationService>();
+
+// GasStationService envuelto por un decorador que registra entrada/salida/errores
+// de cada metodo (logging a nivel de servicio, complementa al middleware HTTP).
+builder.Services.AddScoped<GasStationService>();
+builder.Services.AddScoped<IGasStationService>(serviceProvider =>
+    new GasStationServiceLoggingDecorator(
+        serviceProvider.GetRequiredService<GasStationService>(),
+        serviceProvider.GetRequiredService<IAppLogService>()));
+
 builder.Services.AddScoped<IDatabaseScriptService, DatabaseScriptService>();
 builder.Services.Configure<FileLogOptions>(builder.Configuration.GetSection("FileLogs"));
 builder.Services.AddSingleton<IAppLogService, AppLogService>();
