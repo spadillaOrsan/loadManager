@@ -329,6 +329,18 @@
     </div>
 }
 
+@if (isCancelingAuthorization)
+{
+    <div class="app-modal-backdrop blocking-alert-backdrop">
+        <section class="app-modal hose-alert" role="alertdialog" aria-modal="true" aria-live="assertive">
+            <span class="loading-spinner" aria-hidden="true"></span>
+            <h2>Cancelando autorizacion</h2>
+            <p>Consultando registros...</p>
+            <span>La pantalla permanecera bloqueada hasta terminar.</span>
+        </section>
+    </div>
+}
+
 @if (isWaitingForDispatchHoseHang)
 {
     <div class="app-modal-backdrop blocking-alert-backdrop">
@@ -398,6 +410,7 @@
     private CancellationTokenSource? fuelingMonitorCancellation;
     private bool isRefreshingSummary;
     private bool isDispatching;
+    private bool isCancelingAuthorization;
     private bool isLoadingDispensers;
     private bool isSelectingDispenser;
     private bool isStartingFlow;
@@ -1274,18 +1287,57 @@
                 return;
             }
 
-            if (authorizedDispenserForCountdown is int dispenser)
-            {
-                await InvokeAsync(() => ShowToast("Tiempo agotado. Cancelando autorizacion.", false));
-                await ConsoleClient.SendRawFrameAsync($"CAUTH|{dispenser.ToString(CultureInfo.InvariantCulture)}", pageCancellation.Token);
-            }
+            var dispenserToCancel = authorizedDispenserForCountdown;
 
+            // Regresa de inmediato al paso 2 con el formulario limpio y BLOQUEA toda la
+            // pantalla con el modal "Consultando registros..." mientras cancela y re-consulta,
+            // para que la UI no se quede congelada mostrando "0".
             await InvokeAsync(() =>
             {
-                // Tiempo agotado: regresa al paso 2 con el formulario limpio y reutilizable.
                 ResetDispatchFormState();
+                isCancelingAuthorization = true;
                 StateHasChanged();
             });
+
+            try
+            {
+                // Detener el sondeo del detalle antes de reutilizar la conexion TCP.
+                pollCancellation.Cancel();
+                try
+                {
+                    await pollTask;
+                }
+                catch
+                {
+                    // El sondeo se detuvo al cancelar.
+                }
+
+                // Cancelar la autorizacion en la consola.
+                if (dispenserToCancel is int dispenser)
+                {
+                    try
+                    {
+                        await ConsoleClient.SendRawFrameAsync($"CAUTH|{dispenser.ToString(CultureInfo.InvariantCulture)}", pageCancellation.Token);
+                    }
+                    catch
+                    {
+                        // Si no se pudo cancelar en la consola, continuamos refrescando el estatus.
+                    }
+                }
+
+                // Re-consultamos el estatus de los dispensarios para que no queden mostrando
+                // "sin conexion" con datos viejos.
+                await RefreshDispenserSummaryAsync(pageCancellation.Token);
+            }
+            finally
+            {
+                // Libera la pantalla solo cuando termino la cancelacion y la re-consulta.
+                await InvokeAsync(() =>
+                {
+                    isCancelingAuthorization = false;
+                    StateHasChanged();
+                });
+            }
         }
         catch (OperationCanceledException)
         {
