@@ -316,7 +316,10 @@ public sealed class GasStationService(
                 SELECT TOP 3
                     b.*,
                     tp.strDescripcion AS ProductoDescripcion,
-                    tp.dblPrecioU AS ProductoPrecio
+                    tp.dblPrecioU AS ProductoPrecio,
+                    CASE WHEN EXISTS (
+                        SELECT 1 FROM dbo.tblTransacciones t WHERE t.intSecuencia = b.intSecuencia
+                    ) THEN 1 ELSE 0 END AS EstaCerrada
                 FROM dbo.tblBitacora b
                 LEFT JOIN dbo.tblProductos tp ON tp.intProducto = b.intProducto
                 WHERE @folio IS NULL
@@ -343,10 +346,10 @@ public sealed class GasStationService(
                     ProgrammedAmount = SqlDataReaderHelper.GetFirstDecimal(reader, "dblProgramado", "dblCantidadProgramada"),
                     Amount = SqlDataReaderHelper.GetFirstDecimal(reader, "dblImporte", "dblMonto", "dblVendido", "dblVenta"),
                     Liters = SqlDataReaderHelper.GetFirstDecimal(reader, "dblLitros", "dblVolumen", "dblCantidad"),
-                    Price = SqlDataReaderHelper.GetFirstDecimal(reader, "dblPrecioU", "ProductoPrecio", "dblPrecio"),
-                    CreatedAt = SqlDataReaderHelper.GetFirstDateTime(reader, "dtmFecha", "dtFecha", "Fecha", "fecFecha", "dteFecha"),
+                    Price = SqlDataReaderHelper.GetFirstDecimal(reader, "dblPrecioUnitario", "dblPrecioU", "ProductoPrecio", "dblPrecio"),
+                    CreatedAt = SqlDataReaderHelper.GetFirstDateTime(reader, "datFechaHora", "dtmFecha", "dtFecha", "Fecha", "fecFecha", "dteFecha"),
                     IsCanceled = SqlDataReaderHelper.GetFirstBool(reader, "bitCancelada", "bitCancelado", "Cancelada", "Cancelado"),
-                    IsClosed = SqlDataReaderHelper.GetFirstBool(reader, "bitCerrada", "bitCerrado", "Cerrada", "Cerrado")
+                    IsClosed = SqlDataReaderHelper.GetFirstBool(reader, "EstaCerrada")
                 });
             }
 

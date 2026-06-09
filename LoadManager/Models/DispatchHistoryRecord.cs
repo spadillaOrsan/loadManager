@@ -30,5 +30,5 @@ public sealed class DispatchHistoryRecord
 
     public bool IsClosed { get; init; }
 
-    public string Status => IsCanceled ? "Cancelada" : IsClosed ? "Cerrada" : "Autorizada";
+    public string Status => IsCanceled ? "Cancelada" : IsClosed ? "Cerrada" : "Abierta";
 }

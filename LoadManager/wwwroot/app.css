@@ -1,5 +1,5 @@
 html, body {
-    background: #f4f7f9;
+    background: #0f172a;
     color: #17212b;
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     min-height: 100%;
@@ -191,6 +191,71 @@ a, .btn-link {
     max-width: 1180px;
     overflow-x: hidden;
     width: 100%;
+}
+
+/* Centrar el modulo Tester horizontalmente */
+.tester-shell {
+    margin-inline: auto;
+    max-width: 880px;
+}
+
+.tester-shell .console-header {
+    justify-content: center;
+    text-align: center;
+    flex-direction: column;
+    align-items: center;
+}
+
+.tester-shell .tester-actions-panel {
+    display: flex;
+    justify-content: center;
+}
+
+/* Separacion entre el acordeon de busqueda y la tabla en Historial */
+.history-shell .accordion-section {
+    margin-bottom: 1rem;
+}
+
+/* Separacion del encabezado "Historial de cargas" */
+.history-shell .settings-panel.history-panel {
+    margin-bottom: 1rem;
+}
+
+/* Badge de producto en el historial */
+.product-badge {
+    border-radius: 999px;
+    color: #fff;
+    display: inline-block;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    padding: 0.2rem 0.7rem;
+    white-space: nowrap;
+}
+
+.product-badge.is-supreme {
+    background: #d71920;
+}
+
+.product-badge.is-diesel {
+    background: #1c1c1c;
+}
+
+.product-badge.is-magna {
+    background: #1f9d4d;
+}
+
+.product-badge.is-default {
+    background: #6c7a86;
+}
+
+/* Pie de la tabla de historial: contador alineado a la derecha */
+.history-table-footer {
+    color: #6c7a86;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-top: 0.5rem;
+    text-align: right;
 }
 
 .console-header {
@@ -1742,9 +1807,10 @@ a, .btn-link {
     place-content: center;
 }
 
-/* El modal de bloqueo por falta de comunicacion debe quedar por debajo del
-   menu lateral para permitir ir a Configuracion. */
-.app-modal-backdrop.connection-block-backdrop {
+/* Modales que deben quedar por debajo del menu lateral (para no bloquear la
+   navegacion): bloqueo de comunicacion y "Consultando registros". */
+.app-modal-backdrop.connection-block-backdrop,
+.app-modal-backdrop.below-menu-backdrop {
     z-index: 1000;
 }
 
@@ -1908,7 +1974,8 @@ a, .btn-link {
 }
 
 .accordion-list {
-    display: grid;
+    display: flex;
+    flex-direction: column;
     gap: 0.85rem;
     max-width: 720px;
     width: 100%;
@@ -1919,6 +1986,7 @@ a, .btn-link {
     border: 1px solid var(--ua-panel-border, #d8e0e6);
     border-radius: 8px;
     box-shadow: var(--ua-panel-shadow, 0 10px 28px rgba(23, 33, 43, 0.06));
+    display: block;
     overflow: hidden;
 }
 
@@ -1934,6 +2002,11 @@ a, .btn-link {
     padding: 1.1rem;
     text-align: left;
     width: 100%;
+}
+
+.accordion-header:focus,
+.accordion-header:focus-visible {
+    outline: none;
 }
 
 .accordion-header:hover {
@@ -1982,9 +2055,11 @@ a, .btn-link {
 }
 
 .accordion-body {
-    display: grid;
+    border-top: 1px solid var(--ua-panel-border, #d8e0e6);
+    display: flex;
+    flex-direction: column;
     gap: 1rem;
-    padding: 0 1.1rem 1.1rem;
+    padding: 1.1rem;
 }
 
 .config-actions-footer {

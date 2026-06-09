@@ -6,33 +6,36 @@
 @inject IReceiptPrinterService ReceiptPrinter
 
 <section class="console-shell history-shell @(isLoading ? "is-busy" : string.Empty)" aria-busy="@isLoading">
-    <section class="settings-panel history-panel">
-        <div class="panel-heading">
-            <h2>Historial de cargas</h2>
-            <div class="panel-heading-actions">
-                <span>@(isLoading ? "Consultando..." : $"{records.Count} registros")</span>
-                <button class="btn btn-outline-secondary history-search-button" @onclick="RefreshHistoryAsync" disabled="@isLoading">
-                    Refrescar
-                </button>
+    <section class="accordion-section">
+        <button class="accordion-header" type="button" @onclick="() => folioFilterOpen = !folioFilterOpen">
+            <div class="accordion-title">
+                <h2>Filtrar por folio</h2>
             </div>
-        </div>
-
-        <div class="history-search">
-            <label class="settings-field">
-                <span>Folio</span>
-                <input class="form-control"
-                       placeholder="Buscar folio"
-                       value="@folioSearch"
-                       @oninput="OnFolioChanged"
-                       disabled="@isLoading" />
-            </label>
-            <button class="btn btn-primary history-search-button" @onclick="LoadHistoryAsync" disabled="@isLoading">
-                Buscar
-            </button>
-            <button class="btn btn-outline-secondary history-search-button" @onclick="ClearSearchAsync" disabled="@isLoading">
-                Limpiar
-            </button>
-        </div>
+            <svg class="accordion-chevron @(folioFilterOpen ? "is-open" : "")" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 9l6 6 6-6" />
+            </svg>
+        </button>
+        @if (folioFilterOpen)
+        {
+            <div class="accordion-body">
+                <div class="history-search">
+                    <label class="settings-field">
+                        <span>Folio</span>
+                        <input class="form-control"
+                               placeholder="Buscar folio"
+                               value="@folioSearch"
+                               @oninput="OnFolioChanged"
+                               disabled="@isLoading" />
+                    </label>
+                    <button class="btn btn-primary history-search-button" @onclick="LoadHistoryAsync" disabled="@isLoading">
+                        Buscar
+                    </button>
+                    <button class="btn btn-outline-secondary history-search-button" @onclick="ClearSearchAsync" disabled="@isLoading">
+                        Limpiar
+                    </button>
+                </div>
+            </div>
+        }
     </section>
 
     <section class="response-panel history-panel">
@@ -46,7 +49,15 @@
         }
         else
         {
-            <div class="history-table-wrap">
+
+            <div class="panel-heading-actions">
+                <div> 
+                    <button class="btn btn-outline-secondary history-search-button" @onclick="RefreshHistoryAsync" disabled="@isLoading">
+                        Refrescar
+                    </button>
+                </div>
+            </div>
+            <div class="history-table-wrap"> 
                 <table class="history-table">
                     <thead>
                         <tr>
@@ -56,10 +67,14 @@
                             <th>Disp.</th>
                             <th>Mang.</th>
                             <th>Producto</th>
+                            <th>Precio</th>
                             <th>Programado</th>
                             <th>Litros</th>
                             <th>Importe</th>
-                            <th></th>
+                            @if (printEnabled)
+                            {
+                                <th></th>
+                            }
                         </tr>
                     </thead>
                     <tbody>
@@ -71,83 +86,30 @@
                                 <td>@FormatDate(record.CreatedAt)</td>
                                 <td>@record.Dispenser</td>
                                 <td>@record.Hose</td>
-                                <td>@GetProductText(record)</td>
+                                <td><span class="product-badge @GetProductBadgeClass(record)">@GetProductText(record)</span></td>
+                                <td>@($"${record.Price:N2}")</td>
                                 <td>@FormatDecimal(record.ProgrammedAmount)</td>
                                 <td>@($"{record.Liters:N2}")</td>
                                 <td>@($"${record.Amount:N2}")</td>
-                                <td>
-                                    <button class="btn btn-outline-secondary history-print-button"
-                                            @onclick="() => PrintRecordAsync(record)"
-                                            disabled="@isLoading">
-                                        Imprimir
-                                    </button>
-                                </td>
+                                @if (printEnabled)
+                                {
+                                    <td>
+                                        <button class="btn btn-outline-secondary history-print-button"
+                                                @onclick="() => PrintRecordAsync(record)"
+                                                disabled="@isLoading">
+                                            Imprimir
+                                        </button>
+                                    </td>
+                                }
                             </tr>
                         }
                     </tbody>
                 </table>
+                <div class="history-table-footer">@(isLoading ? "Consultando..." : $"{records.Count} registros")</div>
             </div>
         }
     </section>
 
-    @if (selectedRecord is not null)
-    {
-        <section class="ticket-panel history-ticket-preview">
-            <div class="ticket-folio">
-                <span>Folio</span>
-                <strong>@selectedRecord.Sequence</strong>
-            </div>
-
-            <div class="ticket-grid">
-                <div>
-                    <span>Estatus</span>
-                    <strong>@selectedRecord.Status</strong>
-                </div>
-                <div>
-                    <span>Fecha</span>
-                    <strong>@FormatDate(selectedRecord.CreatedAt)</strong>
-                </div>
-                <div>
-                    <span>Dispensario</span>
-                    <strong>#@selectedRecord.Dispenser</strong>
-                </div>
-                <div>
-                    <span>Manguera</span>
-                    <strong>@selectedRecord.Hose</strong>
-                </div>
-                <div>
-                    <span>Producto</span>
-                    <strong>@GetProductText(selectedRecord)</strong>
-                </div>
-                <div>
-                    <span>Tipo</span>
-                    <strong>@selectedRecord.DispatchTypeId</strong>
-                </div>
-                <div>
-                    <span>Cantidad</span>
-                    <strong>@FormatDecimal(selectedRecord.ProgrammedAmount)</strong>
-                </div>
-                <div>
-                    <span>Precio</span>
-                    <strong>@($"${selectedRecord.Price:N2}")</strong>
-                </div>
-                <div>
-                    <span>Litros</span>
-                    <strong>@($"{selectedRecord.Liters:N2} Lt")</strong>
-                </div>
-                <div>
-                    <span>Importe</span>
-                    <strong>@($"${selectedRecord.Amount:N2}")</strong>
-                </div>
-            </div>
-
-            <div class="ticket-actions">
-                <button class="btn btn-primary action-button" @onclick="PrintSelectedTicketAsync" disabled="@isLoading">
-                    Imprimir ticket
-                </button>
-            </div>
-        </section>
-    }
 </section>
 
 @if (isLoading)
@@ -165,9 +127,12 @@
 @code {
     private readonly CultureInfo culture = CultureInfo.GetCultureInfo("es-MX");
     private List<DispatchHistoryRecord> records = [];
-    private DispatchHistoryRecord? selectedRecord;
     private string folioSearch = string.Empty;
     private bool isLoading;
+    private bool folioFilterOpen;
+
+    // El boton de imprimir queda oculto por ahora. Cambiar a true para mostrarlo.
+    private bool printEnabled;
 
     private int AuthorizedCount => records.Count(record => !record.IsCanceled);
     private int CanceledCount => records.Count(record => record.IsCanceled);
@@ -181,7 +146,6 @@
     private async Task LoadHistoryAsync()
     {
         isLoading = true;
-        selectedRecord = null;
         await InvokeAsync(StateHasChanged);
 
         try
@@ -212,20 +176,8 @@
 
     private async Task PrintRecordAsync(DispatchHistoryRecord record)
     {
-        selectedRecord = record;
-        await InvokeAsync(StateHasChanged);
-        await Task.Yield();
-        await PrintSelectedTicketAsync();
-    }
-
-    private async Task PrintSelectedTicketAsync()
-    {
-        if (selectedRecord is null)
-        {
-            return;
-        }
-
-        await ReceiptPrinter.PrintHtmlAsync(BuildTicketHtml(selectedRecord), $"Ticket_{selectedRecord.Sequence}");
+        // Solo manda a imprimir el ticket, sin mostrar campos en pantalla.
+        await ReceiptPrinter.PrintHtmlAsync(BuildTicketHtml(record), $"Ticket_{record.Sequence}");
     }
 
     private string BuildTicketHtml(DispatchHistoryRecord record)
@@ -253,7 +205,7 @@
             ".print-date{margin-top:18px;text-align:center;}" +
             ".end{margin-top:22px;text-align:center;font-size:15px;letter-spacing:.12em;}" +
             "</style></head><body><section class=\"ticket\">" +
-            "<div class=\"center brand\">UAAC</div>" +
+            "<div class=\"center brand\">Adm.Carga</div>" +
             "<div class=\"center title\">ORIGINAL</div>" +
             "<div class=\"line\"></div>" +
             $"<div class=\"center folio-code\">{record.Sequence}</div>" +
@@ -293,6 +245,28 @@
         return string.IsNullOrWhiteSpace(record.ProductDescription)
             ? record.Product.ToString()
             : record.ProductDescription;
+    }
+
+    private static string GetProductBadgeClass(DispatchHistoryRecord record)
+    {
+        var description = GetProductText(record).ToUpperInvariant();
+
+        if (description.Contains("SUPREME") || description.Contains("PREMIUM"))
+        {
+            return "is-supreme";
+        }
+
+        if (description.Contains("DIESEL"))
+        {
+            return "is-diesel";
+        }
+
+        if (description.Contains("MAGNA") || description.Contains("REGULAR"))
+        {
+            return "is-magna";
+        }
+
+        return "is-default";
     }
 
     private string FormatDate(DateTime? date)

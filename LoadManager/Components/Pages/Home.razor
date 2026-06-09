@@ -168,17 +168,11 @@
             }
         </div>
 
-        <section class="actions-panel dispatch-stage-actions"> 
+        <section class="actions-panel dispatch-stage-actions">
             <button class="btn btn-outline-secondary action-button" @onclick="GoBack" disabled="@(isDispatching || dispatchFormStage == 1)">
                 ← Atras
             </button>
-            @if (dispatchFormStage < 3)
-            {
-                <button class="btn btn-primary action-button" @onclick="GoForward" disabled="@(!CanGoForward)">
-                    Siguiente →
-                </button>
-            }
-            else
+            @if (dispatchFormStage == 3)
             {
                 <button class="btn btn-primary action-button" @onclick="StartDispatchAsync" disabled="@(!CanServe)">
                     @(isDispatching ? "Cargando..." : "Cargar")
@@ -463,15 +457,6 @@
     private bool CanGoNext =>
         CanEditSelectedDispenser &&
         SelectedProduct is not null;
-
-    private bool CanGoForward =>
-        !isDispatching &&
-        dispatchFormStage switch
-        {
-            1 => SelectedDispenser is not null && CanEditSelectedDispenser,
-            2 => SelectedProduct is not null,
-            _ => false
-        };
 
     private bool CanServe =>
         !isDispatching &&
@@ -895,18 +880,6 @@
         }
     }
 
-    private void GoForward()
-    {
-        if (!CanGoForward)
-        {
-            return;
-        }
-
-        if (dispatchFormStage < 3)
-        {
-            dispatchFormStage++;
-        }
-    }
 
     private async Task StartDispatchAsync()
     {
