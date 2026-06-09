@@ -12,6 +12,12 @@ public sealed class ApiLogEntry
 
     public string? Url { get; init; }
 
+    public string? IpAddress { get; init; }
+
+    public string? MacAddress { get; init; }
+
+    public string? DeviceName { get; init; }
+
     public int? HttpStatus { get; init; }
 
     public string? RequestBody { get; init; }

@@ -940,15 +940,11 @@
             return;
         }
 
-        if (currentStep == 2)
+        // En el paso 2: retrocede de etapa. En la primera etapa ya no hay a donde ir
+        // (el antiguo paso 1 se elimino), asi que se queda en la seleccion.
+        if (currentStep == 2 && dispatchFormStage > 1)
         {
-            if (dispatchFormStage > 1)
-            {
-                dispatchFormStage--;
-                return;
-            }
-
-            currentStep = 1;
+            dispatchFormStage--;
         }
     }
 
@@ -1286,9 +1282,8 @@
 
             await InvokeAsync(() =>
             {
-                currentStep = 2;
-                authorizedDispenserForCountdown = null;
-                countdownWarningShown = false;
+                // Tiempo agotado: regresa al paso 2 con el formulario limpio y reutilizable.
+                ResetDispatchFormState();
                 StateHasChanged();
             });
         }
@@ -1497,11 +1492,17 @@
     {
         StopAuthorizationCountdown();
         StopFuelingMonitor();
-        currentStep = 1;
+        ResetDispatchFormState();
+    }
+
+    // Deja el formulario del paso 2 limpio y listo para un nuevo despacho.
+    private void ResetDispatchFormState()
+    {
+        currentStep = 2;
+        dispatchFormStage = 1;
         selectedDispenser = null;
         selectedProductKey = null;
         selectedDispatchTypeId = null;
-        dispatchFormStage = 1;
         amountValue = null;
         amountInputRenderKey++;
         productLoadMessage = null;
@@ -1510,6 +1511,11 @@
         currentDispatchFolio = null;
         liveAmount = 0;
         isWaitingForDispatchHoseHang = false;
+        isFueling = false;
+        isCompletingDispatch = false;
+        dispatchTicket = null;
+        authorizedDispenserForCountdown = null;
+        countdownWarningShown = false;
         products.Clear();
     }
 

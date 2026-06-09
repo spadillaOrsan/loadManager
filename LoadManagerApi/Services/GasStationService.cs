@@ -97,22 +97,19 @@ public sealed class GasStationService(
                 ? $"Equipo autorizado ({resolvedName})."
                 : "El equipo no tiene autorizacion.";
 
-            // Se registra el resultado (autorizado o no) en el mismo metodo.
-            await LogAndReturnAsync(new ConsoleCommandResult
+            // El resultado (autorizado/no) se registra con IP, MAC y dispositivo en su
+            // campo dedicado, en el log estructurado (SUCCESS o ERROR segun el caso).
+            await logService.WriteAsync(new ApiLogEntry
             {
-                IsSuccess = authorized,
-                CommandName = "device-authorization",
-                RequestFrame = $"SELECT tblConexionesAutorizadas WHERE strIP = {ip} | MAC={mac} | Equipo={device}",
-                ResponseFrame = $"Autorizado={authorized}; Nombre={resolvedName}",
-                UserMessage = message
+                Level = authorized ? "Success" : "Error",
+                Service = "GasStationService.DeviceAuthorization",
+                Message = authorized ? "Equipo autorizado." : "Intento de conexion NO autorizado.",
+                IpAddress = ip,
+                MacAddress = mac,
+                DeviceName = string.IsNullOrWhiteSpace(resolvedName) ? device : resolvedName,
+                RequestBody = $"SELECT COUNT(*) tblConexionesAutorizadas WHERE strIP={ip} AND bitAutorizada=1",
+                ResponseBody = $"Autorizado={authorized}"
             }, cancellationToken);
-
-            // Si el equipo NO esta autorizado, se deja un archivo de auditoria con
-            // MAC, IP y nombre del equipo que intento conectarse.
-            if (!authorized)
-            {
-                await WriteUnauthorizedAttemptFileAsync(ip, mac, device, cancellationToken);
-            }
 
             return new DeviceAuthorizationResult
             {
@@ -124,10 +121,16 @@ public sealed class GasStationService(
         }
         catch (Exception ex)
         {
-            await LogAndReturnAsync(CreateErrorResult(
-                $"SELECT tblConexionesAutorizadas WHERE strIP = {ip}",
-                "No se pudo validar la autorizacion del equipo.",
-                ex), cancellationToken);
+            await logService.WriteAsync(new ApiLogEntry
+            {
+                Level = "Error",
+                Service = "GasStationService.DeviceAuthorization",
+                Message = "No se pudo validar la autorizacion del equipo.",
+                IpAddress = ip,
+                MacAddress = mac,
+                DeviceName = device,
+                Exception = ex.ToString()
+            }, cancellationToken);
 
             return new DeviceAuthorizationResult
             {
@@ -137,25 +140,6 @@ public sealed class GasStationService(
                 Message = "No se pudo validar la autorizacion del equipo."
             };
         }
-    }
-
-    private async Task WriteUnauthorizedAttemptFileAsync(
-        string ip,
-        string mac,
-        string device,
-        CancellationToken cancellationToken)
-    {
-        var now = DateTime.Now;
-        // Un solo archivo por dia: cada intento agrega una linea.
-        var fileName = $"AUTH_LOG_{now:yyyyMMdd}.txt";
-        var content =
-            $"[{now:yyyy-MM-dd HH:mm:ss}] INTENTO NO AUTORIZADO" +
-            $" | IP={(string.IsNullOrWhiteSpace(ip) ? "(desconocida)" : ip)}" +
-            $" | MAC={(string.IsNullOrWhiteSpace(mac) ? "(desconocida)" : mac)}" +
-            $" | Dispositivo={(string.IsNullOrWhiteSpace(device) ? "(desconocido)" : device)}" +
-            Environment.NewLine;
-
-        await logService.WriteFileAsync(fileName, content, cancellationToken);
     }
 
     public async Task<int> RegisterAuthorizationAsync(

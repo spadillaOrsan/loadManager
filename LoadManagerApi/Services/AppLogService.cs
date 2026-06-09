@@ -1,6 +1,5 @@
 using System.Text;
 using LoadManagerApi.Interfaces;
-using LoadManagerApi.Helpers;
 using LoadManagerApi.Models;
 using Microsoft.Extensions.Options;
 
@@ -17,34 +16,29 @@ public sealed class AppLogService(
         CancellationToken cancellationToken = default)
     {
         var now = DateTime.Now;
-        var filePath = Path.Combine(GetDailyDirectory(now), $"log_{now:yyyyMMdd}.txt");
-        var content = BuildContent(entry, now);
+        var level = NormalizeLevel(entry.Level);
+        // Estructura: Logs/AÑO/MES/DIA/SUCCESS|ERROR/Log_yyyyMMdd.txt (uno por dia por nivel).
+        var levelFolder = level == "Error" ? "ERROR" : "SUCCESS";
+        var filePath = Path.Combine(GetDailyDirectory(now, levelFolder), $"Log_{now:yyyyMMdd}.txt");
+        var content = BuildContent(entry, now, level);
 
         await AppendAsync(filePath, content, cancellationToken);
         return filePath;
     }
 
-    public async Task<string> WriteFileAsync(
-        string fileName,
-        string content,
-        CancellationToken cancellationToken = default)
+    private string GetDailyDirectory(DateTime now, string levelFolder)
     {
-        var filePath = Path.Combine(GetDailyDirectory(DateTime.Now), fileName);
-        await AppendAsync(filePath, content, cancellationToken);
-        return filePath;
-    }
-
-    private string GetDailyDirectory(DateTime now)
-    {
-        var solutionRoot = SolutionPathHelper.GetSolutionRoot(environment.ContentRootPath);
+        // Raiz del proyecto/aplicacion de LoadManagerApi (carpeta del proyecto en local,
+        // carpeta de la app en IIS). Si BasePath es absoluto en appsettings.json se respeta.
         var basePath = Path.IsPathRooted(options.Value.BasePath)
             ? options.Value.BasePath
-            : Path.Combine(solutionRoot, options.Value.BasePath);
+            : Path.Combine(environment.ContentRootPath, options.Value.BasePath);
         var directory = Path.Combine(
             basePath,
             now.ToString("yyyy"),
             now.ToString("MM"),
-            now.ToString("yyyy-MM-dd"));
+            now.ToString("dd"),
+            levelFolder);
 
         Directory.CreateDirectory(directory);
         return directory;
@@ -63,7 +57,7 @@ public sealed class AppLogService(
         }
     }
 
-    private static string BuildContent(ApiLogEntry entry, DateTime createdAt)
+    private static string BuildContent(ApiLogEntry entry, DateTime createdAt, string level)
     {
         var parts = new List<string>
         {
@@ -73,6 +67,9 @@ public sealed class AppLogService(
 
         Add(parts, "Metodo", entry.Method);
         Add(parts, "URL", entry.Url);
+        Add(parts, "IP", entry.IpAddress);
+        Add(parts, "MAC", entry.MacAddress);
+        Add(parts, "Dispositivo", entry.DeviceName);
         if (entry.HttpStatus.HasValue)
         {
             parts.Add($"HttpStatus={entry.HttpStatus.Value}");
@@ -87,7 +84,7 @@ public sealed class AppLogService(
         Add(parts, "Respuesta", entry.ResponseBody);
         Add(parts, "Exception", entry.Exception);
 
-        return $"[{FormatTimestamp(createdAt)}]{NormalizeLevel(entry.Level)} - {string.Join(" | ", parts)}{Environment.NewLine}";
+        return $"[{FormatTimestamp(createdAt)}]{level} - {string.Join(" | ", parts)}{Environment.NewLine}";
     }
 
     private static void Add(ICollection<string> parts, string name, string? value)

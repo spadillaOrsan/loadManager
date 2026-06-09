@@ -1,0 +1,1 @@
+﻿[2026-06-09 01:37:37.103 p.m.]Error - Servicio=GasStationService.DeviceAuthorization | Mensaje=Intento de conexion NO autorizado. | IP=8.8.8.8 | MAC=AA:BB:CC:DD:EE:FF | Dispositivo=PruebaRaiz | Body=SELECT COUNT(*) tblConexionesAutorizadas WHERE strIP=8.8.8.8 AND bitAutorizada=1 | Respuesta=Autorizado=False
