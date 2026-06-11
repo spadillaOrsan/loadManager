@@ -117,7 +117,7 @@
                                 @foreach (var dispatchType in dispatchTypes)
                                 {
                                     <button class="amount-mode @(selectedDispatchTypeId == dispatchType.Id ? "is-selected" : string.Empty)"
-                                            @onclick="() => SelectDispatchType(dispatchType)"
+                                            @onclick="() => SelectDispatchTypeAndAdvance(dispatchType)"
                                             disabled="@(!CanEditSelectedDispenser || isDispatching)">
                                         @dispatchType.Description
                                     </button>
@@ -129,7 +129,17 @@
                         {
                             <p class="empty-message">No se encontraron tipos de despacho activos.</p>
                         }
+                    }
+                </section>
 
+                <section class="amount-panel dispatch-stage-card">
+                    <div class="panel-heading">
+                        <h2>@(SelectedDispatchType?.IsFull == true ? "Confirmar carga" : "Monto a surtir")</h2>
+                        <span>@(SelectedDispatchType?.Description ?? "Seleccione")</span>
+                    </div>
+
+                    @if (SelectedDispatchType?.IsFull != true)
+                    {
                         <label class="amount-input-wrap">
                             <div class="amount-input">
                                 @if (SelectedDispatchType?.IsMoney == true)
@@ -144,18 +154,24 @@
                                        value="@amountValue"
                                        @oninput="OnAmountChanged"
                                        @onblur="FormatAmount"
-                                       disabled="@(!CanEditSelectedDispenser || isDispatching || SelectedDispatchType?.IsFull == true)" />
+                                       disabled="@(!CanEditSelectedDispenser || isDispatching)" />
                                 @if (SelectedDispatchType?.IsVolume == true)
-                                {
-                                    <strong>Lt</strong>
-                                }
-                                @if (SelectedDispatchType?.IsFull == true)
                                 {
                                     <strong>Lt</strong>
                                 }
                             </div>
                         </label>
                     }
+                    else
+                    {
+                        <p class="full-charge-note">Se surtira hasta llenar el tanque.</p>
+                    }
+
+                    <div class="charge-circle-wrap">
+                        <button class="charge-circle" @onclick="StartDispatchAsync" disabled="@(!CanServe)">
+                            <span class="charge-circle-text">@(isDispatching ? "..." : "Cargar")</span>
+                        </button>
+                    </div>
                 </section>
             </div>
 
@@ -172,12 +188,6 @@
             <button class="btn btn-outline-secondary action-button" @onclick="GoBack" disabled="@(isDispatching || dispatchFormStage == 1)">
                 ← Atras
             </button>
-            @if (dispatchFormStage == 3)
-            {
-                <button class="btn btn-primary action-button" @onclick="StartDispatchAsync" disabled="@(!CanServe)">
-                    @(isDispatching ? "Cargando..." : "Cargar")
-                </button>
-            }
         </section>
 
     }
@@ -956,12 +966,21 @@
         amountValue = null;
     }
 
+    // Al elegir el tipo en la etapa 3, fija el tipo y desliza a la etapa 4
+    // (captura de monto para Moneda/Litros, o boton circular de carga para Lleno).
+    private void SelectDispatchTypeAndAdvance(DispatchTypeViewModel dispatchType)
+    {
+        SelectDispatchType(dispatchType);
+        amountInputRenderKey++;
+        dispatchFormStage = 4;
+    }
+
     private void GoBack()
     {
         if (currentStep == 3)
         {
             currentStep = 2;
-            dispatchFormStage = 3;
+            dispatchFormStage = 4;
             return;
         }
 
