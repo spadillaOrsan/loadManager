@@ -1467,6 +1467,20 @@ a, .btn-link {
     letter-spacing: 0;
 }
 
+/* Parpadeo mientras se surte: la palabra "Surtiendo", los digitos (litros/moneda
+   primario y secundario) y el porcentaje del tanque parpadean en sincronia.
+   No aplica en el ticket final (is-finished) ni al completar el tanque (is-complete). */
+@keyframes uaacFuelBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+}
+
+.liters-display:not(.is-finished) .live-counter-status,
+.liters-display:not(.is-finished) strong,
+.fuel-tank:not(.is-complete) .fuel-tank-pct {
+    animation: uaacFuelBlink 1s ease-in-out infinite;
+}
+
 .liters-display strong {
     align-items: baseline;
     color: #1b6ec2;
