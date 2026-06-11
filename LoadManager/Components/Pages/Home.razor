@@ -200,6 +200,18 @@
                         <strong>@((MarkupString)FormatSecondaryLiveCounter())</strong>
                     </div>
                 </div>
+
+                @if (FuelProgressPercent is int tankPct)
+                {
+                    <div class="fuel-tank @FuelTankColorClass @(tankPct >= 100 ? "is-complete" : null)"
+                         role="img" aria-label="@($"Llenado {tankPct} por ciento")">
+                        <span class="fuel-tank-cap"></span>
+                        <div class="fuel-tank-body">
+                            <div class="fuel-tank-fill" style="height:@(tankPct)%"></div>
+                            <span class="fuel-tank-pct">@tankPct<small>%</small></span>
+                        </div>
+                    </div>
+                }
             }
             else
             {
@@ -1991,6 +2003,31 @@
             ? "Litros equivalentes"
             : "Importe equivalente";
     }
+
+    // Porcentaje de avance del surtido (0-100) para la simulacion del tanque.
+    // Devuelve null cuando no hay meta definida (despacho "Lleno") y no aplica.
+    private int? FuelProgressPercent
+    {
+        get
+        {
+            if (SelectedDispatchType?.IsFull == true)
+            {
+                return null;
+            }
+
+            if (!TryGetAmount(out var requested) || requested <= 0)
+            {
+                return null;
+            }
+
+            var current = SelectedDispatchType?.IsMoney == true ? liveAmount : liveLiters;
+            var pct = (int)Math.Floor(current / requested * 100m);
+            return Math.Clamp(pct, 0, 100);
+        }
+    }
+
+    // Clase de color del producto seleccionado para pintar el liquido del tanque.
+    private string FuelTankColorClass => SelectedProduct?.CssClass ?? "fuel-magna";
 
     private string FormatPrimaryLiveCounter()
     {

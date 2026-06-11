@@ -1445,7 +1445,11 @@ a, .btn-link {
     display: grid;
     gap: 0.25rem;
     justify-items: center;
+    /* Fallback para WebView viejo del Verifone (Chrome 75, sin clamp()); los
+       navegadores modernos aplican el clamp de la linea siguiente. */
+    min-height: 40vh;
     min-height: clamp(12rem, 40vh, 20rem);
+    padding: 1rem;
     padding: clamp(0.75rem, 2.5vw, 1.3rem);
     width: 100%;
 }
@@ -1467,11 +1471,12 @@ a, .btn-link {
     align-items: baseline;
     color: #1b6ec2;
     display: inline-flex;
-    /* Dimensionado al ancho del card (cqw): el peor caso ($9,990.00 / 9,990.00 Lt)
-       llena ~80% del contenedor en una sola linea sin salirse, y escala en cualquier
-       dispositivo (escritorio anchos y Verifone 360px). El minimo se mantiene bajo
-       para que en pantallas angostas no se fuerce un tamano que desborde. */
-    font-size: clamp(1.6rem, 16cqw, 11rem);
+    /* Verifone (WebView Chrome 75, sin clamp ni cqw): usa vw, calibrado para que
+       $9,990.00 quepa en la pantalla de 360px CSS. Los navegadores modernos
+       (escritorio/WebView2) ignoran el vw y aplican el clamp con cqw, que llena
+       ~75% del card y escala a cualquier ancho. */
+    font-size: 12vw;
+    font-size: clamp(2rem, 18cqw, 12rem);
     gap: 0.2rem;
     line-height: 0.95;
     max-width: 100%;
@@ -1507,7 +1512,9 @@ a, .btn-link {
 
 .live-secondary-counter strong {
     color: #1b6ec2;
-    font-size: clamp(1.1rem, 10cqw, 6.5rem);
+    /* Fallback vw para Chrome 75 (Verifone); clamp para navegadores modernos. */
+    font-size: 7.5vw;
+    font-size: clamp(1.2rem, 11cqw, 7rem);
     line-height: 0.95;
     white-space: nowrap;
 }
@@ -1529,6 +1536,102 @@ a, .btn-link {
 .liters-display.is-finished .live-secondary-counter span,
 .liters-display.is-finished .live-secondary-counter strong {
     color: #176c35;
+}
+
+/* === Simulacion de tanque de llenado (debajo del contador de surtido) ===
+   Estilo bateria: el liquido sube de abajo hacia arriba segun el porcentaje.
+   0-99% usa el color del producto; al 100% se pone verde (como bateria cargada).
+   Sin clamp()/cqw para que funcione tambien en el WebView Chrome 75 del Verifone. */
+.fuel-tank {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    margin: 0.6rem auto 0;
+}
+
+.fuel-tank-cap {
+    background: #cdd9e5;
+    border-radius: 4px 4px 0 0;
+    height: 0.55rem;
+    width: 2.2rem;
+}
+
+.fuel-tank-body {
+    background: #ffffff;
+    border: 4px solid #cdd9e5;
+    border-radius: 12px;
+    box-shadow: inset 0 2px 6px rgba(15, 23, 42, 0.12);
+    height: 12rem;
+    overflow: hidden;
+    position: relative;
+    width: 6rem;
+}
+
+.fuel-tank-fill {
+    background: #20a54a;
+    bottom: 0;
+    left: 0;
+    position: absolute;
+    transition: height 0.6s ease, background-color 0.4s ease;
+    width: 100%;
+}
+
+/* Brillo en la superficie del liquido, con leve oscilacion tipo oleaje */
+.fuel-tank-fill::before {
+    animation: fuelTankWave 2.4s ease-in-out infinite;
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    content: "";
+    height: 0.8rem;
+    left: -10%;
+    position: absolute;
+    top: -0.4rem;
+    width: 120%;
+}
+
+@keyframes fuelTankWave {
+    0%, 100% { transform: translateX(-5%); }
+    50% { transform: translateX(5%); }
+}
+
+.fuel-tank-pct {
+    background: rgba(15, 23, 42, 0.72);
+    border-radius: 999px;
+    color: #ffffff;
+    font-size: 1.45rem;
+    font-weight: 900;
+    left: 50%;
+    line-height: 1;
+    padding: 0.2rem 0.55rem;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    white-space: nowrap;
+    z-index: 2;
+}
+
+.fuel-tank-pct small {
+    font-size: 0.85rem;
+    margin-left: 0.05rem;
+}
+
+/* Color del liquido segun el producto (0-99%) */
+.fuel-tank.fuel-premium .fuel-tank-fill { background: #d71920; }
+.fuel-tank.fuel-extra .fuel-tank-fill { background: #2563eb; }
+.fuel-tank.fuel-diesel .fuel-tank-fill { background: #111827; }
+.fuel-tank.fuel-magna .fuel-tank-fill { background: #20a54a; }
+
+/* Al 100%: verde de "completado", como bateria cargada */
+.fuel-tank.is-complete .fuel-tank-fill { background: #16a34a; }
+.fuel-tank.is-complete .fuel-tank-body { border-color: #16a34a; }
+.fuel-tank.is-complete .fuel-tank-cap { background: #16a34a; }
+.fuel-tank.is-complete .fuel-tank-pct { background: rgba(22, 163, 74, 0.92); }
+
+/* En pantallas anchas (escritorio) el tanque se ve un poco mas grande */
+@media (min-width: 641px) {
+    .fuel-tank-body { height: 14rem; width: 7rem; }
+    .fuel-tank-cap { height: 0.65rem; width: 2.6rem; }
+    .fuel-tank-pct { font-size: 1.7rem; }
 }
 
 .fueling-note {
