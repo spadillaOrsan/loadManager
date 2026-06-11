@@ -5,6 +5,7 @@
 @inject IGasStationService ConsoleClient
 @inject IAppSettingsService SettingsProvider
 @inject IConnectionValidationService ConnectionState
+@inject IDevModeService DevMode
 @inject IJSRuntime JsRuntime
 
 <section class="console-shell">
@@ -578,7 +579,8 @@
             var currentSettings = await SettingsProvider.GetSettingsAsync(pageCancellation.Token);
 
             // 1) Validar que existan los datos de configuracion
-            if (!HasRequiredConfiguration(currentSettings))
+            // (en modo DEV se omite si se saltan TCP/IP o BD, que son los datos que usa).
+            if (!DevMode.BypassTcpConnection && !DevMode.BypassDatabase && !HasRequiredConfiguration(currentSettings))
             {
                 startupStatusMessage = "Configuracion incompleta.";
                 connectionBlockedMessage = "Capture los datos de configuracion (IP, puerto e interfaz, URL del servicio).";
@@ -587,63 +589,67 @@
             }
 
             // 2) Primera validacion: el equipo debe estar autorizado (por su IP).
-            startupStatusMessage = "Validando autorizacion del equipo...";
-            await InvokeAsync(StateHasChanged);
-
-            var deviceAuthorization = await ConsoleClient.CheckDeviceAuthorizationAsync(pageCancellation.Token);
-            if (!deviceAuthorization.IsAuthorized)
+            if (!DevMode.BypassDeviceAuthorization)
             {
-                // Equipo no autorizado: modal especial, sin reintentar, cierra la app
-                // tras la cuenta regresiva. El intento ya quedo registrado en el API.
-                startupStatusMessage = null;
-                deviceNotAuthorized = true;
-                _ = RunDeviceNotAuthorizedCountdownAsync();
-                return;
+                startupStatusMessage = "Validando autorizacion del equipo...";
+                await InvokeAsync(StateHasChanged);
+
+                var deviceAuthorization = await ConsoleClient.CheckDeviceAuthorizationAsync(pageCancellation.Token);
+                if (!deviceAuthorization.IsAuthorized)
+                {
+                    // Equipo no autorizado: modal especial, sin reintentar, cierra la app
+                    // tras la cuenta regresiva. El intento ya quedo registrado en el API.
+                    startupStatusMessage = null;
+                    deviceNotAuthorized = true;
+                    _ = RunDeviceNotAuthorizedCountdownAsync();
+                    return;
+                }
             }
 
             startupStatusMessage = "Validando TCP/IP y base de datos...";
             await InvokeAsync(StateHasChanged);
 
-            var databaseTask = ConsoleClient.CheckDatabaseConnectionAsync(pageCancellation.Token);
-            var tcpTask = ConsoleClient.IsConnected
-                ? Task.FromResult(new ConsoleAvailabilityResult
-                {
-                    IsAvailable = true,
-                    UserMessage = "La consola ya esta conectada."
-                })
-                : ConsoleClient.ConnectAsync(pageCancellation.Token);
-
-            await Task.WhenAll(databaseTask, tcpTask);
-
-            // 2) Validar base de datos
-            var databaseResult = await databaseTask;
-            ConnectionState.SetDatabaseResult(databaseResult);
-
-            if (!databaseResult.IsSuccess)
+            // 2) Validar base de datos (DEV: se puede saltar)
+            if (DevMode.BypassDatabase)
             {
-                if (ConsoleClient.IsConnected)
+                databaseIsReady = true;
+            }
+            else
+            {
+                var databaseResult = await ConsoleClient.CheckDatabaseConnectionAsync(pageCancellation.Token);
+                ConnectionState.SetDatabaseResult(databaseResult);
+
+                if (!databaseResult.IsSuccess)
                 {
-                    await ConsoleClient.DisconnectAsync();
+                    if (ConsoleClient.IsConnected)
+                    {
+                        await ConsoleClient.DisconnectAsync();
+                    }
+
+                    startupStatusMessage = "Sin comunicacion.";
+                    connectionBlockedMessage = "Revise la conexion con la base de datos (BD).";
+                    connectionBlocked = true;
+                    return;
                 }
 
-                startupStatusMessage = "Sin comunicacion.";
-                connectionBlockedMessage = "Revise la conexion con la base de datos (BD).";
-                connectionBlocked = true;
-                return;
+                databaseIsReady = true;
             }
 
-            databaseIsReady = true;
-
-            // 3) Validar interfaz TCP/IP
-            var tcpResult = await tcpTask;
-
-            if (!tcpResult.IsAvailable)
+            // 3) Validar interfaz TCP/IP (DEV: se puede saltar)
+            if (!DevMode.BypassTcpConnection)
             {
-                databaseIsReady = false;
-                startupStatusMessage = "Sin comunicacion.";
-                connectionBlockedMessage = "Revise la conexion TCP/IP.";
-                connectionBlocked = true;
-                return;
+                var tcpResult = ConsoleClient.IsConnected
+                    ? new ConsoleAvailabilityResult { IsAvailable = true, UserMessage = "La consola ya esta conectada." }
+                    : await ConsoleClient.ConnectAsync(pageCancellation.Token);
+
+                if (!tcpResult.IsAvailable)
+                {
+                    databaseIsReady = false;
+                    startupStatusMessage = "Sin comunicacion.";
+                    connectionBlockedMessage = "Revise la conexion TCP/IP.";
+                    connectionBlocked = true;
+                    return;
+                }
             }
 
             isLoadingDispensers = true;
@@ -654,25 +660,42 @@
             try
             {
                 configuredDispenserCount = currentSettings.AppConfiguration.DispenserCount;
-                LoadConfiguredDispensers();
-                await RefreshDispenserSummaryAsync(pageCancellation.Token);
 
-                // 4) Validar que al menos un dispensario tenga comunicacion
-                if (!HasAnyDispenserCommunication())
+                // 4) Dispensarios (DEV: datos de ejemplo y sin validar comunicacion)
+                if (DevMode.BypassDispenserCommunication)
                 {
-                    startupStatusMessage = "Sin comunicacion.";
-                    connectionBlockedMessage = "Revise la conexion de los dispensarios.";
-                    connectionBlocked = true;
-                    return;
+                    LoadMockDispensers();
+                }
+                else
+                {
+                    LoadConfiguredDispensers();
+                    await RefreshDispenserSummaryAsync(pageCancellation.Token);
+
+                    if (!HasAnyDispenserCommunication())
+                    {
+                        startupStatusMessage = "Sin comunicacion.";
+                        connectionBlockedMessage = "Revise la conexion de los dispensarios.";
+                        connectionBlocked = true;
+                        return;
+                    }
                 }
 
                 // Si hay una manguera descolgada NO se bloquea el inicio: el dispensario
                 // simplemente se muestra con su estatus (manguera levantada) y su color.
-                blockedHoseDispenser = GetFirstLiftedHoseDispenser();
+                blockedHoseDispenser = DevMode.BypassHoseLiftedBlock ? null : GetFirstLiftedHoseDispenser();
 
                 startupStatusMessage = "Consultando tipos de despacho...";
                 await InvokeAsync(StateHasChanged);
-                await LoadDispatchTypesAsync();
+
+                if (DevMode.BypassDispatchTypesAndProducts)
+                {
+                    LoadMockDispatchTypes();
+                }
+                else
+                {
+                    await LoadDispatchTypesAsync();
+                }
+
                 dispatchFormStage = 1;
                 currentStep = 2;
             }
@@ -847,6 +870,45 @@
         }
     }
 
+    // --- Datos de ejemplo para Modo DEV (ver el diseno sin hardware/BD) ---
+    private void LoadMockDispensers()
+    {
+        dispensers.Clear();
+        var count = configuredDispenserCount > 0 ? configuredDispenserCount : 4;
+
+        for (var i = 1; i <= count; i++)
+        {
+            var dispenser = new DispenserViewModel
+            {
+                Number = DispenserFrameHelper.NormalizeDispenserNumber(i.ToString(CultureInfo.InvariantCulture))
+            };
+            ApplyDispenserStatusCode(dispenser, "1"); // Libre / disponible
+            dispensers.Add(dispenser);
+        }
+
+        dispensers.Sort((left, right) => string.Compare(left.Number, right.Number, StringComparison.Ordinal));
+    }
+
+    private void LoadMockDispatchTypes()
+    {
+        dispatchTypes.Clear();
+        dispatchTypes.Add(new DispatchTypeViewModel(1, "Importe"));
+        dispatchTypes.Add(new DispatchTypeViewModel(2, "Litros"));
+        dispatchTypes.Add(new DispatchTypeViewModel(3, "Lleno"));
+    }
+
+    private void LoadMockProducts()
+    {
+        products.Clear();
+        productLoadMessage = null;
+        products.Add(new FuelProductViewModel("1-1", "SUPREME+", FuelProductHelper.GetCssClass("SUPREME"), 1,
+            FuelProductHelper.GetAuthorizationProductCode("SUPREME", 1), 1, 24.50m));
+        products.Add(new FuelProductViewModel("1-2", "EXTRA", FuelProductHelper.GetCssClass("EXTRA"), 2,
+            FuelProductHelper.GetAuthorizationProductCode("EXTRA", 2), 1, 22.30m));
+        products.Add(new FuelProductViewModel("2-3", "DIESEL", FuelProductHelper.GetCssClass("DIESEL"), 3,
+            FuelProductHelper.GetAuthorizationProductCode("DIESEL", 3), 2, 23.10m));
+    }
+
     private void LoadConfiguredDispensers()
     {
         dispensers.Clear();
@@ -920,6 +982,13 @@
     {
         products.Clear();
         productLoadMessage = null;
+
+        // Modo DEV: productos de ejemplo, sin consultar la consola.
+        if (DevMode.BypassDispatchTypesAndProducts)
+        {
+            LoadMockProducts();
+            return;
+        }
 
         if (string.IsNullOrWhiteSpace(selectedDispenser) ||
             !int.TryParse(DispenserFrameHelper.ToCommandNumber(selectedDispenser), out var dispenserNumber))
