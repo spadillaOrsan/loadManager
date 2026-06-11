@@ -1076,9 +1076,18 @@
 
         try
         {
-            if (SelectedDispenser?.StatusCode == "3")
+            if (!DevMode.BypassHoseLiftedBlock && SelectedDispenser?.StatusCode == "3")
             {
                 await ShowHoseLiftedBlockAsync("La manguera del dispensario seleccionado esta descolgada. Cuelguela para poder cargar.", selectedDispenser);
+                return;
+            }
+
+            // Modo DEV: saltar el registro/envio de autorizacion y simular el despacho
+            // (cuenta regresiva, surtido y ticket) para ver el diseno sin consola.
+            if (DevMode.BypassSendAuthorization)
+            {
+                isDispatching = false;
+                await RunSimulatedDispatchAsync();
                 return;
             }
 
@@ -1135,7 +1144,7 @@
             var authorizationMessage = GetAuthorizationToastMessage(lastResult);
             ShowToast(authorizationMessage.Message, authorizationMessage.IsSuccess);
 
-            if (IsAuthorizedResponse(lastResult))
+            if (DevMode.BypassAuthorizationResponse || IsAuthorizedResponse(lastResult))
             {
                 await SendTotalizersForLogAsync(dispenser, dispatchCancellation.Token);
                 StartAuthorizationCountdown(dispenser);
@@ -1173,6 +1182,86 @@
     {
         dispatchCancellation?.Cancel();
         return Task.CompletedTask;
+    }
+
+    // Modo DEV: simula autorizacion y (si 'Simular surtido' esta activo) el surtido y el
+    // ticket, para poder ver y acomodar el diseno sin consola ni hardware.
+    private async Task RunSimulatedDispatchAsync()
+    {
+        var isMoney = SelectedDispatchType?.IsMoney == true;
+        var isFull = SelectedDispatchType?.IsFull == true;
+        var requested = GetAmountOrZero();
+        var price = SelectedProduct?.Price ?? 22.50m;
+        if (price <= 0)
+        {
+            price = 22.50m;
+        }
+
+        var targetPrimary = isFull
+            ? (fullTankProgrammedAmount > 0 ? fullTankProgrammedAmount : 30m)
+            : (requested > 0 ? requested : (isMoney ? 200m : 20m));
+
+        var targetLiters = isMoney ? targetPrimary / price : targetPrimary;
+        var targetAmount = isMoney ? targetPrimary : targetPrimary * price;
+
+        currentDispatchFolio = Random.Shared.Next(1000, 9999);
+        dispatchTicket = null;
+        liveLiters = 0;
+        liveAmount = 0;
+        currentStep = 3;
+
+        try
+        {
+            // Sin 'Simular surtido': solo la pantalla de instrucciones/cuenta regresiva.
+            if (!DevMode.BypassFueling)
+            {
+                isFueling = false;
+                remainingAuthorizationSeconds = authorizationCountdownSeconds;
+                ShowInfoToast("Modo DEV: autorizacion simulada. Active 'Simular surtido' para ver el surtido.");
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
+            // Surtido animado de 0 a la meta.
+            isFueling = true;
+            liveDispenserStatus = "Surtiendo";
+            ShowInfoToast("Modo DEV: surtido simulado.");
+            await InvokeAsync(StateHasChanged);
+
+            const int steps = 40;
+            for (var i = 1; i <= steps; i++)
+            {
+                var ratio = (decimal)i / steps;
+                liveLiters = Math.Round(targetLiters * ratio, 3);
+                liveAmount = Math.Round(targetAmount * ratio, 2);
+                await InvokeAsync(StateHasChanged);
+                await Task.Delay(150, pageCancellation.Token);
+            }
+
+            liveLiters = Math.Round(targetLiters, 3);
+            liveAmount = Math.Round(targetAmount, 2);
+            isFueling = false;
+
+            dispatchTicket = new DispatchTicketViewModel
+            {
+                Dispenser = selectedDispenser ?? "1",
+                Hose = hoseNumber.ToString(CultureInfo.InvariantCulture),
+                Product = SelectedProduct?.Name ?? "SUPREME+",
+                ProductCode = SelectedProduct?.ProductCode.ToString(CultureInfo.InvariantCulture) ?? "1",
+                DispatchType = SelectedDispatchType?.Description ?? "Importe",
+                ProgrammedAmount = string.IsNullOrWhiteSpace(amountValue) ? FormatQuantity(targetPrimary) : amountValue,
+                Price = price.ToString("N2", CultureInfo.GetCultureInfo("en-US")),
+                Liters = liveLiters.ToString("N3", CultureInfo.GetCultureInfo("en-US")),
+                Amount = liveAmount.ToString("N2", CultureInfo.GetCultureInfo("en-US")),
+                Folio = $"DEV-{currentDispatchFolio}",
+                RawResponse = "DEV simulado"
+            };
+            currentStep = 4;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (OperationCanceledException)
+        {
+        }
     }
 
     private async Task<bool> ValidateSelectedDispenserForAuthorizationAsync(CancellationToken cancellationToken)
@@ -1711,6 +1800,11 @@
             return;
         }
 
+        if (DevMode.BypassAmountLimits)
+        {
+            return;
+        }
+
         if ((SelectedDispatchType?.IsVolume == true || SelectedDispatchType?.IsFull == true) &&
             TryGetAmount(out var amount) &&
             amount > litersLimit)
@@ -1751,17 +1845,20 @@
             return;
         }
 
-        if ((SelectedDispatchType?.IsVolume == true || SelectedDispatchType?.IsFull == true) &&
-            amount > litersLimit)
+        if (!DevMode.BypassAmountLimits)
         {
-            amount = litersLimit;
-            ShowToast($"El limite maximo de litros es {FormatQuantity(litersLimit)}.", false);
-        }
+            if ((SelectedDispatchType?.IsVolume == true || SelectedDispatchType?.IsFull == true) &&
+                amount > litersLimit)
+            {
+                amount = litersLimit;
+                ShowToast($"El limite maximo de litros es {FormatQuantity(litersLimit)}.", false);
+            }
 
-        if (SelectedDispatchType?.IsMoney == true && amount > amountLimit)
-        {
-            amount = amountLimit;
-            ShowToast($"El limite maximo de importe es {FormatQuantity(amountLimit)}.", false);
+            if (SelectedDispatchType?.IsMoney == true && amount > amountLimit)
+            {
+                amount = amountLimit;
+                ShowToast($"El limite maximo de importe es {FormatQuantity(amountLimit)}.", false);
+            }
         }
 
         amountValue = FormatQuantity(amount);
