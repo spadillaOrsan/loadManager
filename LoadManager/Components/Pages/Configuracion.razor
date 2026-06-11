@@ -153,6 +153,18 @@
         {
             <div class="dev-toggle-list">
                 <p class="dev-warning">Validaciones desactivadas: las pantallas usaran datos de ejemplo. No usar en produccion.</p>
+
+                <div class="switch-row dev-toggle-all">
+                    <span class="switch-row-label">@(AreAllDevTogglesOn ? "Desactivar todo" : "Activar todo")</span>
+                    <button type="button"
+                            class="switch @(AreAllDevTogglesOn ? "is-on" : string.Empty)"
+                            @onclick="ToggleAllDevToggles"
+                            aria-pressed="@AreAllDevTogglesOn"
+                            aria-label="Activar o desactivar todos los toggles">
+                        <span class="switch-track"><span class="switch-thumb"></span></span>
+                    </button>
+                </div>
+
                 @foreach (var toggle in DevToggles)
                 {
                     <div class="switch-row">
@@ -256,6 +268,17 @@
         ("Ignorar limites de importe/litros", () => DevMode.SkipAmountLimits, v => DevMode.SkipAmountLimits = v),
         ("Simular surtido (ver contador y tanque)", () => DevMode.SimulateFueling, v => DevMode.SimulateFueling = v),
     };
+
+    private bool AreAllDevTogglesOn => DevToggles.All(toggle => toggle.Get());
+
+    private void ToggleAllDevToggles()
+    {
+        var target = !AreAllDevTogglesOn;
+        foreach (var toggle in DevToggles)
+        {
+            toggle.Set(target);
+        }
+    }
 
     private void ToggleDevMaster()
     {

@@ -1548,6 +1548,16 @@ a, .btn-link {
     transform: translateX(1.4rem);
 }
 
+.dev-toggle-all {
+    border-top: 0;
+    border-bottom: 2px solid var(--ua-panel-border, #d8e0e6);
+    margin-bottom: 0.25rem;
+}
+
+.dev-toggle-all .switch-row-label {
+    font-weight: 800;
+}
+
 .dev-password-modal {
     display: grid;
     gap: 0.75rem;
