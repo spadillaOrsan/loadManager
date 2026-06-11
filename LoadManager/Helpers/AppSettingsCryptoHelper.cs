@@ -10,9 +10,24 @@ public static class AppSettingsCryptoHelper
     private const string CryptoPurpose = "LoadManager.UAAC.AppSettings.2026";
     private const string DefaultConfigurationPasswordHash = "5095a522aeb0532fd80c4af727e7296dc6c7cac61c35043fcb454a44cf3349b7";
 
+    // SHA256 de la contrasena del Modo DEV (no se guarda la contrasena en claro).
+    private const string DevModePasswordHash = "be33b3fe286896e06306d9fe5debe5b8da338f5a835f51a4861257ed73192e05";
+
     public static string GetDefaultConfigurationPasswordHash()
     {
         return DefaultConfigurationPasswordHash;
+    }
+
+    public static bool VerifyDevModePassword(string password)
+    {
+        if (string.IsNullOrEmpty(password))
+        {
+            return false;
+        }
+
+        return CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(DevModePasswordHash),
+            Encoding.UTF8.GetBytes(HashPassword(password)));
     }
 
     public static bool VerifyConfigurationPassword(string? expectedHash, string password)

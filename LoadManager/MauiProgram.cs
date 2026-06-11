@@ -23,6 +23,7 @@ namespace LoadManager
             builder.Services.AddSingleton<IGasStationService, GasStationService>();
             builder.Services.AddSingleton<IReceiptPrinterService, ReceiptPrinterService>();
             builder.Services.AddSingleton<IConnectionValidationService, ConnectionValidationService>();
+            builder.Services.AddSingleton<IDevModeService, DevModeService>();
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();

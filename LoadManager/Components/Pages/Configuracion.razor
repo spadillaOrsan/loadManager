@@ -1,7 +1,9 @@
 @page "/configuracion"
+@using LoadManager.Helpers
 @inject IAppSettingsService SettingsProvider
 @inject IGasStationService ConsoleClient
 @inject IConnectionValidationService ConnectionState
+@inject IDevModeService DevMode
 @inject NavigationManager NavigationManager
 
 <PageTitle>Configuracion</PageTitle>
@@ -131,6 +133,42 @@
 
     </div>
 
+    <!-- Modo DEV (desarrollo): desactiva validaciones del modulo de dispensario -->
+    <section class="dev-section">
+        <div class="dev-section-head">
+            <div class="dev-section-title">
+                <h2>DEV</h2>
+                <span>Desactiva validaciones para desarrollar y acomodar estilos</span>
+            </div>
+            <button type="button"
+                    class="switch @(DevMode.IsEnabled ? "is-on" : string.Empty)"
+                    @onclick="ToggleDevMaster"
+                    aria-pressed="@DevMode.IsEnabled"
+                    aria-label="Activar modo DEV">
+                <span class="switch-track"><span class="switch-thumb"></span></span>
+            </button>
+        </div>
+
+        @if (DevMode.IsEnabled)
+        {
+            <div class="dev-toggle-list">
+                <p class="dev-warning">Validaciones desactivadas: las pantallas usaran datos de ejemplo. No usar en produccion.</p>
+                @foreach (var toggle in DevToggles)
+                {
+                    <div class="switch-row">
+                        <span class="switch-row-label">@toggle.Label</span>
+                        <button type="button"
+                                class="switch @(toggle.Get() ? "is-on" : string.Empty)"
+                                @onclick="() => toggle.Set(!toggle.Get())"
+                                aria-pressed="@toggle.Get()">
+                            <span class="switch-track"><span class="switch-thumb"></span></span>
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+
     <!-- Botones al fondo -->
     <div class="settings-actions config-actions-footer">
         <button class="btn btn-outline-secondary action-button" type="button" @onclick="OpenTester" disabled="@isSaving">
@@ -145,6 +183,30 @@
 @if (!string.IsNullOrWhiteSpace(toastMessage))
 {
     <div class="app-toast @toastCss">@toastMessage</div>
+}
+
+@if (showDevPasswordModal)
+{
+    <div class="app-modal-backdrop">
+        <section class="app-modal dev-password-modal" role="dialog" aria-modal="true" aria-label="Contraseña DEV">
+            <h2>Modo DEV</h2>
+            <p>Ingrese la contraseña para desactivar validaciones.</p>
+            <input type="password"
+                   class="dev-password-input"
+                   placeholder="Contraseña"
+                   @bind="devPassword"
+                   @bind:event="oninput"
+                   @onkeydown="OnDevPasswordKeyDown" />
+            @if (!string.IsNullOrEmpty(devPasswordError))
+            {
+                <span class="dev-password-error">@devPasswordError</span>
+            }
+            <div class="dev-password-actions">
+                <button class="btn btn-outline-secondary action-button" type="button" @onclick="CancelDevPassword">Cancelar</button>
+                <button class="btn btn-primary action-button" type="button" @onclick="ConfirmDevPassword">Activar</button>
+            </div>
+        </section>
+    </div>
 }
 
 @code {
@@ -175,6 +237,67 @@
     private readonly bool[] openSections = [false, false, false];
 
     private void ToggleSection(int index) => openSections[index] = !openSections[index];
+
+    // --- Modo DEV ---
+    private bool showDevPasswordModal;
+    private string devPassword = string.Empty;
+    private string? devPasswordError;
+
+    private List<(string Label, Func<bool> Get, Action<bool> Set)> DevToggles => new()
+    {
+        ("Saltar conexion TCP/IP", () => DevMode.SkipTcpConnection, v => DevMode.SkipTcpConnection = v),
+        ("Saltar base de datos (BD)", () => DevMode.SkipDatabase, v => DevMode.SkipDatabase = v),
+        ("Saltar autorizacion del equipo", () => DevMode.SkipDeviceAuthorization, v => DevMode.SkipDeviceAuthorization = v),
+        ("Saltar comunicacion de dispensarios", () => DevMode.SkipDispenserCommunication, v => DevMode.SkipDispenserCommunication = v),
+        ("Saltar tipos de despacho y productos", () => DevMode.SkipDispatchTypesAndProducts, v => DevMode.SkipDispatchTypesAndProducts = v),
+        ("Saltar registro/envio de autorizacion", () => DevMode.SkipSendAuthorization, v => DevMode.SkipSendAuthorization = v),
+        ("Tratar respuesta de consola como autorizada", () => DevMode.SkipAuthorizationResponse, v => DevMode.SkipAuthorizationResponse = v),
+        ("Ignorar bloqueo por manguera descolgada", () => DevMode.SkipHoseLiftedBlock, v => DevMode.SkipHoseLiftedBlock = v),
+        ("Ignorar limites de importe/litros", () => DevMode.SkipAmountLimits, v => DevMode.SkipAmountLimits = v),
+        ("Simular surtido (ver contador y tanque)", () => DevMode.SimulateFueling, v => DevMode.SimulateFueling = v),
+    };
+
+    private void ToggleDevMaster()
+    {
+        if (DevMode.IsEnabled)
+        {
+            DevMode.Disable();
+            return;
+        }
+
+        devPassword = string.Empty;
+        devPasswordError = null;
+        showDevPasswordModal = true;
+    }
+
+    private void ConfirmDevPassword()
+    {
+        if (!AppSettingsCryptoHelper.VerifyDevModePassword(devPassword))
+        {
+            devPasswordError = "Contraseña incorrecta.";
+            return;
+        }
+
+        DevMode.IsEnabled = true;
+        showDevPasswordModal = false;
+        devPassword = string.Empty;
+        devPasswordError = null;
+    }
+
+    private void CancelDevPassword()
+    {
+        showDevPasswordModal = false;
+        devPassword = string.Empty;
+        devPasswordError = null;
+    }
+
+    private void OnDevPasswordKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            ConfirmDevPassword();
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {

@@ -1455,6 +1455,132 @@ a, .btn-link {
     text-align: center;
 }
 
+/* === Modo DEV (Configuracion) === */
+.dev-section {
+    border: 1px solid var(--ua-panel-border, #d8e0e6);
+    border-radius: 10px;
+    margin-top: 1rem;
+    padding: 1rem 1.1rem;
+}
+
+.dev-section-head {
+    align-items: center;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+}
+
+.dev-section-title h2 {
+    margin: 0;
+}
+
+.dev-section-title span {
+    color: var(--ua-muted, #667684);
+    font-size: 0.82rem;
+}
+
+.dev-toggle-list {
+    display: grid;
+    gap: 0.25rem;
+    margin-top: 1rem;
+}
+
+.dev-warning {
+    background: #fff4e5;
+    border-radius: 6px;
+    color: #92400e;
+    font-size: 0.82rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+    padding: 0.5rem 0.7rem;
+}
+
+.switch-row {
+    align-items: center;
+    border-top: 1px solid var(--ua-panel-border, #e6ecf1);
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    padding: 0.55rem 0.1rem;
+}
+
+.switch-row-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+/* Slide toggle (boton estilo interruptor) */
+.switch {
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    flex: none;
+    padding: 0;
+}
+
+.switch-track {
+    background: #c2ccd6;
+    border-radius: 999px;
+    display: block;
+    height: 1.6rem;
+    position: relative;
+    transition: background-color 0.2s ease;
+    width: 3rem;
+}
+
+.switch-thumb {
+    background: #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    height: 1.2rem;
+    left: 0.2rem;
+    position: absolute;
+    top: 0.2rem;
+    transition: transform 0.2s ease;
+    width: 1.2rem;
+}
+
+.switch.is-on .switch-track {
+    background: #16a34a;
+}
+
+.switch.is-on .switch-thumb {
+    transform: translateX(1.4rem);
+}
+
+.dev-password-modal {
+    display: grid;
+    gap: 0.75rem;
+    max-width: 360px;
+    text-align: center;
+}
+
+.dev-password-input {
+    border: 1px solid var(--ua-panel-border, #d8e0e6);
+    border-radius: 8px;
+    font-size: 1.1rem;
+    padding: 0.65rem 0.85rem;
+    text-align: center;
+    width: 100%;
+}
+
+.theme-dark .dev-password-input {
+    background: #0f172a;
+    border-color: #334155;
+    color: #f8fafc;
+}
+
+.dev-password-error {
+    color: #e30613;
+    font-weight: 700;
+}
+
+.dev-password-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+}
+
 .authorization-panel {
     align-items: stretch;
 }
