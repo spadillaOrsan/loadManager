@@ -288,6 +288,7 @@
         ("Ignorar limites de importe/litros", () => DevMode.SkipAmountLimits, v => DevMode.SkipAmountLimits = v),
         ("Simular surtido (ver contador y tanque)", () => DevMode.SimulateFueling, v => DevMode.SimulateFueling = v),
         ("Ocultar boton de impresion (historial y ticket)", () => DevMode.HidePrintButton, v => DevMode.HidePrintButton = v),
+        ("Cancelar carga al pasar a segundo plano", () => DevMode.CancelOnBackground, v => DevMode.CancelOnBackground = v),
     };
 
     private bool AreAllDevTogglesOn => DevToggles.All(toggle => toggle.Get());

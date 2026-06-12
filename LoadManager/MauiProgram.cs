@@ -24,6 +24,7 @@ namespace LoadManager
             builder.Services.AddSingleton<IReceiptPrinterService, ReceiptPrinterService>();
             builder.Services.AddSingleton<IConnectionValidationService, ConnectionValidationService>();
             builder.Services.AddSingleton<IDevModeService, DevModeService>();
+            builder.Services.AddSingleton<IActiveDispatchTracker, ActiveDispatchTracker>();
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();

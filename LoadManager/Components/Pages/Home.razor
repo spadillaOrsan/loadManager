@@ -6,6 +6,7 @@
 @inject IAppSettingsService SettingsProvider
 @inject IConnectionValidationService ConnectionState
 @inject IDevModeService DevMode
+@inject IActiveDispatchTracker DispatchTracker
 @inject IJSRuntime JsRuntime
 
 <section class="console-shell">
@@ -1451,6 +1452,7 @@
         StopAuthorizationCountdown();
         StopFuelingMonitor();
         authorizedDispenserForCountdown = dispenser;
+        DispatchTracker.ActiveDispenser = dispenser;
         remainingAuthorizationSeconds = authorizationCountdownSeconds;
         countdownWarningShown = false;
         isFueling = false;
@@ -1473,6 +1475,7 @@
         if (clearAuthorization)
         {
             authorizedDispenserForCountdown = null;
+            DispatchTracker.ActiveDispenser = null;
             isFueling = false;
             isCompletingDispatch = false;
             liveLiters = 0;
@@ -1774,6 +1777,7 @@
             isFueling = false;
             isWaitingForDispatchHoseHang = false;
             liveDispenserStatus = "2";
+            DispatchTracker.ActiveDispenser = null; // carga finalizada: ya no hay que cancelar
             StopAuthorizationCountdown(clearAuthorization: false);
             StopFuelingMonitor();
             currentStep = 4;
@@ -1812,6 +1816,7 @@
         isCompletingDispatch = false;
         dispatchTicket = null;
         authorizedDispenserForCountdown = null;
+        DispatchTracker.ActiveDispenser = null;
         countdownWarningShown = false;
         products.Clear();
     }
