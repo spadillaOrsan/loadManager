@@ -120,12 +120,12 @@
                         <input type="number" @bind="quantityDecimals" min="0" max="6" />
                     </label>
                     <label class="settings-field">
-                        <span>Tiempo instrucciones (seg)</span>
+                        <span>Tiempo descolgar manguera (seg)</span>
                         <input type="number" @bind="authorizationCountdownSeconds" min="1" />
                     </label>
                     <div class="settings-field">
                         <div class="settings-field-head">
-                            <span>Cantidad de dispensarios</span>
+                            <span>#Dispensarios</span>
                             <span class="switch-inline">
                                 <span class="switch-inline-label">Rellenar</span>
                                 <button type="button"
@@ -157,8 +157,7 @@
     <section class="dev-section">
         <div class="dev-section-head">
             <div class="dev-section-title dev-tap-area" @onclick="OnDevTap" role="button" tabindex="0">
-                <h2>DEV</h2>
-                <span>Desactiva validaciones para desarrollar y acomodar estilos</span>
+                <h2>Version Adm.Carga: 1.0.0</h2>
             </div>
             @if (DevMode.IsEnabled)
             {
