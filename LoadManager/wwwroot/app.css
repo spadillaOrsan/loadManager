@@ -1739,100 +1739,63 @@ a, .btn-link {
     color: #176c35;
 }
 
-/* === Simulacion de tanque de llenado (debajo del contador de surtido) ===
-   Estilo bateria: el liquido sube de abajo hacia arriba segun el porcentaje.
-   0-99% usa el color del producto; al 100% se pone verde (como bateria cargada).
-   Sin clamp()/cqw para que funcione tambien en el WebView Chrome 75 del Verifone. */
+/* === Simulacion de bidon/tanque de combustible (debajo del contador de surtido) ===
+   El combustible sube de abajo hacia arriba segun el porcentaje (nivel = <rect> SVG
+   con clip a la forma del bidon). 0-99% usa el color del producto; al 100% verde.
+   fill/y/height son propiedades CSS validas en el WebView Chrome 75 del Verifone. */
 .fuel-tank {
-    align-items: center;
-    display: flex;
-    flex-direction: column;
     margin: 0.6rem auto 0;
-}
-
-.fuel-tank-cap {
-    background: #cdd9e5;
-    border-radius: 4px 4px 0 0;
-    height: 0.55rem;
-    width: 2.2rem;
-}
-
-.fuel-tank-body {
-    background: #ffffff;
-    border: 4px solid #cdd9e5;
-    border-radius: 12px;
-    box-shadow: inset 0 2px 6px rgba(15, 23, 42, 0.12);
-    height: 12rem;
-    overflow: hidden;
     position: relative;
-    width: 6rem;
+    width: 6.5rem;
 }
 
-.fuel-tank-fill {
-    background: #20a54a;
-    bottom: 0;
-    left: 0;
-    position: absolute;
-    transition: height 0.6s ease, background-color 0.4s ease;
+.fuel-tank-svg {
+    display: block;
+    height: auto;
     width: 100%;
 }
 
-/* Brillo en la superficie del liquido, con leve oscilacion tipo oleaje */
-.fuel-tank-fill::before {
-    animation: fuelTankWave 2.4s ease-in-out infinite;
-    background: rgba(255, 255, 255, 0.4);
-    border-radius: 50%;
-    content: "";
-    height: 0.8rem;
-    left: -10%;
-    position: absolute;
-    top: -0.4rem;
-    width: 120%;
+.fuel-tank-liquid {
+    fill: #20a54a;
+    transition: y 0.5s ease, height 0.5s ease, fill 0.4s ease;
 }
 
-@keyframes fuelTankWave {
-    0%, 100% { transform: translateX(-5%); }
-    50% { transform: translateX(5%); }
-}
+/* Color del combustible segun el producto (0-99%) */
+.fuel-tank.fuel-premium .fuel-tank-liquid { fill: #d71920; }
+.fuel-tank.fuel-extra .fuel-tank-liquid { fill: #2563eb; }
+.fuel-tank.fuel-diesel .fuel-tank-liquid { fill: #111827; }
+.fuel-tank.fuel-magna .fuel-tank-liquid { fill: #20a54a; }
+
+/* Al 100%: verde de "completado" */
+.fuel-tank.is-complete .fuel-tank-liquid { fill: #16a34a; }
 
 .fuel-tank-pct {
     background: rgba(15, 23, 42, 0.72);
     border-radius: 999px;
     color: #ffffff;
-    font-size: 1.45rem;
+    font-size: 1.35rem;
     font-weight: 900;
     left: 50%;
     line-height: 1;
     padding: 0.2rem 0.55rem;
     position: absolute;
-    top: 50%;
+    top: 58%;
     transform: translate(-50%, -50%);
     white-space: nowrap;
     z-index: 2;
 }
 
 .fuel-tank-pct small {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     margin-left: 0.05rem;
 }
 
-/* Color del liquido segun el producto (0-99%) */
-.fuel-tank.fuel-premium .fuel-tank-fill { background: #d71920; }
-.fuel-tank.fuel-extra .fuel-tank-fill { background: #2563eb; }
-.fuel-tank.fuel-diesel .fuel-tank-fill { background: #111827; }
-.fuel-tank.fuel-magna .fuel-tank-fill { background: #20a54a; }
-
-/* Al 100%: verde de "completado", como bateria cargada */
-.fuel-tank.is-complete .fuel-tank-fill { background: #16a34a; }
-.fuel-tank.is-complete .fuel-tank-body { border-color: #16a34a; }
-.fuel-tank.is-complete .fuel-tank-cap { background: #16a34a; }
 .fuel-tank.is-complete .fuel-tank-pct { background: rgba(22, 163, 74, 0.92); }
 
-/* En pantallas anchas (escritorio) el tanque se ve un poco mas grande */
+/* En pantallas anchas (escritorio) el bidon se ve un poco mas grande */
 @media (min-width: 641px) {
-    .fuel-tank-body { height: 14rem; width: 7rem; }
-    .fuel-tank-cap { height: 0.65rem; width: 2.6rem; }
-    .fuel-tank-pct { font-size: 1.7rem; }
+    .fuel-tank { width: 8rem; }
+    .fuel-tank-pct { font-size: 1.6rem; }
 }
 
 .fueling-note {
