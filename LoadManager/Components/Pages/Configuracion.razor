@@ -152,20 +152,20 @@
 
     </div>
 
-    <!-- Modo DEV (desarrollo): desactiva validaciones del modulo de dispensario -->
+    <!-- Modo DEV (desarrollo): desactiva validaciones del modulo de dispensario.
+         Se activa tocando 10 veces el apartado DEV (luego pide contrasena). -->
     <section class="dev-section">
         <div class="dev-section-head">
-            <div class="dev-section-title">
+            <div class="dev-section-title dev-tap-area" @onclick="OnDevTap" role="button" tabindex="0">
                 <h2>DEV</h2>
                 <span>Desactiva validaciones para desarrollar y acomodar estilos</span>
             </div>
-            <button type="button"
-                    class="switch @(DevMode.IsEnabled ? "is-on" : string.Empty)"
-                    @onclick="ToggleDevMaster"
-                    aria-pressed="@DevMode.IsEnabled"
-                    aria-label="Activar modo DEV">
-                <span class="switch-track"><span class="switch-thumb"></span></span>
-            </button>
+            @if (DevMode.IsEnabled)
+            {
+                <button type="button" class="btn btn-outline-secondary dev-disable-button" @onclick="DisableDev">
+                    Desactivar
+                </button>
+            }
         </div>
 
         @if (DevMode.IsEnabled)
@@ -302,17 +302,37 @@
         }
     }
 
-    private void ToggleDevMaster()
+    private int devTapCount;
+
+    // Se activa el Modo DEV tocando 10 veces el apartado (estilo "opciones de desarrollador").
+    private void OnDevTap()
     {
         if (DevMode.IsEnabled)
         {
-            DevMode.Disable();
             return;
         }
 
-        devPassword = string.Empty;
-        devPasswordError = null;
-        showDevPasswordModal = true;
+        devTapCount++;
+
+        if (devTapCount >= 10)
+        {
+            devTapCount = 0;
+            devPassword = string.Empty;
+            devPasswordError = null;
+            showDevPasswordModal = true;
+            return;
+        }
+
+        if (devTapCount >= 4)
+        {
+            ShowToast($"Faltan {10 - devTapCount} toques para activar DEV.", true);
+        }
+    }
+
+    private void DisableDev()
+    {
+        DevMode.Disable();
+        devTapCount = 0;
     }
 
     private void ConfirmDevPassword()

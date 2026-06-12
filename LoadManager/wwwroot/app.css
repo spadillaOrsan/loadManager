@@ -1479,6 +1479,17 @@ a, .btn-link {
     font-size: 0.82rem;
 }
 
+.dev-tap-area {
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.dev-disable-button {
+    flex: none;
+    padding: 0.4rem 1rem;
+}
+
 .dev-toggle-list {
     display: grid;
     gap: 0.25rem;
