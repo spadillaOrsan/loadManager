@@ -1077,6 +1077,17 @@ a, .btn-link {
     border-color: #34a853;
 }
 
+/* Ocupado (estatus 5: surtiendo): verde, como un dispensario activo. */
+.dispenser-card.is-busy {
+    background: #eaf8ef;
+    border-color: #34a853;
+    color: #17212b;
+}
+
+.dispenser-card.is-busy .dispenser-status {
+    color: #176c35;
+}
+
 .dispenser-card.is-offline {
     background: #fff;
     border-color: #d8e0e6;
@@ -1100,7 +1111,7 @@ a, .btn-link {
     opacity: 0.55;
 }
 
-.dispenser-card:not(.is-available):not(.is-hose-lifted):not(.is-checking):not(.is-authorized):not(.is-offline) {
+.dispenser-card:not(.is-available):not(.is-hose-lifted):not(.is-checking):not(.is-authorized):not(.is-offline):not(.is-busy) {
     background: #fff1f1;
     border-color: #d71920;
 }
@@ -1121,7 +1132,7 @@ a, .btn-link {
     color: #5a6977;
 }
 
-.dispenser-card:not(.is-available):not(.is-hose-lifted):not(.is-checking):not(.is-authorized):not(.is-offline) .dispenser-status {
+.dispenser-card:not(.is-available):not(.is-hose-lifted):not(.is-checking):not(.is-authorized):not(.is-offline):not(.is-busy) .dispenser-status {
     color: #a31313;
 }
 

@@ -2051,6 +2051,16 @@
             return;
         }
 
+        if (statusCode == "5")
+        {
+            // La consola reporta "5" cuando el dispensario esta ocupado (surtiendo).
+            dispenser.StatusCode = statusCode;
+            dispenser.IsAvailable = false;
+            dispenser.StatusText = "Ocupado";
+            dispenser.ImagePath = "images/dispensers/sirviendo.png";
+            return;
+        }
+
         if (statusCode == "6")
         {
             dispenser.StatusCode = statusCode;
@@ -2334,6 +2344,10 @@
         else if (dispenser.StatusCode == "3")
         {
             classes.Add("is-hose-lifted");
+        }
+        else if (dispenser.StatusCode == "5")
+        {
+            classes.Add("is-busy");
         }
         else if (dispenser.IsAvailable)
         {
