@@ -4,6 +4,7 @@
 @inject IGasStationService GasStationService
 @inject IJSRuntime JsRuntime
 @inject IReceiptPrinterService ReceiptPrinter
+@inject IDevModeService DevMode
 
 <section class="console-shell history-shell @(isLoading ? "is-busy" : string.Empty)" aria-busy="@isLoading">
     <section class="accordion-section">
@@ -131,8 +132,8 @@
     private bool isLoading;
     private bool folioFilterOpen;
 
-    // El boton de imprimir queda oculto por ahora. Cambiar a true para mostrarlo.
-    private bool printEnabled;
+    // Visible por defecto; se oculta con el toggle "Ocultar boton de impresion" del Modo DEV.
+    private bool printEnabled => !DevMode.IsPrintButtonHidden;
 
     private int AuthorizedCount => records.Count(record => !record.IsCanceled);
     private int CanceledCount => records.Count(record => record.IsCanceled);

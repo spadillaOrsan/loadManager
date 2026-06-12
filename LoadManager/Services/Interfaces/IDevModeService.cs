@@ -22,6 +22,7 @@ public interface IDevModeService
     bool SkipHoseLiftedBlock { get; set; }
     bool SkipAmountLimits { get; set; }
     bool SimulateFueling { get; set; }
+    bool HidePrintButton { get; set; }
 
     // Efectivos: combinan el interruptor maestro con cada interruptor individual.
     bool BypassTcpConnection { get; }
@@ -34,6 +35,7 @@ public interface IDevModeService
     bool BypassHoseLiftedBlock { get; }
     bool BypassAmountLimits { get; }
     bool BypassFueling { get; }
+    bool IsPrintButtonHidden { get; }
 
     /// <summary>Apaga el modo DEV y reinicia todos los interruptores.</summary>
     void Disable();

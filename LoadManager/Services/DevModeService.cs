@@ -17,6 +17,7 @@ public sealed class DevModeService : IDevModeService
     public bool SkipHoseLiftedBlock { get; set; }
     public bool SkipAmountLimits { get; set; }
     public bool SimulateFueling { get; set; }
+    public bool HidePrintButton { get; set; }
 
     public bool BypassTcpConnection => IsEnabled && SkipTcpConnection;
     public bool BypassDatabase => IsEnabled && SkipDatabase;
@@ -28,6 +29,7 @@ public sealed class DevModeService : IDevModeService
     public bool BypassHoseLiftedBlock => IsEnabled && SkipHoseLiftedBlock;
     public bool BypassAmountLimits => IsEnabled && SkipAmountLimits;
     public bool BypassFueling => IsEnabled && SimulateFueling;
+    public bool IsPrintButtonHidden => IsEnabled && HidePrintButton;
 
     public void Disable()
     {
@@ -42,5 +44,6 @@ public sealed class DevModeService : IDevModeService
         SkipHoseLiftedBlock = false;
         SkipAmountLimits = false;
         SimulateFueling = false;
+        HidePrintButton = false;
     }
 }

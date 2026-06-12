@@ -333,9 +333,12 @@
                     </div>
 
                     <div class="ticket-actions">
-                        <button class="btn btn-outline-secondary action-button" @onclick="PrintTicketAsync">
-                            Imprimir ticket
-                        </button>
+                        @if (!DevMode.IsPrintButtonHidden)
+                        {
+                            <button class="btn btn-outline-secondary action-button" @onclick="PrintTicketAsync">
+                                Imprimir ticket
+                            </button>
+                        }
                         <button class="btn btn-primary action-button ticket-home-button" @onclick="ReturnToStart">
                             Volver a inicio
                         </button>
