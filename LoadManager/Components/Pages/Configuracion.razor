@@ -123,10 +123,29 @@
                         <span>Tiempo instrucciones (seg)</span>
                         <input type="number" @bind="authorizationCountdownSeconds" min="1" />
                     </label>
-                    <label class="settings-field">
-                        <span>Cantidad de dispensarios</span>
-                        <input type="number" @bind="dispenserCount" min="1" />
-                    </label>
+                    <div class="settings-field">
+                        <div class="settings-field-head">
+                            <span>Cantidad de dispensarios</span>
+                            <span class="switch-inline">
+                                <span class="switch-inline-label">Rellenar</span>
+                                <button type="button"
+                                        class="switch @(dispenserFillSequential ? "is-on" : string.Empty)"
+                                        @onclick="() => dispenserFillSequential = !dispenserFillSequential"
+                                        aria-pressed="@dispenserFillSequential"
+                                        aria-label="Rellenar secuencial">
+                                    <span class="switch-track"><span class="switch-thumb"></span></span>
+                                </button>
+                            </span>
+                        </div>
+                        @if (dispenserFillSequential)
+                        {
+                            <input type="number" @bind="dispenserCount" min="1" placeholder="Ej: 10 (genera 1, 2, ... 10)" />
+                        }
+                        else
+                        {
+                            <input type="text" @bind="dispenserNumbers" placeholder="Numeros especificos. Ej: 2,4,6,20,13" />
+                        }
+                    </div>
                 </div>
             }
         </section>
@@ -235,6 +254,8 @@
     private int quantityDecimals;
     private int authorizationCountdownSeconds;
     private int dispenserCount;
+    private bool dispenserFillSequential = true;
+    private string dispenserNumbers = string.Empty;
     private string apiBaseHost = string.Empty;
     private int apiPort;
     private int apiRequestTimeoutSeconds;
@@ -355,6 +376,8 @@
                 HoseRestorePollingMilliseconds = current.AppConfiguration.HoseRestorePollingMilliseconds,
                 ToastDurationMilliseconds = current.AppConfiguration.ToastDurationMilliseconds,
                 DispenserCount = current.AppConfiguration.DispenserCount,
+                DispenserFillSequential = current.AppConfiguration.DispenserFillSequential,
+                DispenserNumbers = current.AppConfiguration.DispenserNumbers,
                 ConfigurationPasswordHash = current.AppConfiguration.ConfigurationPasswordHash
             },
             Api = new ApiOptions
@@ -380,6 +403,8 @@
         quantityDecimals = settings.AppConfiguration.QuantityDecimals;
         authorizationCountdownSeconds = settings.AppConfiguration.AuthorizationCountdownSeconds;
         dispenserCount = settings.AppConfiguration.DispenserCount;
+        dispenserFillSequential = settings.AppConfiguration.DispenserFillSequential;
+        dispenserNumbers = settings.AppConfiguration.DispenserNumbers;
         apiRequestTimeoutSeconds = settings.Api.RequestTimeoutSeconds;
         toastDurationMilliseconds = settings.AppConfiguration.ToastDurationMilliseconds;
         databaseIsConnected = ConnectionState.DatabaseIsConnected;
@@ -451,6 +476,21 @@
         NavigationManager.NavigateTo("tester");
     }
 
+    private static List<int> ParseDispenserNumbers(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return new List<int>();
+        }
+
+        return raw
+            .Split(new[] { ',', ';', ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(part => int.TryParse(part, out var number) ? number : 0)
+            .Where(number => number > 0)
+            .Distinct()
+            .ToList();
+    }
+
     private async Task<bool> SaveConfigurationOnlyAsync()
     {
         if (settings is null || string.IsNullOrWhiteSpace(ipAddress) || port is <= 0 or > 65535)
@@ -478,10 +518,18 @@
             || limiteImporte <= 0 || limiteLitros <= 0 || cantidadTanqueLleno <= 0
             || quantityDecimals is < 0 or > 6
             || authorizationCountdownSeconds <= 0
-            || dispenserCount <= 0
             || apiRequestTimeoutSeconds <= 0)
         {
             ShowToast("Revise los valores de configuracion.", false);
+            return false;
+        }
+
+        var dispenserNumberList = ParseDispenserNumbers(dispenserNumbers);
+        if (dispenserFillSequential ? dispenserCount <= 0 : dispenserNumberList.Count == 0)
+        {
+            ShowToast(dispenserFillSequential
+                ? "Capture una cantidad de dispensarios mayor a 0."
+                : "Capture numeros de dispensario validos (ej. 2,4,6,20,13).", false);
             return false;
         }
 
@@ -496,7 +544,13 @@
         settings.AppConfiguration.CantidadTanqueLleno = cantidadTanqueLleno;
         settings.AppConfiguration.QuantityDecimals = quantityDecimals;
         settings.AppConfiguration.AuthorizationCountdownSeconds = authorizationCountdownSeconds;
-        settings.AppConfiguration.DispenserCount = dispenserCount;
+        settings.AppConfiguration.DispenserFillSequential = dispenserFillSequential;
+        settings.AppConfiguration.DispenserNumbers = dispenserFillSequential
+            ? string.Empty
+            : string.Join(",", dispenserNumberList);
+        settings.AppConfiguration.DispenserCount = dispenserCount > 0
+            ? dispenserCount
+            : Math.Max(1, dispenserNumberList.Count);
         settings.Api.BaseUrl = apiUrl;
         settings.Api.RequestTimeoutSeconds = apiRequestTimeoutSeconds;
 

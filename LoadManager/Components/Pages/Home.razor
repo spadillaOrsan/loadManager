@@ -27,13 +27,20 @@
             <div class="dispatch-stage-track stage-@dispatchFormStage">
                 <section class="dispensers-panel dispatch-stage-card">
                     <div class="panel-heading">
-                        <h2>Dispensarios</h2>
+                        <div>
+                            <h5>Dispensarios</h5>
+                            <span class="text-muted">
+                                @(isLoadingDispensers
+                                    ? "Consultando estatus..."
+                                    : $"{AvailableDispensersCount} disponibles")
+                            </span>
+                        </div>
+
                         <div class="panel-heading-actions">
-                            <span>@(isLoadingDispensers ? "Consultando estatus..." : $"{AvailableDispensersCount} disponibles")</span>
                             <button class="btn btn-outline-secondary refresh-dispensers-button"
                                     @onclick="RefreshConfiguredDispensersAsync"
                                     disabled="@(isLoadingDispensers || isDispatching)">
-                                Refrescar estatus
+                                Refrescar
                             </button>
                         </div>
                     </div>
@@ -290,7 +297,7 @@
 
                     <div class="ticket-grid">
                         <div>
-                            <span>Dispensario</span>
+                            <span>Dispensario</span> 
                             <strong>#@dispatchTicket.Dispenser</strong>
                         </div>
                         <div>
@@ -476,6 +483,8 @@
     private int hoseRestorePollingMilliseconds;
     private int toastDurationMilliseconds;
     private int configuredDispenserCount;
+    private bool dispenserFillSequential = true;
+    private string dispenserNumbers = string.Empty;
     private int remainingAuthorizationSeconds;
     private int? authorizedDispenserForCountdown;
     private bool countdownWarningShown;
@@ -547,6 +556,8 @@
         hoseRestorePollingMilliseconds = settings.AppConfiguration.HoseRestorePollingMilliseconds;
         toastDurationMilliseconds = settings.AppConfiguration.ToastDurationMilliseconds;
         configuredDispenserCount = settings.AppConfiguration.DispenserCount;
+        dispenserFillSequential = settings.AppConfiguration.DispenserFillSequential;
+        dispenserNumbers = settings.AppConfiguration.DispenserNumbers;
 
         // El paso 1 (boton "Comenzar") se elimino: la validacion de comunicacion
         // se ejecuta automaticamente al entrar al modulo.
@@ -674,6 +685,8 @@
             try
             {
                 configuredDispenserCount = currentSettings.AppConfiguration.DispenserCount;
+                dispenserFillSequential = currentSettings.AppConfiguration.DispenserFillSequential;
+                dispenserNumbers = currentSettings.AppConfiguration.DispenserNumbers;
 
                 // 4) Dispensarios (DEV: datos de ejemplo y sin validar comunicacion)
                 if (DevMode.BypassDispenserCommunication)
@@ -844,6 +857,8 @@
         {
             var settings = await SettingsProvider.GetSettingsAsync(pageCancellation.Token);
             configuredDispenserCount = settings.AppConfiguration.DispenserCount;
+            dispenserFillSequential = settings.AppConfiguration.DispenserFillSequential;
+            dispenserNumbers = settings.AppConfiguration.DispenserNumbers;
 
             LoadConfiguredDispensers();
             await RefreshDispenserSummaryAsync(pageCancellation.Token);
@@ -884,17 +899,39 @@
         }
     }
 
+    // Numeros de dispensario a mostrar: secuenciales 1..N ("Rellenar" activo) o la
+    // lista especifica capturada en Configuracion ("Rellenar" desactivado).
+    private List<int> GetConfiguredDispenserNumbers()
+    {
+        if (!dispenserFillSequential && !string.IsNullOrWhiteSpace(dispenserNumbers))
+        {
+            var list = dispenserNumbers
+                .Split(new[] { ',', ';', ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(part => int.TryParse(part, out var n) ? n : 0)
+                .Where(n => n > 0)
+                .Distinct()
+                .ToList();
+
+            if (list.Count > 0)
+            {
+                return list;
+            }
+        }
+
+        var count = configuredDispenserCount > 0 ? configuredDispenserCount : 4;
+        return Enumerable.Range(1, count).ToList();
+    }
+
     // --- Datos de ejemplo para Modo DEV (ver el diseno sin hardware/BD) ---
     private void LoadMockDispensers()
     {
         dispensers.Clear();
-        var count = configuredDispenserCount > 0 ? configuredDispenserCount : 4;
 
-        for (var i = 1; i <= count; i++)
+        foreach (var number in GetConfiguredDispenserNumbers())
         {
             var dispenser = new DispenserViewModel
             {
-                Number = DispenserFrameHelper.NormalizeDispenserNumber(i.ToString(CultureInfo.InvariantCulture))
+                Number = DispenserFrameHelper.NormalizeDispenserNumber(number.ToString(CultureInfo.InvariantCulture))
             };
             ApplyDispenserStatusCode(dispenser, "1"); // Libre / disponible
             dispensers.Add(dispenser);
@@ -927,10 +964,10 @@
     {
         dispensers.Clear();
 
-        for (var dispenser = 1; dispenser <= configuredDispenserCount; dispenser++)
+        foreach (var number in GetConfiguredDispenserNumbers())
         {
             AddOrUpdateDispenser(
-                DispenserFrameHelper.NormalizeDispenserNumber(dispenser.ToString(CultureInfo.InvariantCulture)),
+                DispenserFrameHelper.NormalizeDispenserNumber(number.ToString(CultureInfo.InvariantCulture)),
                 statusCode: null);
         }
     }

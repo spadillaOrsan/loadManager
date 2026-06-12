@@ -32,5 +32,12 @@ public sealed class AppConfigurationOptions
 
     public int DispenserCount { get; set; }
 
+    // true: la "Cantidad de dispensarios" genera numeros secuenciales 1..N.
+    // false: se usan los numeros especificos capturados en DispenserNumbers.
+    public bool DispenserFillSequential { get; set; } = true;
+
+    // Numeros de dispensario especificos (ej. "2,4,6,20,13") cuando no es secuencial.
+    public string DispenserNumbers { get; set; } = string.Empty;
+
     public string ConfigurationPasswordHash { get; set; } = string.Empty;
 }

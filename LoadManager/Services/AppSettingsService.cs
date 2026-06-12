@@ -170,6 +170,8 @@ public sealed class AppSettingsService : IAppSettingsService
         EncryptNumber(jsonNode, "AppConfiguration", "HoseRestorePollingMilliseconds");
         EncryptNumber(jsonNode, "AppConfiguration", "ToastDurationMilliseconds");
         EncryptNumber(jsonNode, "AppConfiguration", "DispenserCount");
+        EncryptBoolean(jsonNode, "AppConfiguration", "DispenserFillSequential");
+        EncryptString(jsonNode, "AppConfiguration", "DispenserNumbers");
         EncryptString(jsonNode, "AppConfiguration", "ConfigurationPasswordHash");
 
         EncryptString(jsonNode, "Api", "BaseUrl");
@@ -202,6 +204,8 @@ public sealed class AppSettingsService : IAppSettingsService
         DecryptNumber(jsonNode, "AppConfiguration", "HoseRestorePollingMilliseconds");
         DecryptNumber(jsonNode, "AppConfiguration", "ToastDurationMilliseconds");
         DecryptNumber(jsonNode, "AppConfiguration", "DispenserCount");
+        DecryptBoolean(jsonNode, "AppConfiguration", "DispenserFillSequential");
+        DecryptString(jsonNode, "AppConfiguration", "DispenserNumbers");
         DecryptString(jsonNode, "AppConfiguration", "ConfigurationPasswordHash");
 
         DecryptString(jsonNode, "Api", "BaseUrl");

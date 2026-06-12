@@ -2226,6 +2226,20 @@ a, .btn-link {
     gap: 0.35rem;
 }
 
+.settings-field-head {
+    align-items: center;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+}
+
+.switch-inline {
+    align-items: center;
+    display: inline-flex;
+    flex: none;
+    gap: 0.5rem;
+}
+
 .settings-field input,
 .settings-field select,
 .settings-field textarea {
