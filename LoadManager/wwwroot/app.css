@@ -1746,7 +1746,7 @@ a, .btn-link {
 .fuel-tank {
     margin: 0.6rem auto 0;
     position: relative;
-    width: 6.5rem;
+    width: 11rem;
 }
 
 .fuel-tank-svg {
@@ -1779,7 +1779,7 @@ a, .btn-link {
     line-height: 1;
     padding: 0.2rem 0.55rem;
     position: absolute;
-    top: 58%;
+    top: 47%;
     transform: translate(-50%, -50%);
     white-space: nowrap;
     z-index: 2;
@@ -1792,10 +1792,10 @@ a, .btn-link {
 
 .fuel-tank.is-complete .fuel-tank-pct { background: rgba(22, 163, 74, 0.92); }
 
-/* En pantallas anchas (escritorio) el bidon se ve un poco mas grande */
+/* En pantallas anchas (escritorio) el tanque se ve un poco mas grande */
 @media (min-width: 641px) {
-    .fuel-tank { width: 8rem; }
-    .fuel-tank-pct { font-size: 1.6rem; }
+    .fuel-tank { width: 14rem; }
+    .fuel-tank-pct { font-size: 1.9rem; }
 }
 
 .fueling-note {

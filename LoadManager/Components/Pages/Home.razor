@@ -223,23 +223,25 @@
                 {
                     <div class="fuel-tank @FuelTankColorClass @(tankPct >= 100 ? "is-complete" : null)"
                          role="img" aria-label="@($"Llenado {tankPct} por ciento")">
-                        <svg class="fuel-tank-svg" viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg">
+                        <svg class="fuel-tank-svg" viewBox="0 0 160 110" xmlns="http://www.w3.org/2000/svg">
                             <defs>
                                 <clipPath id="fuelCanClip">
-                                    <rect x="14" y="28" width="72" height="96" rx="9" />
+                                    <rect x="12" y="18" width="136" height="68" rx="34" />
                                 </clipPath>
                             </defs>
-                            <!-- bidon vacio -->
-                            <rect x="14" y="28" width="72" height="96" rx="9" fill="#eaf0f6" />
+                            <!-- patas -->
+                            <rect x="36" y="82" width="13" height="20" rx="2" fill="#cdd9e5" />
+                            <rect x="111" y="82" width="13" height="20" rx="2" fill="#cdd9e5" />
+                            <!-- boca de registro arriba -->
+                            <rect x="68" y="7" width="24" height="13" rx="2" fill="#cdd9e5" stroke="#a9bccd" stroke-width="2" />
+                            <!-- tanque vacio (cilindro horizontal) -->
+                            <rect x="12" y="18" width="136" height="68" rx="34" fill="#eaf0f6" />
                             <!-- combustible: sube de abajo hacia arriba segun el porcentaje -->
-                            <rect class="fuel-tank-liquid" x="14" width="72"
-                                  y="@(124 - 96 * tankPct / 100)" height="@(96 * tankPct / 100)"
+                            <rect class="fuel-tank-liquid" x="12" width="136"
+                                  y="@(86 - 68 * tankPct / 100)" height="@(68 * tankPct / 100)"
                                   clip-path="url(#fuelCanClip)" />
-                            <!-- contorno del bidon, boquilla, tapa y asa -->
-                            <rect x="14" y="28" width="72" height="96" rx="9" fill="none" stroke="#a9bccd" stroke-width="3" />
-                            <rect x="59" y="20" width="13" height="9" fill="#cdd9e5" />
-                            <rect x="55" y="11" width="21" height="10" rx="2.5" fill="#cdd9e5" stroke="#a9bccd" stroke-width="2" />
-                            <path d="M24 28 V18 a4 4 0 0 1 4 -4 H40 a4 4 0 0 1 4 4 V28" fill="none" stroke="#a9bccd" stroke-width="3" />
+                            <!-- contorno -->
+                            <rect x="12" y="18" width="136" height="68" rx="34" fill="none" stroke="#a9bccd" stroke-width="3" />
                         </svg>
                         <span class="fuel-tank-pct">@tankPct<small>%</small></span>
                     </div>
