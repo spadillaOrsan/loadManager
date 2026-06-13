@@ -41,9 +41,33 @@ public sealed class DatabaseScriptService(
 
             foreach (var (objectName, scriptPath) in StoredProcedureScripts)
             {
-                // Siempre se ejecuta el script (CREATE OR ALTER): si ya existe un SP
-                // con ese nombre, se reemplaza por la version de la carpeta Script.
-                var script = await ReadScriptAsync(scriptPath, cancellationToken);
+                // 1) Validar si el SP YA existe en la base de datos.
+                if (await StoredProcedureExistsAsync(connection, objectName, cancellationToken))
+                {
+                    continue; // ya existe: no hay nada que hacer.
+                }
+
+                // 2) No existe: intentar crearlo desde el .sql de la carpeta Script.
+                var fullPath = Path.Combine(
+                    environment.ContentRootPath,
+                    scriptPath.Replace('/', Path.DirectorySeparatorChar));
+
+                if (!File.Exists(fullPath))
+                {
+                    // No existe el SP ni su script: se registra el error y se continua,
+                    // para no tronar la app aqui (en vez de lanzar FileNotFoundException).
+                    await logService.WriteAsync(new ApiLogEntry
+                    {
+                        Level = "Error",
+                        Service = nameof(DatabaseScriptService),
+                        Message = "El procedimiento no existe en la BD y tampoco se encontro su script para crearlo.",
+                        RequestBody = $"Objeto={objectName} | Script={scriptPath}",
+                        ResponseBody = "No creado"
+                    }, cancellationToken);
+                    continue;
+                }
+
+                var script = await File.ReadAllTextAsync(fullPath, cancellationToken);
                 await using var command = new SqlCommand(script, connection)
                 {
                     CommandType = CommandType.Text
@@ -54,7 +78,7 @@ public sealed class DatabaseScriptService(
                 {
                     Level = "Success",
                     Service = nameof(DatabaseScriptService),
-                    Message = "Procedimiento almacenado aplicado (CREATE OR ALTER).",
+                    Message = "Procedimiento almacenado no existia: se creo desde el script.",
                     RequestBody = $"Objeto={objectName} | Script={scriptPath}",
                     ResponseBody = objectName
                 }, cancellationToken);
@@ -68,14 +92,15 @@ public sealed class DatabaseScriptService(
         }
     }
 
-    private Task<string> ReadScriptAsync(
-        string scriptPath,
+    private static async Task<bool> StoredProcedureExistsAsync(
+        SqlConnection connection,
+        string objectName,
         CancellationToken cancellationToken)
     {
-        var fullPath = Path.Combine(
-            environment.ContentRootPath,
-            scriptPath.Replace('/', Path.DirectorySeparatorChar));
+        await using var command = new SqlCommand("SELECT OBJECT_ID(@name, 'P');", connection);
+        command.Parameters.AddWithValue("@name", objectName);
 
-        return File.ReadAllTextAsync(fullPath, cancellationToken);
+        var result = await command.ExecuteScalarAsync(cancellationToken);
+        return result is not null && result is not DBNull;
     }
 }
