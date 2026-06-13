@@ -208,6 +208,11 @@
                 <span>@GetAuthorizationStepStatus()</span>
             </div>
 
+            @if (currentDispatchFolio is int dispatchFolio)
+            {
+                <div class="dispatch-folio-banner">Folio <strong>#@dispatchFolio</strong></div>
+            }
+
             @if (isFueling)
             {
                 <div class="liters-display" aria-live="polite">
@@ -2053,10 +2058,10 @@
 
         if (statusCode == "5")
         {
-            // La consola reporta "5" cuando el dispensario esta ocupado (surtiendo).
+            // La consola reporta "5" cuando el dispensario esta Surtiendo.
             dispenser.StatusCode = statusCode;
             dispenser.IsAvailable = false;
-            dispenser.StatusText = "Ocupado";
+            dispenser.StatusText = "Surtiendo";
             dispenser.ImagePath = "images/dispensers/sirviendo.png";
             return;
         }

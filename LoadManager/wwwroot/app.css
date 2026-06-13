@@ -1617,6 +1617,25 @@ a, .btn-link {
     align-items: stretch;
 }
 
+/* Folio de la autorizacion, arriba del contador del paso de surtido. */
+.dispatch-folio-banner {
+    background: #1b6ec2;
+    border-radius: 8px;
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.25rem;
+    padding: 0.5rem 0.85rem;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.dispatch-folio-banner strong {
+    font-size: 1.35rem;
+    margin-left: 0.25rem;
+}
+
 .countdown-display {
     align-items: center;
     background: #f4f8fc;
