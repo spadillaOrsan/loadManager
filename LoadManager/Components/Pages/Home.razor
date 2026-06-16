@@ -7,6 +7,7 @@
 @inject IConnectionValidationService ConnectionState
 @inject IDevModeService DevMode
 @inject IJSRuntime JsRuntime
+@inject NavigationManager NavigationManager
 
 <section class="console-shell">
 
@@ -427,6 +428,44 @@
             <h2>DISPOSITIVO NO AUTORIZADO</h2>
             <p>Revisar con el dpto. correspondiente.</p>
             <span>La aplicacion se cerrara en @deviceAuthRemainingSeconds segundos.</span>
+            <div class="settings-actions" style="margin-top:1rem;">
+                <button class="btn btn-primary action-button" type="button" @onclick="OpenUnauthorizedConfigurationGateAsync">
+                    Ir a Configuracion
+                </button>
+            </div>
+        </section>
+    </div>
+}
+
+@if (showUnauthorizedConfigurationGate)
+{
+    <div class="app-modal-backdrop">
+        <section class="app-modal config-gate" role="dialog" aria-modal="true">
+            <header>
+                <h2>Acceso a configuracion</h2>
+                <p>Ingrese la contraseña para continuar.</p>
+            </header>
+
+            <EditForm Model="this" OnSubmit="ValidateUnauthorizedConfigurationPasswordAsync">
+                <label class="settings-field">
+                    <span>Contraseña</span>
+                    <input type="password" @bind="unauthorizedConfigurationPassword" autocomplete="current-password" />
+                </label>
+
+                @if (!string.IsNullOrWhiteSpace(unauthorizedConfigurationError))
+                {
+                    <p class="config-gate-error">@unauthorizedConfigurationError</p>
+                }
+
+                <div class="config-gate-actions">
+                    <button class="btn btn-outline-danger action-button" type="button" @onclick="CloseUnauthorizedConfigurationGate">
+                        Cancelar
+                    </button>
+                    <button class="btn btn-primary action-button" type="submit">
+                        Entrar
+                    </button>
+                </div>
+            </EditForm>
         </section>
     </div>
 }
@@ -456,6 +495,7 @@
     private readonly CancellationTokenSource pageCancellation = new();
     private CancellationTokenSource? dispatchCancellation;
     private CancellationTokenSource? authorizationCountdownCancellation;
+    private CancellationTokenSource? deviceAuthorizationCountdownCancellation;
     private CancellationTokenSource? fuelingMonitorCancellation;
     private bool isRefreshingSummary;
     private bool isDispatching;
@@ -470,6 +510,9 @@
     private string connectionBlockedMessage = "No hay comunicacion con la base de datos o la interfaz TCP/IP.";
     private bool deviceNotAuthorized;
     private int deviceAuthRemainingSeconds = 10;
+    private bool showUnauthorizedConfigurationGate;
+    private string unauthorizedConfigurationPassword = string.Empty;
+    private string? unauthorizedConfigurationError;
     private string? selectedDispenser;
     private string? selectedProductKey;
     private int? selectedDispatchTypeId;
@@ -600,6 +643,9 @@
         isStartingFlow = true;
         connectionBlocked = false;
         StopAuthorizationCountdown();
+        StopDeviceAuthorizationCountdown(resetSeconds: true);
+        deviceNotAuthorized = false;
+        showUnauthorizedConfigurationGate = false;
         databaseIsReady = false;
         startupStatusMessage = "Validando configuracion...";
         await InvokeAsync(StateHasChanged);
@@ -631,7 +677,7 @@
                     // tras la cuenta regresiva. El intento ya quedo registrado en el API.
                     startupStatusMessage = null;
                     deviceNotAuthorized = true;
-                    _ = RunDeviceNotAuthorizedCountdownAsync();
+                    StartDeviceAuthorizationCountdown();
                     return;
                 }
             }
@@ -761,16 +807,39 @@
         await BeginDispatchFlowAsync();
     }
 
-    private async Task RunDeviceNotAuthorizedCountdownAsync()
+    private void StartDeviceAuthorizationCountdown(bool resetSeconds = true)
     {
-        deviceAuthRemainingSeconds = 10;
+        StopDeviceAuthorizationCountdown(resetSeconds: false);
 
+        if (resetSeconds || deviceAuthRemainingSeconds <= 0)
+        {
+            deviceAuthRemainingSeconds = 10;
+        }
+
+        deviceAuthorizationCountdownCancellation = CancellationTokenSource.CreateLinkedTokenSource(pageCancellation.Token);
+        _ = RunDeviceNotAuthorizedCountdownAsync(deviceAuthorizationCountdownCancellation.Token);
+    }
+
+    private void StopDeviceAuthorizationCountdown(bool resetSeconds = false)
+    {
+        deviceAuthorizationCountdownCancellation?.Cancel();
+        deviceAuthorizationCountdownCancellation?.Dispose();
+        deviceAuthorizationCountdownCancellation = null;
+
+        if (resetSeconds)
+        {
+            deviceAuthRemainingSeconds = 10;
+        }
+    }
+
+    private async Task RunDeviceNotAuthorizedCountdownAsync(CancellationToken cancellationToken)
+    {
         try
         {
             while (deviceAuthRemainingSeconds > 0)
             {
                 await InvokeAsync(StateHasChanged);
-                await Task.Delay(TimeSpan.FromSeconds(1), pageCancellation.Token);
+                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
                 deviceAuthRemainingSeconds--;
             }
 
@@ -782,6 +851,46 @@
         }
 
         CloseApplication();
+    }
+
+    private Task OpenUnauthorizedConfigurationGateAsync()
+    {
+        StopDeviceAuthorizationCountdown();
+        unauthorizedConfigurationPassword = string.Empty;
+        unauthorizedConfigurationError = null;
+        showUnauthorizedConfigurationGate = true;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private void CloseUnauthorizedConfigurationGate()
+    {
+        showUnauthorizedConfigurationGate = false;
+        unauthorizedConfigurationPassword = string.Empty;
+        unauthorizedConfigurationError = null;
+
+        if (deviceNotAuthorized)
+        {
+            StartDeviceAuthorizationCountdown(resetSeconds: false);
+        }
+    }
+
+    private async Task ValidateUnauthorizedConfigurationPasswordAsync()
+    {
+        var settings = await SettingsProvider.GetSettingsAsync(pageCancellation.Token);
+        if (!AppSettingsCryptoHelper.VerifyConfigurationPassword(
+            settings.AppConfiguration.ConfigurationPasswordHash,
+            unauthorizedConfigurationPassword))
+        {
+            unauthorizedConfigurationError = "Contraseña incorrecta.";
+            return;
+        }
+
+        deviceNotAuthorized = false;
+        showUnauthorizedConfigurationGate = false;
+        unauthorizedConfigurationPassword = string.Empty;
+        unauthorizedConfigurationError = null;
+        StopDeviceAuthorizationCountdown(resetSeconds: true);
+        NavigationManager.NavigateTo("configuracion");
     }
 
     private static void CloseApplication()
@@ -2512,6 +2621,7 @@
         pageCancellation.Dispose();
         dispatchCancellation?.Dispose();
         authorizationCountdownCancellation?.Dispose();
+        deviceAuthorizationCountdownCancellation?.Dispose();
         fuelingMonitorCancellation?.Dispose();
     }
 
