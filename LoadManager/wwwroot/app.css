@@ -1569,11 +1569,18 @@ a, .btn-link {
     font-weight: 800;
 }
 
-.dev-password-modal {
+.app-modal.dev-password-modal {
     display: grid;
-    gap: 0.75rem;
-    max-width: 360px;
+    gap: 1.25rem;
+    max-width: 28rem;
+    padding: 1.25rem;
     text-align: center;
+    width: calc(100vw - 2rem);
+}
+
+.app-modal.dev-password-modal h2,
+.app-modal.dev-password-modal p {
+    margin: 0;
 }
 
 .dev-password-input {
@@ -1598,6 +1605,7 @@ a, .btn-link {
 
 .dev-password-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.75rem;
     justify-content: center;
 }
