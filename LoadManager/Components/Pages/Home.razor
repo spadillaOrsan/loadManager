@@ -17,7 +17,10 @@
             var step = steps[i];
             <div class="dispatch-step @GetStepClass(step.Index)">
                 <span class="step-marker">@(i + 1)</span>
-                <span class="step-label">@step.Name</span>
+                <span class="step-label">
+                    <span class="step-label-full">@step.Name</span>
+                    <span class="step-label-short">@GetStepShortName(step.Name)</span>
+                </span>
             </div>
         }
     </nav>
@@ -2523,6 +2526,16 @@
         }
 
         return SelectedProduct?.Name ?? "Seleccione producto";
+    }
+
+    private static string GetStepShortName(string stepName)
+    {
+        return stepName switch
+        {
+            "Instrucciones" => "Instruc.",
+            "Despachar" => "Despacho",
+            _ => stepName
+        };
     }
 
     private string GetAmountSummary()

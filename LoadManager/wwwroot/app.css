@@ -342,6 +342,7 @@ a, .btn-link {
     font-weight: 800;
     gap: 0.45rem;
     justify-items: center;
+    min-width: 0;
     position: relative;
     text-align: center;
 }
@@ -434,6 +435,17 @@ a, .btn-link {
 
 .step-label {
     font-size: 0.88rem;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+
+.step-label-full,
+.step-label-short {
+    display: inline;
+}
+
+.step-label-short {
+    display: none;
 }
 
 .console-grid {
@@ -2752,6 +2764,28 @@ a, .btn-link {
     .history-summary,
     .history-search {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 380px) {
+    .dispatch-stepper {
+        gap: 0;
+    }
+
+    .dispatch-step {
+        gap: 0.35rem;
+    }
+
+    .step-label {
+        font-size: 0.72rem;
+    }
+
+    .step-label-full {
+        display: none;
+    }
+
+    .step-label-short {
+        display: inline;
     }
 }
 
