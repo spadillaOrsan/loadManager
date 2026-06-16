@@ -987,14 +987,14 @@ a, .btn-link {
 
 .dispensers-grid {
     display: flex;
+    flex-wrap: wrap;
     gap: 1rem;
     overflow-x: auto;
     overscroll-behavior-x: contain;
-    padding: 0.2rem 0.2rem 0.8rem;
     scroll-padding-inline: 0.2rem;
     scroll-snap-type: x mandatory;
     scrollbar-width: thin;
-    width: 100%;
+    justify-content:center;
 }
 
 .dispenser-card {
@@ -1004,10 +1004,9 @@ a, .btn-link {
     border-radius: 8px;
     color: var(--ua-text, #17212b);
     display: grid;
-    flex: 0 0 clamp(145px, 42vw, 190px);
-    gap: 0.55rem;
-    min-height: 210px;
-    padding: 0.85rem;
+    flex: 0 1 0;
+    min-height: 180px;
+    padding-block: 0.3rem;
     scroll-snap-align: start;
     text-align: center;
 }
@@ -1147,6 +1146,7 @@ a, .btn-link {
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
+    margin-top: 0.2rem;
 }
 
 .dispenser-number {
@@ -1157,7 +1157,7 @@ a, .btn-link {
 
 .dispenser-status {
     color: #5a6977;
-    font-size: 0.88rem;
+    font-size: 0.8rem;
     font-weight: 700;
 }
 
