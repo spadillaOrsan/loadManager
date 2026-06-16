@@ -2151,6 +2151,28 @@ a, .btn-link {
     width: 100%;
 }
 
+.app-modal.config-gate {
+    gap: 1.25rem;
+    max-width: 28rem;
+    padding: 1.25rem;
+    width: calc(100vw - 2rem);
+}
+
+.app-modal.config-gate header {
+    display: grid;
+    gap: 0.4rem;
+}
+
+.app-modal.config-gate header h2,
+.app-modal.config-gate header p {
+    margin: 0;
+}
+
+.app-modal.config-gate form {
+    display: grid;
+    gap: 1rem;
+}
+
 .blocking-alert-backdrop {
     background: rgba(15, 23, 42, 0.72);
     place-content: center;
@@ -2322,6 +2344,13 @@ a, .btn-link {
     display: grid;
     gap: 0.75rem;
     justify-items: center;
+}
+
+.config-gate-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
 }
 
 .settings-save-button {
