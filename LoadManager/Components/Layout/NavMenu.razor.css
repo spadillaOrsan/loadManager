@@ -193,8 +193,8 @@
         flex-direction: column;
         justify-content: space-between;
 
-        /* Allow sidebar to scroll for tall menus */
-        height: calc(100vh - 3.5rem);
+        /* Fill whatever height the sidebar gives us (sidebar is now a flex column) */
+        flex: 1;
         overflow-y: auto;
     }
 

@@ -1,117 +1,170 @@
 @page "/historial"
 @using System.Globalization
-@using System.Net
+@using LoadManager.Helpers
 @inject IGasStationService GasStationService
+@inject IAppSettingsService SettingsProvider
 @inject IJSRuntime JsRuntime
 @inject IReceiptPrinterService ReceiptPrinter
 @inject IConsoleLogService Logger
 @inject IDevModeService DevMode
 
 <section class="console-shell history-shell @(isLoading ? "is-busy" : string.Empty)" aria-busy="@isLoading">
-    <section class="accordion-section">
-        <button class="accordion-header" type="button" @onclick="() => folioFilterOpen = !folioFilterOpen">
-            <div class="accordion-title">
-                <h2>Filtrar por folio</h2>
-            </div>
-            <svg class="accordion-chevron @(folioFilterOpen ? "is-open" : "")" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M6 9l6 6 6-6" />
-            </svg>
-        </button>
-        @if (folioFilterOpen)
-        {
-            <div class="accordion-body">
-                <div class="history-search">
-                    <label class="settings-field">
-                        <span>Folio</span>
-                        <input class="form-control"
-                               placeholder="Buscar folio"
-                               value="@folioSearch"
-                               @oninput="OnFolioChanged"
-                               disabled="@isLoading" />
-                    </label>
-                    <button class="btn btn-primary history-search-button" @onclick="LoadHistoryAsync" disabled="@isLoading">
-                        Buscar
-                    </button>
-                    <button class="btn btn-outline-secondary history-search-button" @onclick="ClearSearchAsync" disabled="@isLoading">
-                        Limpiar
-                    </button>
+
+    <div class="historial-stage-track stage-@historialStage">
+
+        <!-- Etapa 1: Dispensarios -->
+        <section class="historial-dispensers-panel dispatch-stage-card">
+            <div class="historial-panel-heading">
+                <div>
+                    <h2 class="historial-panel-title">Historial de cargas</h2>
+                    <p class="historial-panel-sub">Selecciona un dispensario</p>
                 </div>
             </div>
-        }
-    </section>
+            <div class="dispensers-grid">
+                @foreach (var d in availableDispensers)
+                {
+                    <button class="dispenser-card is-available"
+                            @onclick="() => SelectDispenserAsync(d)"
+                            disabled="@isLoading">
+                        <img src="images/dispensers/inactivo.png" alt="" />
+                        <span class="dispenser-label">Dispensario</span>
+                        <span class="dispenser-number">@d.ToString("D2")</span>
+                    </button>
+                }
+            </div>
+        </section>
 
-    <section class="response-panel history-panel">
-        @if (isLoading)
-        {
-            <p class="empty-message">Consultando historial...</p>
-        }
-        else if (records.Count == 0)
-        {
-            <p class="empty-message">No se encontraron cargas registradas.</p>
-        }
-        else
-        {
+        <!-- Etapa 2: Mangueras -->
+        <section class="historial-hoses-panel dispatch-stage-card">
+            <div class="historial-panel-heading">
+                <div>
+                    <h2 class="historial-panel-title">Manguera</h2>
+                    <p class="historial-panel-sub">Dispensario @selectedDispenser.ToString("D2")</p>
+                </div>
+                <button class="btn btn-outline-secondary historial-back-btn" @onclick="() => GoToStage(1)">
+                    ← Volver
+                </button>
+            </div>
+            <div class="dispensers-grid">
+                @foreach (var h in availableHoses)
+                {
+                    <button class="dispenser-card is-available"
+                            @onclick="() => SelectHose(h)"
+                            disabled="@isLoading">
+                        <img src="images/hose/hose.png" alt="" />
+                        <span class="dispenser-label">Manguera</span>
+                        <span class="dispenser-number">@h.ToString("D2")</span>
+                    </button>
+                }
+            </div>
+        </section>
 
-            <div class="panel-heading-actions">
-                <div> 
-                    <button class="btn btn-outline-secondary history-search-button" @onclick="RefreshHistoryAsync" disabled="@isLoading">
-                        Refrescar
+        <!-- Etapa 3: Productos -->
+        <section class="historial-products-panel dispatch-stage-card">
+            <div class="historial-panel-heading">
+                <div>
+                    <h2 class="historial-panel-title">Producto</h2>
+                    <p class="historial-panel-sub">Disp. @selectedDispenser.ToString("D2") &middot; Mang. @selectedHose.ToString("D2")</p>
+                </div>
+                <button class="btn btn-outline-secondary historial-back-btn" @onclick="() => GoToStage(2)">
+                    ← Volver
+                </button>
+            </div>
+            <div class="dispensers-grid">
+                @foreach (var p in availableProducts)
+                {
+                    <button class="dispenser-card is-available"
+                            @onclick="() => SelectProductAsync(p.Id)"
+                            disabled="@isLoading">
+                        <img src="@GetProductImagePath(p.Description)" alt="" />
+                        <span class="dispenser-label">Producto</span>
+                        <span class="dispenser-status">@p.Description</span>
+                    </button>
+                }
+            </div>
+        </section>
+
+        <!-- Etapa 4: Resultados -->
+        <section class="historial-results-panel dispatch-stage-card">
+            <div class="historial-results-header">
+                <button class="btn btn-outline-secondary historial-back-btn" @onclick="() => GoToStage(1)" disabled="@isLoading">
+                    ← Nuevo filtro
+                </button>
+                <span class="historial-filter-summary">
+                    Disp. @selectedDispenser &middot; Mang. @selectedHose &middot; @SelectedProductDescription
+                </span>
+                <button class="btn btn-outline-secondary historial-back-btn" @onclick="RefreshAsync" disabled="@isLoading">
+                    Refrescar
+                </button>
+                <button class="btn btn-outline-secondary historial-back-btn" @onclick="() => GoToStage(3)" disabled="@isLoading">
+                    ← Volver
+                </button>
+            </div>
+
+            @if (records.Count == 0)
+            {
+                <div class="historial-empty">
+                    <p>No se encontraron registros para este filtro.</p>
+                    <button class="btn btn-outline-secondary" @onclick="() => GoToStage(1)">
+                        Limpiar filtros
                     </button>
                 </div>
-            </div>
-            <div class="history-table-wrap"> 
-                <table class="history-table">
-                    <thead>
-                        <tr>
-                            <th>Folio</th>
-                            <th>Estatus</th>
-                            <th>Fecha</th>
-                            <th>Disp.</th>
-                            <th>Mang.</th>
-                            <th>Producto</th>
-                            <th>Precio</th>
-                            <th>Programado</th>
-                            <th>Litros</th>
-                            <th>Importe</th>
-                            @if (printEnabled)
-                            {
-                                <th></th>
-                            }
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var record in records)
-                        {
-                            <tr>
-                                <td>@record.Sequence</td>
-                                <td><span class="history-status @GetStatusClass(record)">@record.Status</span></td>
-                                <td>@FormatDate(record.CreatedAt)</td>
-                                <td>@record.Dispenser</td>
-                                <td>@record.Hose</td>
-                                <td><span class="product-badge @GetProductBadgeClass(record)">@GetProductText(record)</span></td>
-                                <td>@($"${record.Price:N2}")</td>
-                                <td>@FormatDecimal(record.ProgrammedAmount)</td>
-                                <td>@($"{record.Liters:N2}")</td>
-                                <td>@($"${record.Amount:N2}")</td>
+            }
+            else
+            {
+                <div class="historial-cards">
+                    @foreach (var record in records)
+                    {
+                        <article class="historial-card @GetStatusClass(record)">
+                            <header class="historial-card-header">
+                                <span class="historial-card-folio">Folio #@record.Sequence</span>
+                                <span class="history-status @GetStatusClass(record)">@record.Status</span>
+                            </header>
+
+                            <div class="historial-card-body">
+                                <div class="historial-card-row">
+                                    <span>Hora</span>
+                                    <strong>@FormatTime(record.CreatedAt)</strong>
+                                </div>
+                                <div class="historial-card-row">
+                                    <span>Preset</span>
+                                    <strong>@FormatDecimal(record.ProgrammedAmount)</strong>
+                                </div>
+                                <div class="historial-card-row">
+                                    <span>Cantidad</span>
+                                    <strong>$@record.Amount.ToString("N2", culture)</strong>
+                                </div>
+                                <div class="historial-card-row">
+                                    <span>Litros</span>
+                                    <strong>@record.Liters.ToString("N3", culture)</strong>
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(record.Observations))
+                                {
+                                    <div class="historial-card-row historial-card-obs">
+                                        <span>Observaciones</span>
+                                        <strong>@record.Observations</strong>
+                                    </div>
+                                }
+                            </div>
+
+                            <footer class="historial-card-footer">
                                 @if (printEnabled)
                                 {
-                                    <td>
-                                        <button class="btn btn-outline-secondary history-print-button"
-                                                @onclick="() => PrintRecordAsync(record)"
-                                                disabled="@(isLoading || !record.IsClosed)"
-                                                title="@(record.IsClosed ? null : "Solo se puede imprimir una transaccion cerrada")">
-                                            Imprimir
-                                        </button>
-                                    </td>
+                                    <button class="historial-print-btn btn btn-primary"
+                                            @onclick="() => PrintRecordAsync(record)"
+                                            disabled="@(isLoading || !record.IsClosed)"
+                                            title="@(record.IsClosed ? null : "Solo se puede imprimir una transaccion cerrada")">
+                                        🖨 Imprimir
+                                    </button>
                                 }
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-                <div class="history-table-footer">@(isLoading ? "Consultando..." : $"{records.Count} registros")</div>
-            </div>
-        }
-    </section>
+                            </footer>
+                        </article>
+                    }
+                </div>
+            }
+        </section>
+
+    </div>
 
 </section>
 
@@ -134,31 +187,44 @@
 
 @code {
     private readonly CultureInfo culture = CultureInfo.GetCultureInfo("es-MX");
-    private List<DispatchHistoryRecord> records = [];
-    private string folioSearch = string.Empty;
-    private bool isLoading;
-    private bool folioFilterOpen;
 
-    // Visible por defecto; se oculta con el toggle "Ocultar boton de impresion" del Modo DEV.
+    private int historialStage = 1;
+    private bool isLoading;
     private bool printEnabled => !DevMode.IsPrintButtonHidden;
 
-    private int AuthorizedCount => records.Count(record => !record.IsCanceled);
-    private int CanceledCount => records.Count(record => record.IsCanceled);
-    private int ClosedCount => records.Count(record => record.IsClosed);
+    private List<int> availableDispensers = [];
+    private List<int> availableHoses = [];
+    private List<DispenserProductOption> loadedHoseData = [];
+    private List<DispatchTypeOption> availableProducts = [];
+
+    private int selectedDispenser;
+    private int selectedHose;
+    private int selectedProduct;
+
+    private int historialTop = 3;
+
+    private string SelectedProductDescription =>
+        availableProducts.FirstOrDefault(p => p.Id == selectedProduct)?.Description ?? selectedProduct.ToString();
+
+    private List<DispatchHistoryRecord> records = [];
+
+    private string? toastMessage;
+    private string toastCss = "is-success";
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadHistoryAsync();
+        await LoadInitialDataAsync();
     }
 
-    private async Task LoadHistoryAsync()
+    private async Task LoadInitialDataAsync()
     {
         isLoading = true;
         await InvokeAsync(StateHasChanged);
-
         try
         {
-            records = (await GasStationService.GetDispatchHistoryAsync(folioSearch)).ToList();
+            var settings = await SettingsProvider.GetSettingsAsync();
+            historialTop = settings.AppConfiguration.HistorialTopRecords;
+            availableDispensers = GetConfiguredDispenserNumbers(settings.AppConfiguration);
         }
         finally
         {
@@ -166,85 +232,172 @@
         }
     }
 
-    private async Task RefreshHistoryAsync()
+    private async Task SelectDispenserAsync(int dispenser)
     {
-        await LoadHistoryAsync();
-    }
+        selectedDispenser = dispenser;
+        selectedHose = 0;
+        selectedProduct = 0;
+        availableHoses.Clear();
+        loadedHoseData.Clear();
+        availableProducts.Clear();
 
-    private async Task ClearSearchAsync()
-    {
-        folioSearch = string.Empty;
-        await LoadHistoryAsync();
-    }
-
-    private void OnFolioChanged(ChangeEventArgs args)
-    {
-        folioSearch = Convert.ToString(args.Value) ?? string.Empty;
-    }
-
-    private string? toastMessage;
-    private string toastCss = "is-success";
-
-    private async Task PrintRecordAsync(DispatchHistoryRecord record)
-    {
-        // Solo se imprime si la transaccion esta cerrada.
-        if (!record.IsClosed)
-        {
-            ShowToast("No se encontro transaccion o transaccion no cerrada.", false);
-            return;
-        }
-
+        isLoading = true;
+        await InvokeAsync(StateHasChanged);
         try
         {
-            // Reimpresion: intenta registrar la impresion y obtener el numero de ticket.
-            // NO debe bloquear la impresion: si la API no esta disponible, se imprime sin numero.
-            var ticketNumber = 0;
-            try
+            var hoseData = await GasStationService.GetDispenserProductsAsync(selectedDispenser);
+            loadedHoseData = hoseData.ToList();
+            availableHoses = loadedHoseData.Select(h => h.Hose).Distinct().OrderBy(h => h).ToList();
+
+            if (availableHoses.Count == 0)
             {
-                ticketNumber = await GasStationService.RegisterImpressionAsync(record.Sequence);
-            }
-            catch (Exception impEx)
-            {
-                await Logger.WriteAsync(new AppLogEntry
-                {
-                    Level = "Error",
-                    Service = "Historial.Imprimir",
-                    Message = "No se pudo registrar la impresion en la API (se imprime sin numero de ticket).",
-                    RequestBody = $"folio={record.Sequence}",
-                    Exception = impEx.ToString()
-                });
+                ShowToast("No se encontraron mangueras para este dispensario.", false);
+                return;
             }
 
-            var html = TicketHtmlBuilder.Build(record, ticketNumber);
-
-            // Android: dialogo nativo del sistema (PrintManager) con selector de impresora.
-            // Windows: el servicio devuelve false y usamos el dialogo del navegador (JS).
-            var handled = await ReceiptPrinter.PrintHtmlAsync(html, $"Ticket_{record.Sequence}");
-            if (!handled)
-            {
-                await JsRuntime.InvokeVoidAsync("uaacPrintHtml", html);
-            }
-
-            await Logger.WriteAsync(new AppLogEntry
-            {
-                Level = "Success",
-                Service = "Historial.Imprimir",
-                Message = $"Ticket enviado a impresion (nativo={handled}, ticket#={ticketNumber}).",
-                RequestBody = $"folio={record.Sequence}"
-            });
+            historialStage = 2;
         }
-        catch (Exception ex)
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void SelectHose(int hose)
+    {
+        selectedHose = hose;
+        selectedProduct = 0;
+
+        availableProducts = loadedHoseData
+            .Where(h => h.Hose == hose)
+            .Select(h => new DispatchTypeOption { Id = h.ProductId, Description = h.Description })
+            .DistinctBy(p => p.Id)
+            .ToList();
+
+        historialStage = 3;
+    }
+
+    private async Task SelectProductAsync(int product)
+    {
+        selectedProduct = product;
+        await SearchAsync();
+    }
+
+    private async Task SearchAsync()
+    {
+        isLoading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
             await Logger.WriteAsync(new AppLogEntry
             {
-                Level = "Error",
-                Service = "Historial.Imprimir",
-                Message = "Fallo al imprimir el ticket.",
-                RequestBody = $"folio={record.Sequence}",
-                Exception = ex.ToString()
+                Level   = "Info",
+                Service = nameof(Historial),
+                Message = "Busqueda historial iniciada",
+                RequestBody = $"Disp={selectedDispenser:D2}; Mang={selectedHose:D2}; Prod={selectedProduct} ({SelectedProductDescription}); Top={historialTop}"
             });
-            ShowToast($"No se pudo imprimir: {ex.Message}", false);
+
+            records = (await GasStationService.GetHistorialAsync(
+                selectedDispenser, selectedHose, selectedProduct, historialTop)).ToList();
+
+            await Logger.WriteAsync(new AppLogEntry
+            {
+                Level   = records.Count > 0 ? "Success" : "Info",
+                Service = nameof(Historial),
+                Message = $"Historial: {records.Count} registro(s)",
+                RequestBody  = $"Disp={selectedDispenser:D2}; Mang={selectedHose:D2}; Prod={SelectedProductDescription}",
+                ResponseBody = records.Count > 0
+                    ? string.Join(" | ", records.Select(r =>
+                        $"Sec={r.Sequence} {r.CreatedAt:HH:mm} ${r.Amount:N2} {r.Liters:N3}L [{r.Status}]"))
+                    : "Sin registros"
+            });
+
+            historialStage = 4;
         }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task RefreshAsync()
+    {
+        isLoading = true;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            records = (await GasStationService.GetHistorialAsync(
+                selectedDispenser, selectedHose, selectedProduct, historialTop)).ToList();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void GoToStage(int stage)
+    {
+        historialStage = stage;
+        if (stage <= 1)
+        {
+            selectedDispenser = 0;
+            selectedHose = 0;
+            selectedProduct = 0;
+            availableHoses.Clear();
+            loadedHoseData.Clear();
+            availableProducts.Clear();
+            records.Clear();
+        }
+        else if (stage == 2)
+        {
+            selectedHose = 0;
+            selectedProduct = 0;
+            availableProducts.Clear();
+        }
+        else if (stage == 3)
+        {
+            selectedProduct = 0;
+        }
+    }
+
+    private static List<int> GetConfiguredDispenserNumbers(AppConfigurationOptions cfg)
+    {
+        if (!cfg.DispenserFillSequential && !string.IsNullOrWhiteSpace(cfg.DispenserNumbers))
+        {
+            var list = cfg.DispenserNumbers
+                .Split(new[] { ',', ';', ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(part => int.TryParse(part, out var n) ? n : 0)
+                .Where(n => n > 0)
+                .Distinct()
+                .OrderBy(n => n)
+                .ToList();
+
+            if (list.Count > 0)
+                return list;
+        }
+
+        var count = cfg.DispenserCount > 0 ? cfg.DispenserCount : 4;
+        return Enumerable.Range(1, count).ToList();
+    }
+
+    private string FormatTime(DateTime? dt) =>
+        dt.HasValue ? dt.Value.ToString("HH:mm", culture) : "--:--";
+
+    private string FormatDecimal(decimal value) =>
+        value == 0 ? "0" : value.ToString("N2", culture);
+
+    private static string GetStatusClass(DispatchHistoryRecord record)
+    {
+        if (record.IsCanceled) return "is-canceled";
+        return record.IsClosed ? "is-closed" : "is-authorized";
+    }
+
+    private static string GetProductImagePath(string description)
+    {
+        var upper = description.ToUpperInvariant();
+        if (upper.Contains("DIESEL")) return "images/products/DIESEL.png";
+        if (upper.Contains("SUPREME") || upper.Contains("PREMIUM")) return "images/products/SUPREME.png";
+        return "images/products/EXTRA.png";
     }
 
     private void ShowToast(string message, bool success)
@@ -261,52 +414,56 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    private static string GetStatusClass(DispatchHistoryRecord record)
+    private async Task PrintRecordAsync(DispatchHistoryRecord record)
     {
-        if (record.IsCanceled)
+        if (!record.IsClosed)
         {
-            return "is-canceled";
+            ShowToast("No se encontro transaccion o transaccion no cerrada.", false);
+            return;
         }
 
-        return record.IsClosed ? "is-closed" : "is-authorized";
-    }
-
-    private static string GetProductText(DispatchHistoryRecord record)
-    {
-        return string.IsNullOrWhiteSpace(record.ProductDescription)
-            ? record.Product.ToString()
-            : record.ProductDescription;
-    }
-
-    private static string GetProductBadgeClass(DispatchHistoryRecord record)
-    {
-        var description = GetProductText(record).ToUpperInvariant();
-
-        if (description.Contains("SUPREME") || description.Contains("PREMIUM"))
+        await Logger.WriteAsync(new AppLogEntry
         {
-            return "is-supreme";
-        }
+            Level   = "Info",
+            Service = nameof(Historial),
+            Message = "Impresion ticket historial iniciada",
+            RequestBody = $"Sec={record.Sequence}; Disp={record.Dispenser:D2}; Mang={record.Hose:D2}; Prod={record.ProductDescription}; Monto=${record.Amount:N2}; Litros={record.Liters:N3}; Estatus={record.Status}"
+        });
 
-        if (description.Contains("DIESEL"))
+        try
         {
-            return "is-diesel";
-        }
+            int ticketNumber = 0;
+            try
+            {
+                ticketNumber = await GasStationService.RegisterImpressionAsync(record.Sequence);
+            }
+            catch { }
 
-        if (description.Contains("MAGNA") || description.Contains("REGULAR") || description.Contains("EXTRA"))
+            var html = TicketHtmlBuilder.Build(record, ticketNumber);
+            var handled = await ReceiptPrinter.PrintHtmlAsync(html, $"Ticket_{record.Sequence}");
+            if (!handled)
+                await JsRuntime.InvokeVoidAsync("uaacPrintHtml", html);
+
+            await Logger.WriteAsync(new AppLogEntry
+            {
+                Level   = "Success",
+                Service = nameof(Historial),
+                Message = "Ticket impreso",
+                RequestBody  = $"Sec={record.Sequence}; Ticket#{ticketNumber}",
+                ResponseBody = handled ? "Impresora nativa" : "Ventana del navegador"
+            });
+        }
+        catch (Exception ex)
         {
-            return "is-magna";
+            ShowToast("Error al imprimir.", false);
+            await Logger.WriteAsync(new AppLogEntry
+            {
+                Level     = "Error",
+                Service   = nameof(Historial),
+                Message   = "Error al imprimir ticket.",
+                RequestBody  = $"Sec={record.Sequence}; Prod={record.ProductDescription}",
+                ResponseBody = ex.ToString()
+            });
         }
-
-        return "is-default";
-    }
-
-    private string FormatDate(DateTime? date)
-    {
-        return date?.ToString("yyyy-MM-dd HH:mm", culture) ?? "Sin fecha";
-    }
-
-    private string FormatDecimal(decimal value)
-    {
-        return value == 0m ? "0.00" : value.ToString("N2", culture);
     }
 }

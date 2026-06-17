@@ -15,15 +15,22 @@ public sealed class AppLogService(
         ApiLogEntry entry,
         CancellationToken cancellationToken = default)
     {
-        var now = DateTime.Now;
-        var level = NormalizeLevel(entry.Level);
-        // Estructura: Logs/AÑO/MES/DIA/SUCCESS|ERROR/Log_yyyyMMdd.txt (uno por dia por nivel).
-        var levelFolder = level == "Error" ? "ERROR" : "SUCCESS";
-        var filePath = Path.Combine(GetDailyDirectory(now, levelFolder), $"Log_{now:yyyyMMdd}.txt");
-        var content = BuildContent(entry, now, level);
+        try
+        {
+            var now = DateTime.Now;
+            var level = NormalizeLevel(entry.Level);
+            // Estructura: Logs/AÑO/MES/DIA/SUCCESS|ERROR/Log_yyyyMMdd.txt (uno por dia por nivel).
+            var levelFolder = level == "Error" ? "ERROR" : "SUCCESS";
+            var filePath = Path.Combine(GetDailyDirectory(now, levelFolder), $"Log_{now:yyyyMMdd}.txt");
+            var content = BuildContent(entry, now, level);
 
-        await AppendAsync(filePath, content, cancellationToken);
-        return filePath;
+            await AppendAsync(filePath, content, cancellationToken);
+            return filePath;
+        }
+        catch
+        {
+            return string.Empty;
+        }
     }
 
     private string GetDailyDirectory(DateTime now, string levelFolder)

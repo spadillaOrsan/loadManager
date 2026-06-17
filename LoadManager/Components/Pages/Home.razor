@@ -217,15 +217,18 @@
 
             @if (isFueling)
             {
-                <div class="liters-display" aria-live="polite">
-                    <span class="live-counter-status">Surtiendo</span>
-                    <span>@GetPrimaryLiveCounterLabel()</span>
-                    <strong>@((MarkupString)FormatPrimaryLiveCounter())</strong>
-                    <div class="live-secondary-counter">
-                        <span>@GetSecondaryLiveCounterLabel()</span>
-                        <strong>@((MarkupString)FormatSecondaryLiveCounter())</strong>
+                @if (DevMode.ShouldShowLiveCounter)
+                {
+                    <div class="liters-display" aria-live="polite">
+                        <span class="live-counter-status">Surtiendo</span>
+                        <span>@GetPrimaryLiveCounterLabel()</span>
+                        <strong>@((MarkupString)FormatPrimaryLiveCounter())</strong>
+                        <div class="live-secondary-counter">
+                            <span>@GetSecondaryLiveCounterLabel()</span>
+                            <strong>@((MarkupString)FormatSecondaryLiveCounter())</strong>
+                        </div>
                     </div>
-                </div>
+                }
 
                 @if (FuelProgressPercent is int tankPct)
                 {
@@ -252,6 +255,13 @@
                             <rect x="12" y="18" width="136" height="68" rx="34" fill="none" stroke="#a9bccd" stroke-width="3" />
                         </svg>
                         <span class="fuel-tank-pct">@tankPct<small>%</small></span>
+                    </div>
+                    <div class="fuel-tank-preset">
+                        <span class="fuel-tank-preset-label">Preset</span>
+                        <strong>
+                            @amountValue
+                            <span class="live-counter-unit">Lt</span>
+                        </strong>
                     </div>
                 }
             }
@@ -425,6 +435,7 @@
     </div>
 }
 
+@* COMENTADO: modal dispositivo no autorizado
 @if (deviceNotAuthorized)
 {
     <div class="app-modal-backdrop blocking-alert-backdrop">
@@ -441,6 +452,7 @@
         </section>
     </div>
 }
+*@
 
 @if (connectionBlocked && !isStartingFlow)
 {
@@ -629,7 +641,8 @@
                 return;
             }
 
-            // 2) Primera validacion: el equipo debe estar autorizado (por su IP).
+            // COMENTADO: validacion de autorizacion de equipo
+            /*
             if (!DevMode.BypassDeviceAuthorization)
             {
                 startupStatusMessage = "Validando autorizacion del equipo...";
@@ -638,14 +651,13 @@
                 var deviceAuthorization = await ConsoleClient.CheckDeviceAuthorizationAsync(pageCancellation.Token);
                 if (!deviceAuthorization.IsAuthorized)
                 {
-                    // Equipo no autorizado: modal especial, sin reintentar, cierra la app
-                    // tras la cuenta regresiva. El intento ya quedo registrado en el API.
                     startupStatusMessage = null;
                     deviceNotAuthorized = true;
                     _ = RunDeviceNotAuthorizedCountdownAsync();
                     return;
                 }
             }
+            */
 
             startupStatusMessage = "Validando TCP/IP y base de datos...";
             await InvokeAsync(StateHasChanged);

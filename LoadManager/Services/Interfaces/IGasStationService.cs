@@ -49,4 +49,14 @@ public interface IGasStationService
     Task<IReadOnlyList<DispatchHistoryRecord>> GetDispatchHistoryAsync(
         string? folio,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<DispatchTypeOption>> GetActiveProductsAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<DispatchHistoryRecord>> GetHistorialAsync(
+        int dispenser,
+        int hose,
+        int product,
+        int top,
+        CancellationToken cancellationToken = default);
 }

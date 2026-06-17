@@ -25,6 +25,7 @@ public interface IDevModeService
     bool HidePrintButton { get; set; }
     bool CancelOnBackground { get; set; }
     bool UseCountdown { get; set; }
+    bool ShowLiveCounter { get; set; }
 
     // Efectivos: combinan el interruptor maestro con cada interruptor individual.
     bool BypassTcpConnection { get; }
@@ -41,6 +42,8 @@ public interface IDevModeService
     bool ShouldCancelOnBackground { get; }
     /// <summary>true cuando debe mostrarse el contador en autorizacion (siempre fuera de DEV, o cuando UseCountdown == true en DEV).</summary>
     bool ShouldShowCountdown { get; }
+    /// <summary>true cuando debe mostrarse el contador de litros/moneda durante el surtido (siempre fuera de DEV, o cuando ShowLiveCounter == true en DEV).</summary>
+    bool ShouldShowLiveCounter { get; }
 
     /// <summary>Apaga el modo DEV y reinicia todos los interruptores.</summary>
     void Disable();

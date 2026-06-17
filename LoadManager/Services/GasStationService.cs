@@ -541,6 +541,28 @@ public sealed class GasStationService(
             cancellationToken);
     }
 
+    public Task<IReadOnlyList<DispatchTypeOption>> GetActiveProductsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return GetApiListAsync<DispatchTypeOption>(
+            "api/products",
+            "No se pudieron consultar los productos activos.",
+            cancellationToken);
+    }
+
+    public Task<IReadOnlyList<DispatchHistoryRecord>> GetHistorialAsync(
+        int dispenser,
+        int hose,
+        int product,
+        int top,
+        CancellationToken cancellationToken = default)
+    {
+        return GetApiListAsync<DispatchHistoryRecord>(
+            $"api/history/current?dispenser={dispenser}&hose={hose}&product={product}&top={top}",
+            "No se pudo consultar el historial.",
+            cancellationToken);
+    }
+
     private async Task<ConsoleCommandResult> SendConfiguredCommandAsync(
         string commandName,
         IReadOnlyDictionary<string, string>? replacements,

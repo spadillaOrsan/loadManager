@@ -40,4 +40,7 @@ public sealed class AppConfigurationOptions
     public string DispenserNumbers { get; set; } = string.Empty;
 
     public string ConfigurationPasswordHash { get; set; } = string.Empty;
+
+    // Cantidad de registros a mostrar en el historial (min 3, max 15).
+    public int HistorialTopRecords { get; set; } = 3;
 }

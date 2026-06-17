@@ -14,7 +14,8 @@ public sealed class DatabaseScriptService(
     // requiere OPENJSON (compatibilidad 130+) y la BD esta en compat 100.
     private static readonly (string ObjectName, string ScriptPath)[] StoredProcedureScripts =
     [
-        ("dbo.sp_folio_app", "Script/sp_folio_app.sql")
+        ("dbo.sp_folio_app",            "Script/sp_folio_app.sql"),
+        ("dbo.sp_HistorialFolioCorte",  "Script/sp_historial_folio.sql")
     ];
 
     // Los scripts son CREATE OR ALTER: se aplican una sola vez por arranque del

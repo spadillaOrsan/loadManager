@@ -73,18 +73,40 @@
             }
         </section>
 
-        <!-- App Configuracion -->
+        <!-- URL de APIs -->
         <section class="accordion-section">
             <button class="accordion-header" type="button" @onclick="() => ToggleSection(2)">
                 <div class="accordion-title">
-                    <h2>App Configuracion</h2>
-                    <span>Datos generales</span>
+                    <h2>URL de APIs</h2>
+                    <span class="status-indicator">@BuildApiUrl()</span>
                 </div>
                 <svg class="accordion-chevron @(openSections[2] ? "is-open" : "")" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M6 9l6 6 6-6" />
                 </svg>
             </button>
             @if (openSections[2])
+            {
+                <div class="accordion-body">
+                    <label class="settings-field">
+                        <span>URL completa</span>
+                        <input type="text" @bind="ApiFullUrl" placeholder="Ej: http://172.20.11.40:8084/" />
+                    </label>
+                </div>
+            }
+        </section>
+
+        <!-- App Configuracion -->
+        <section class="accordion-section">
+            <button class="accordion-header" type="button" @onclick="() => ToggleSection(3)">
+                <div class="accordion-title">
+                    <h2>App Configuracion</h2>
+                    <span>Datos generales</span>
+                </div>
+                <svg class="accordion-chevron @(openSections[3] ? "is-open" : "")" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 9l6 6 6-6" />
+                </svg>
+            </button>
+            @if (openSections[3])
             {
                 <div class="accordion-body">
                     <label class="settings-field">
@@ -126,6 +148,10 @@
                             <input type="number" @bind="authorizationCountdownSeconds" min="1" />
                         </label>
                     }
+                    <label class="settings-field">
+                        <span>Registros en historial (3–15)</span>
+                        <input type="number" @bind="historialTopRecords" min="3" max="15" />
+                    </label>
                     <div class="settings-field">
                         <div class="settings-field-head">
                             <span>#Dispensarios</span>
@@ -255,6 +281,7 @@
     private decimal cantidadTanqueLleno;
     private int quantityDecimals;
     private int authorizationCountdownSeconds;
+    private int historialTopRecords;
     private int dispenserCount;
     private bool dispenserFillSequential = true;
     private string dispenserNumbers = string.Empty;
@@ -269,7 +296,13 @@
     private string? toastMessage;
     private string toastCss = "is-success";
 
-    private readonly bool[] openSections = [false, false, false];
+    private readonly bool[] openSections = [false, false, false, false];
+
+    private string ApiFullUrl
+    {
+        get => BuildApiUrl();
+        set => ParseApiUrl(value);
+    }
 
     private void ToggleSection(int index) => openSections[index] = !openSections[index];
 
@@ -282,7 +315,7 @@
     {
         ("Saltar conexion TCP/IP", () => DevMode.SkipTcpConnection, v => DevMode.SkipTcpConnection = v),
         ("Saltar base de datos (BD)", () => DevMode.SkipDatabase, v => DevMode.SkipDatabase = v),
-        ("Saltar autorizacion del equipo", () => DevMode.SkipDeviceAuthorization, v => DevMode.SkipDeviceAuthorization = v),
+        // ("Saltar autorizacion del equipo", () => DevMode.SkipDeviceAuthorization, v => DevMode.SkipDeviceAuthorization = v),
         ("Saltar comunicacion de dispensarios", () => DevMode.SkipDispenserCommunication, v => DevMode.SkipDispenserCommunication = v),
         ("Saltar tipos de despacho y productos", () => DevMode.SkipDispatchTypesAndProducts, v => DevMode.SkipDispatchTypesAndProducts = v),
         ("Saltar registro/envio de autorizacion", () => DevMode.SkipSendAuthorization, v => DevMode.SkipSendAuthorization = v),
@@ -290,6 +323,7 @@
         ("Ignorar bloqueo por manguera descolgada", () => DevMode.SkipHoseLiftedBlock, v => DevMode.SkipHoseLiftedBlock = v),
         ("Ignorar limites de importe/litros", () => DevMode.SkipAmountLimits, v => DevMode.SkipAmountLimits = v),
         ("Simular surtido (ver contador y tanque)", () => DevMode.SimulateFueling, v => DevMode.SimulateFueling = v),
+        ("Mostrar contador de litros/moneda al surtir", () => DevMode.ShowLiveCounter, v => DevMode.ShowLiveCounter = v),
         ("Ocultar boton de impresion (historial y ticket)", () => DevMode.HidePrintButton, v => DevMode.HidePrintButton = v),
         ("Cancelar carga al pasar a segundo plano", () => DevMode.CancelOnBackground, v => DevMode.CancelOnBackground = v),
         ("Contador en autorizacion", () => DevMode.UseCountdown, v => DevMode.UseCountdown = v),
@@ -421,6 +455,7 @@
         cantidadTanqueLleno = settings.AppConfiguration.CantidadTanqueLleno;
         quantityDecimals = settings.AppConfiguration.QuantityDecimals;
         authorizationCountdownSeconds = settings.AppConfiguration.AuthorizationCountdownSeconds;
+        historialTopRecords = settings.AppConfiguration.HistorialTopRecords;
         dispenserCount = settings.AppConfiguration.DispenserCount;
         dispenserFillSequential = settings.AppConfiguration.DispenserFillSequential;
         dispenserNumbers = settings.AppConfiguration.DispenserNumbers;
@@ -537,6 +572,7 @@
             || limiteImporte <= 0 || limiteLitros <= 0 || cantidadTanqueLleno <= 0
             || quantityDecimals is < 0 or > 6
             || (DevMode.ShouldShowCountdown && authorizationCountdownSeconds <= 0)
+            || historialTopRecords is < 3 or > 15
             || apiRequestTimeoutSeconds <= 0)
         {
             ShowToast("Revise los valores de configuracion.", false);
@@ -563,6 +599,7 @@
         settings.AppConfiguration.CantidadTanqueLleno = cantidadTanqueLleno;
         settings.AppConfiguration.QuantityDecimals = quantityDecimals;
         settings.AppConfiguration.AuthorizationCountdownSeconds = authorizationCountdownSeconds;
+        settings.AppConfiguration.HistorialTopRecords = Math.Clamp(historialTopRecords, 3, 15);
         settings.AppConfiguration.DispenserFillSequential = dispenserFillSequential;
         settings.AppConfiguration.DispenserNumbers = dispenserFillSequential
             ? string.Empty

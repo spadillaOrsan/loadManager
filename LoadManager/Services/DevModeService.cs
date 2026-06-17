@@ -20,6 +20,7 @@ public sealed class DevModeService : IDevModeService
     public bool HidePrintButton { get; set; }
     public bool CancelOnBackground { get; set; }
     public bool UseCountdown { get; set; }
+    public bool ShowLiveCounter { get; set; }
 
     public bool BypassTcpConnection => IsEnabled && SkipTcpConnection;
     public bool BypassDatabase => IsEnabled && SkipDatabase;
@@ -34,6 +35,7 @@ public sealed class DevModeService : IDevModeService
     public bool IsPrintButtonHidden => IsEnabled && HidePrintButton;
     public bool ShouldCancelOnBackground => IsEnabled && CancelOnBackground;
     public bool ShouldShowCountdown => !IsEnabled || UseCountdown;
+    public bool ShouldShowLiveCounter => !IsEnabled || ShowLiveCounter;
 
     public void Disable()
     {
@@ -51,5 +53,6 @@ public sealed class DevModeService : IDevModeService
         HidePrintButton = false;
         CancelOnBackground = false;
         UseCountdown = false;
+        ShowLiveCounter = false;
     }
 }

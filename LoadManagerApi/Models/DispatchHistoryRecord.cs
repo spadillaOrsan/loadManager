@@ -39,5 +39,7 @@ public sealed class DispatchHistoryRecord
 
     public int EstacionUG { get; init; }
 
+    public string Observations { get; init; } = string.Empty;
+
     public string Status => IsCanceled ? "Cancelada" : IsClosed ? "Cerrada" : "Abierta";
 }

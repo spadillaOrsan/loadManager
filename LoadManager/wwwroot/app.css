@@ -1785,9 +1785,9 @@ a, .btn-link {
    con clip a la forma del bidon). 0-99% usa el color del producto; al 100% verde.
    fill/y/height son propiedades CSS validas en el WebView Chrome 75 del Verifone. */
 .fuel-tank {
-    margin: 0.6rem auto 0;
+    margin: 0.75rem auto 0;
     position: relative;
-    width: 11rem;
+    width: 16rem;
 }
 
 .fuel-tank-svg {
@@ -1833,10 +1833,41 @@ a, .btn-link {
 
 .fuel-tank.is-complete .fuel-tank-pct { background: rgba(22, 163, 74, 0.92); }
 
-/* En pantallas anchas (escritorio) el tanque se ve un poco mas grande */
+/* En pantallas anchas (escritorio) el tanque se ve mas grande */
 @media (min-width: 641px) {
-    .fuel-tank { width: 14rem; }
-    .fuel-tank-pct { font-size: 1.9rem; }
+    .fuel-tank { width: 22rem; }
+    .fuel-tank-pct { font-size: 2.2rem; }
+}
+
+.fuel-tank-preset {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    margin-top: 0.6rem;
+    text-align: center;
+}
+
+.fuel-tank-preset-label {
+    color: #6b7280;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.fuel-tank-preset strong {
+    align-items: baseline;
+    color: #1b6ec2;
+    display: inline-flex;
+    font-size: 2rem;
+    font-weight: 900;
+    gap: 0.15rem;
+    line-height: 1.1;
+}
+
+@media (min-width: 641px) {
+    .fuel-tank-preset strong { font-size: 2.5rem; }
 }
 
 .fueling-note {
@@ -2588,7 +2619,7 @@ a, .btn-link {
 }
 
 .history-status.is-authorized {
-    background: #1f6fbf;
+    background: #16855f;
 }
 
 .history-status.is-canceled {
@@ -2596,7 +2627,7 @@ a, .btn-link {
 }
 
 .history-status.is-closed {
-    background: #16855f;
+    background: #c43131;
 }
 
 .history-ticket-preview {

@@ -114,6 +114,9 @@ public sealed class AppSettingsService : IAppSettingsService
         current.AppConfiguration.ToastDurationMilliseconds = UsePositive(current.AppConfiguration.ToastDurationMilliseconds, defaults.AppConfiguration.ToastDurationMilliseconds);
         current.AppConfiguration.DispenserCount = UsePositive(current.AppConfiguration.DispenserCount, defaults.AppConfiguration.DispenserCount);
         current.AppConfiguration.ConfigurationPasswordHash = UseText(current.AppConfiguration.ConfigurationPasswordHash, defaults.AppConfiguration.ConfigurationPasswordHash);
+        current.AppConfiguration.HistorialTopRecords = current.AppConfiguration.HistorialTopRecords is >= 3 and <= 15
+            ? current.AppConfiguration.HistorialTopRecords
+            : defaults.AppConfiguration.HistorialTopRecords;
 
         current.Api.BaseUrl = UseText(current.Api.BaseUrl, defaults.Api.BaseUrl);
         current.Api.RequestTimeoutSeconds = UsePositive(current.Api.RequestTimeoutSeconds, defaults.Api.RequestTimeoutSeconds);
@@ -173,6 +176,7 @@ public sealed class AppSettingsService : IAppSettingsService
         EncryptBoolean(jsonNode, "AppConfiguration", "DispenserFillSequential");
         EncryptString(jsonNode, "AppConfiguration", "DispenserNumbers");
         EncryptString(jsonNode, "AppConfiguration", "ConfigurationPasswordHash");
+        EncryptNumber(jsonNode, "AppConfiguration", "HistorialTopRecords");
 
         EncryptString(jsonNode, "Api", "BaseUrl");
         EncryptNumber(jsonNode, "Api", "RequestTimeoutSeconds");
@@ -207,6 +211,7 @@ public sealed class AppSettingsService : IAppSettingsService
         DecryptBoolean(jsonNode, "AppConfiguration", "DispenserFillSequential");
         DecryptString(jsonNode, "AppConfiguration", "DispenserNumbers");
         DecryptString(jsonNode, "AppConfiguration", "ConfigurationPasswordHash");
+        DecryptNumber(jsonNode, "AppConfiguration", "HistorialTopRecords");
 
         DecryptString(jsonNode, "Api", "BaseUrl");
         DecryptNumber(jsonNode, "Api", "RequestTimeoutSeconds");

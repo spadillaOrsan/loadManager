@@ -1,0 +1,320 @@
+/* ---------- Stage track ---------- */
+
+.historial-stage-track {
+    display: block;
+    width: 100%;
+}
+
+.historial-stage-track.stage-1 .historial-dispensers-panel,
+.historial-stage-track.stage-2 .historial-hoses-panel,
+.historial-stage-track.stage-3 .historial-products-panel {
+    animation: stageSlideIn 180ms ease;
+    display: grid;
+}
+
+.historial-stage-track.stage-4 .historial-results-panel {
+    animation: stageSlideIn 180ms ease;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ---------- Cards de selección (dispensario / manguera / producto) — blanco ---------- */
+
+.historial-dispensers-panel .dispenser-card.is-available,
+.historial-hoses-panel .dispenser-card.is-available,
+.historial-products-panel .dispenser-card.is-available {
+    background: #ffffff;
+    border-color: #d1d5db;
+}
+
+.historial-dispensers-panel .dispenser-card.is-available .dispenser-status,
+.historial-hoses-panel .dispenser-card.is-available .dispenser-status,
+.historial-products-panel .dispenser-card.is-available .dispenser-status {
+    color: #374151;
+}
+
+/* ---------- Panel heading ---------- */
+
+.historial-panel-heading {
+    align-items: center;
+    display: flex;
+    gap: 0.75rem;
+    justify-content: space-between;
+    padding: 1rem 1rem 0.5rem;
+}
+
+.historial-panel-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.historial-panel-sub {
+    color: #6b7280;
+    font-size: 0.82rem;
+    margin: 0.15rem 0 0;
+}
+
+.historial-back-btn {
+    flex-shrink: 0;
+    font-size: 0.82rem;
+    padding: 0.35rem 0.8rem;
+    min-height: 2.25rem;
+}
+
+/* ---------- Selector cards grid ---------- */
+
+.historial-dispensers-panel .dispensers-grid,
+.historial-hoses-panel .dispensers-grid,
+.historial-products-panel .dispensers-grid {
+    padding: 0.5rem 1rem 1.25rem;
+}
+
+/* ---------- Cabecera de resultados ---------- */
+
+.historial-results-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    flex-wrap: wrap;
+}
+
+.historial-filter-summary {
+    flex: 1;
+    font-size: 0.85rem;
+    color: #6b7280;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ---------- Grid de cards de resultado ---------- */
+
+.historial-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    padding: 0 1rem 1.5rem;
+}
+
+/* ---------- Card individual ---------- */
+
+.historial-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-left-width: 4px;
+    border-left-color: #1f6fbf;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.historial-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.65rem 1rem;
+    background: #eff6ff;
+    border-bottom: 1px solid #e5e7eb;
+    gap: 0.5rem;
+}
+
+.historial-card-folio {
+    color: #111827;
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.historial-card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0.6rem 1rem 0.75rem;
+}
+
+.historial-card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.historial-card-row:last-child {
+    border-bottom: none;
+}
+
+.historial-card-row span {
+    color: #6b7280;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.historial-card-row strong {
+    color: #111827;
+    font-size: 0.92rem;
+    font-weight: 600;
+    text-align: right;
+    word-break: break-word;
+}
+
+.historial-card-obs {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    border-top: 1px solid #f3f4f6;
+    margin-top: 0.35rem;
+    padding-top: 0.45rem;
+    text-align: center;
+}
+
+.historial-card-obs strong {
+    font-size: 0.82rem;
+    color: #374151;
+    font-weight: 500;
+}
+
+.historial-card-footer {
+    display: flex;
+    justify-content: center;
+    padding: 0.65rem 1rem 0.85rem;
+    border-top: 1px solid #f3f4f6;
+}
+
+.historial-print-btn {
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    min-height: 2.25rem;
+    padding: 0.4rem 1.4rem;
+    width: 100%;
+    max-width: 200px;
+    border-radius: 8px;
+    transition: opacity 0.15s;
+}
+
+.historial-print-btn:disabled {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+/* ---------- Estado vacío ---------- */
+
+.historial-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 3rem 1rem;
+    text-align: center;
+    color: #6b7280;
+}
+
+/* ==========================================================================
+   RESPONSIVO
+   - Windows escritorio : ≥ 900 px  → cards 3 columnas, header en línea
+   - Tablet / landscape : 600–899px → cards 2 columnas
+   - Android portrait   : < 600 px  → cards 1 columna, header compacto
+   ========================================================================== */
+
+/* --- Escritorio ancho --- */
+@media (min-width: 900px) {
+    .historial-cards {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        padding: 0 1.25rem 2rem;
+        gap: 1.25rem;
+    }
+
+    .historial-results-header {
+        padding: 0.85rem 1.25rem;
+        gap: 0.75rem;
+    }
+
+    .historial-panel-heading {
+        padding: 1rem 1.25rem 0.5rem;
+    }
+
+    .historial-dispensers-panel .dispensers-grid,
+    .historial-hoses-panel .dispensers-grid,
+    .historial-products-panel .dispensers-grid {
+        padding: 0.5rem 1.25rem 1.5rem;
+    }
+}
+
+/* --- Tablet / landscape --- */
+@media (min-width: 600px) and (max-width: 899px) {
+    .historial-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* --- Android portrait (< 600 px) --- */
+@media (max-width: 599px) {
+    .historial-cards {
+        grid-template-columns: 1fr;
+        padding: 0 0.75rem 1.5rem;
+        gap: 0.75rem;
+    }
+
+    .historial-panel-heading {
+        padding: 0.75rem 0.75rem 0.35rem;
+        flex-wrap: wrap;
+    }
+
+    .historial-panel-title {
+        font-size: 1rem;
+    }
+
+    .historial-dispensers-panel .dispensers-grid,
+    .historial-hoses-panel .dispensers-grid,
+    .historial-products-panel .dispensers-grid {
+        padding: 0.5rem 0.75rem 1rem;
+    }
+
+    /* Header de resultados: botones en primera fila, summary en segunda */
+    .historial-results-header {
+        padding: 0.6rem 0.75rem;
+        gap: 0.4rem;
+    }
+
+    .historial-filter-summary {
+        order: 10;
+        flex-basis: 100%;
+        font-size: 0.8rem;
+        white-space: normal;
+        text-align: center;
+    }
+
+    .historial-back-btn {
+        font-size: 0.78rem;
+        padding: 0.3rem 0.6rem;
+        min-height: 2rem;
+    }
+
+    /* Card body más compacto */
+    .historial-card-body {
+        padding: 0.5rem 0.75rem 0.6rem;
+    }
+
+    .historial-card-header {
+        padding: 0.55rem 0.75rem;
+    }
+
+    .historial-card-folio {
+        font-size: 0.88rem;
+    }
+
+    .historial-print-btn {
+        max-width: none;
+    }
+}

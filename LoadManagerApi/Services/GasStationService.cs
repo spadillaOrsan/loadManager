@@ -643,6 +643,136 @@ public sealed class GasStationService(
         return records;
     }
 
+    public async Task<IReadOnlyList<DispatchTypeOption>> GetActiveProductsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var products = new List<DispatchTypeOption>();
+
+        try
+        {
+            await using var connection = await OpenConnectionAsync(cancellationToken);
+            await using var command = new SqlCommand("""
+                SELECT intProducto, strDescripcion
+                FROM dbo.tblProductos
+                WHERE bitEstatus = 1
+                ORDER BY strDescripcion
+                """, connection);
+
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                products.Add(new DispatchTypeOption
+                {
+                    Id = Convert.ToInt32(reader["intProducto"]),
+                    Description = Convert.ToString(reader["strDescripcion"]) ?? string.Empty
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            await LogAndReturnAsync(CreateErrorResult(
+                "SELECT intProducto, strDescripcion FROM dbo.tblProductos WHERE bitEstatus = 1",
+                "No se pudieron consultar los productos activos.",
+                ex), cancellationToken);
+        }
+
+        return products;
+    }
+
+    public async Task<IReadOnlyList<DispatchHistoryRecord>> GetHistorialAsync(
+        int dispenser,
+        int hose,
+        int product,
+        int top,
+        CancellationToken cancellationToken = default)
+    {
+        var records = new List<DispatchHistoryRecord>();
+        var topClamped = Math.Clamp(top, 1, 100);
+
+        try
+        {
+            await using var connection = await OpenConnectionAsync(cancellationToken);
+
+            await using var command = new SqlCommand("""
+                SELECT TOP (@intTop)
+                    b.intFolioCorte,
+                    b.intSecuencia,
+                    b.datFechaHora,
+                    b.intDispensario,
+                    b.intManguera,
+                    b.intProducto,
+                    b.dblProgramado,
+                    b.dblVendido,
+                    b.dblVolumenVendido,
+                    b.bitCerrada,
+                    b.strObservaciones,
+                    tp.strDescripcion  AS ProductoDescripcion,
+                    tp.dblPrecioU      AS ProductoPrecio,
+                    tparam.strMarcaGasolinera AS MarcaGasolinera,
+                    tparam.strRFC             AS Rfc,
+                    tparam.strNomEmpresa      AS NombreEmpresa,
+                    tparam.intEstUG           AS EstacionUG,
+                    CASE WHEN EXISTS (
+                        SELECT 1 FROM dbo.tblTransacciones t WHERE t.intSecuencia = b.intSecuencia
+                    ) THEN 1 ELSE 0 END AS EstaCerrada
+                FROM dbo.tblBitacora b
+                LEFT JOIN dbo.tblProductos  tp     ON tp.intProducto  = b.intProducto
+                LEFT JOIN dbo.tblParametros tparam ON 1=1
+                WHERE b.intDispensario = @dispensario
+                  AND b.intManguera   = @manguera
+                  AND b.intProducto   = @producto
+                ORDER BY b.datFechaHora DESC
+                """, connection);
+
+            command.Parameters.AddWithValue("@intTop",      topClamped);
+            command.Parameters.AddWithValue("@dispensario", dispenser);
+            command.Parameters.AddWithValue("@manguera",    hose);
+            command.Parameters.AddWithValue("@producto",    product);
+
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                records.Add(new DispatchHistoryRecord
+                {
+                    Sequence          = SqlDataReaderHelper.GetFirstInt(reader,      "intSecuencia"),
+                    Dispenser         = SqlDataReaderHelper.GetFirstInt(reader,      "intDispensario"),
+                    Hose              = SqlDataReaderHelper.GetFirstInt(reader,      "intManguera"),
+                    Product           = SqlDataReaderHelper.GetFirstInt(reader,      "intProducto"),
+                    ProductDescription= SqlDataReaderHelper.GetFirstString(reader,   "ProductoDescripcion"),
+                    ProgrammedAmount  = SqlDataReaderHelper.GetFirstDecimal(reader,  "dblProgramado"),
+                    Amount            = SqlDataReaderHelper.GetFirstDecimal(reader,  "dblVendido"),
+                    Liters            = SqlDataReaderHelper.GetFirstDecimal(reader,  "dblVolumenVendido"),
+                    Price             = SqlDataReaderHelper.GetFirstDecimal(reader,  "ProductoPrecio"),
+                    CreatedAt         = SqlDataReaderHelper.GetFirstDateTime(reader, "datFechaHora"),
+                    IsClosed          = SqlDataReaderHelper.GetFirstBool(reader,     "EstaCerrada"),
+                    Observations      = SqlDataReaderHelper.GetFirstString(reader,   "strObservaciones"),
+                    MarcaGasolinera   = SqlDataReaderHelper.GetFirstString(reader,   "MarcaGasolinera"),
+                    Rfc               = SqlDataReaderHelper.GetFirstString(reader,   "Rfc"),
+                    NombreEmpresa     = SqlDataReaderHelper.GetFirstString(reader,   "NombreEmpresa"),
+                    EstacionUG        = SqlDataReaderHelper.GetFirstInt(reader,      "EstacionUG")
+                });
+            }
+
+            await LogAndReturnAsync(new ConsoleCommandResult
+            {
+                IsSuccess = true,
+                CommandName = "database",
+                RequestFrame = $"tblBitacora disp={dispenser} mang={hose} prod={product} top={topClamped}",
+                ResponseFrame = $"{records.Count} registros",
+                UserMessage = "Historial consultado correctamente."
+            }, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            await LogAndReturnAsync(CreateErrorResult(
+                "SELECT tblBitacora historial",
+                "No se pudo consultar el historial.",
+                ex), cancellationToken);
+        }
+
+        return records;
+    }
+
     private static async Task<bool> ColumnExistsAsync(
         SqlConnection connection,
         string schema,
