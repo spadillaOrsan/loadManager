@@ -1,8 +1,8 @@
 using LoadManagerApi.Interfaces;
 using LoadManagerApi.Helpers;
 using LoadManagerApi.Models;
-using LoadManagerApi.Models;
 using Microsoft.Data.SqlClient;
+using System.Collections.Concurrent;
 using System.Data;
 using System.Text.Json;
 
@@ -13,6 +13,18 @@ public sealed class GasStationService(
     IDatabaseScriptService databaseScriptService,
     IAppLogService logService) : IGasStationService
 {
+    // Candado en memoria por dispensario: primera linea de defensa contra la doble autorizacion
+    // simultanea. Garantiza que solo una solicitud por dispensario se procesa a la vez dentro
+    // del mismo proceso, incluso si sp_getapplock o el check de bitacora fallan.
+    private static readonly ConcurrentDictionary<int, SemaphoreSlim> DispenserSemaphores = new();
+
+    // Registro en memoria del ultimo folio autorizado por dispensario con su hora UTC.
+    // Segunda linea de defensa: bloquea al segundo equipo aunque datFechaHora en BD sea NULL.
+    private static readonly ConcurrentDictionary<int, DateTime> LastAuthorizationUtc = new();
+
+    private static SemaphoreSlim GetDispenserSemaphore(int dispenser) =>
+        DispenserSemaphores.GetOrAdd(dispenser, _ => new SemaphoreSlim(1, 1));
+
     private static readonly string[] RequiredObjects =
     [
         "dbo.tblMangueras",
@@ -24,9 +36,14 @@ public sealed class GasStationService(
         "dbo.tblTiposVenta",
         "dbo.tblUsuarioIsla",
         "dbo.tblConsultasUG",
+        "dbo.tblImpresiones",
         "dbo.sp_folio_app",
         "dbo.sp_bitacora_app"
     ];
+
+    // Ventana (segundos) para el rechazo anti doble-tap: dos autorizaciones del mismo
+    // dispensario dentro de este lapso se consideran el mismo "presionar al mismo tiempo".
+    private const int DoubleTapWindowSeconds = 10;
 
     public async Task<ConsoleCommandResult> CheckConnectionAsync(CancellationToken cancellationToken = default)
     {
@@ -146,74 +163,233 @@ public sealed class GasStationService(
         FuelAuthorizationRequest request,
         CancellationToken cancellationToken = default)
     {
+        // Primera linea de defensa: semaforo en memoria por dispensario.
+        // Garantiza que dos solicitudes simultaneas para el mismo dispensario
+        // se serialicen sin importar lo que ocurra en la BD.
+        var semaphore = GetDispenserSemaphore(request.Dispensario);
+        var acquired = await semaphore.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
+        if (!acquired)
+        {
+            throw new DispenserBusyException(request.Dispensario);
+        }
+
+        try
+        {
+            return await RegisterAuthorizationCoreAsync(request, cancellationToken);
+        }
+        finally
+        {
+            semaphore.Release();
+        }
+    }
+
+    private async Task<int> RegisterAuthorizationCoreAsync(
+        FuelAuthorizationRequest request,
+        CancellationToken cancellationToken)
+    {
         try
         {
             await using var connection = await OpenConnectionAsync(cancellationToken);
             await databaseScriptService.EnsureRequiredStoredProceduresAsync(connection, cancellationToken);
 
-            // 1) Generar el folio de secuencia (sp_folio_app devuelve @intFolioSecuencia OUTPUT).
-            long folio;
-            await using (var folioCommand = new SqlCommand("dbo.sp_folio_app", connection)
+        // Candado de sesion (Session scope): persiste aunque el COMMIT libere la conexion.
+        // Garantiza serializacion incluso entre instancias/procesos distintos de IIS
+        // (web garden) que comparten la misma base de datos.
+        var lockResource = $"LM_D{request.Dispensario}";
+        var lockAcquired = false;
+
+        try
+        {
+            await using (var acquireLock = new SqlCommand("sp_getapplock", connection)
             {
                 CommandType = CommandType.StoredProcedure
             })
             {
-                var folioParameter = folioCommand.Parameters.Add("@intFolioSecuencia", SqlDbType.BigInt);
-                folioParameter.Direction = ParameterDirection.Output;
-                await folioCommand.ExecuteNonQueryAsync(cancellationToken);
+                acquireLock.Parameters.AddWithValue("@Resource", lockResource);
+                acquireLock.Parameters.AddWithValue("@LockMode", "Exclusive");
+                acquireLock.Parameters.AddWithValue("@LockOwner", "Session");
+                acquireLock.Parameters.AddWithValue("@LockTimeout", 10000);
+                var rv = acquireLock.Parameters.Add("@rv", SqlDbType.Int);
+                rv.Direction = ParameterDirection.ReturnValue;
+                await acquireLock.ExecuteNonQueryAsync(cancellationToken);
+                if (rv.Value is int rvInt && rvInt < 0)
+                    throw new DispenserBusyException(request.Dispensario);
+            }
+            lockAcquired = true;
 
-                if (folioParameter.Value is null || folioParameter.Value is DBNull)
+            // Check rapido en memoria (evita una ida a BD si el mismo proceso
+            // acaba de autorizar este dispensario hace menos de N segundos).
+            if (LastAuthorizationUtc.TryGetValue(request.Dispensario, out var lastAuth)
+                && (DateTime.UtcNow - lastAuth).TotalSeconds < DoubleTapWindowSeconds)
+            {
+                throw new DispenserBusyException(request.Dispensario);
+            }
+
+            await using var transaction = connection.BeginTransaction();
+            try
+            {
+                // Verificar autorizacion reciente en tblBitacora (double-tap) y
+                // estatus activo en tblDispensarios (dispensario en servicio).
+                // WITH (READCOMMITTEDLOCK) fuerza leer el estado committed actual
+                // aunque la BD use SNAPSHOT ISOLATION, garantizando que Device B
+                // vea el registro que Device A acaba de insertar y commitear.
+                // No se usa UPDATE en tblDispensarios porque sp_Bitacora_APP puede
+                // reescribir intEstatus dentro de la misma transaccion.
+                await using (var checkCmd = new SqlCommand(
+                    """
+                    SELECT TOP 1 1
+                    WHERE EXISTS (
+                        SELECT 1 FROM dbo.tblBitacora WITH (READCOMMITTEDLOCK)
+                        WHERE intDispensario = @dispensario
+                          AND datFechaHora >= DATEADD(SECOND, -@ventana, GETDATE())
+                    )
+                    OR EXISTS (
+                        SELECT 1 FROM dbo.tblDispensarios WITH (READCOMMITTEDLOCK)
+                        WHERE intDispensario = @dispensario
+                          AND intEstatus IN (4, 5, 6)
+                    )
+                    """, connection, transaction))
                 {
-                    throw new InvalidOperationException("sp_folio_app no devolvio el folio generado.");
+                    checkCmd.Parameters.AddWithValue("@dispensario", request.Dispensario);
+                    checkCmd.Parameters.AddWithValue("@ventana", DoubleTapWindowSeconds);
+                    var exists = await checkCmd.ExecuteScalarAsync(cancellationToken);
+                    if (exists is not null)
+                        throw new DispenserBusyException(request.Dispensario);
                 }
 
-                folio = Convert.ToInt64(folioParameter.Value);
-            }
+                long folio;
+                await using (var folioCommand = new SqlCommand("dbo.sp_folio_app", connection, transaction)
+                {
+                    CommandType = CommandType.StoredProcedure
+                })
+                {
+                    var folioParameter = folioCommand.Parameters.Add("@intFolioSecuencia", SqlDbType.BigInt);
+                    folioParameter.Direction = ParameterDirection.Output;
+                    await folioCommand.ExecuteNonQueryAsync(cancellationToken);
 
-            // 2) Registrar la bitacora con parametros individuales (compatible con compat 100).
-            await using (var command = new SqlCommand("dbo.sp_Bitacora_APP", connection)
-            {
-                CommandType = CommandType.StoredProcedure
-            })
-            {
-                command.Parameters.AddWithValue("@intTPV", request.Tpv);
-                command.Parameters.AddWithValue("@intTipoVenta", request.TipoVenta);
-                command.Parameters.AddWithValue("@intDispensario", request.Dispensario);
-                command.Parameters.AddWithValue("@intManguera", request.Manguera);
-                command.Parameters.AddWithValue("@intProducto", request.Producto);
-                command.Parameters.AddWithValue("@intUsuario", request.Usuario);
-                command.Parameters.AddWithValue("@strTarjeta", request.Tarjeta ?? string.Empty);
-                command.Parameters.AddWithValue("@intTipoProgramado", request.TipoProgramado);
-                command.Parameters.AddWithValue("@dblProgramado", request.Programado);
-                command.Parameters.AddWithValue("@intFolioSecuencia", folio);
-                command.Parameters.AddWithValue("@strCliente", request.Cliente ?? string.Empty);
-                command.Parameters.AddWithValue("@strBandaMagnetica", request.BandaMagnetica ?? string.Empty);
-                command.Parameters.AddWithValue("@strVehiculo", request.Vehiculo ?? string.Empty);
-                command.Parameters.AddWithValue("@strOdometro", request.Odometro ?? string.Empty);
-                command.Parameters.AddWithValue("@strPie1", "Adm.Cargas");
-                command.Parameters.AddWithValue("@strPie2", string.Empty);
-                command.Parameters.AddWithValue("@strPie3", string.Empty);
-                command.Parameters.AddWithValue("@strPie4", string.Empty);
+                    if (folioParameter.Value is null || folioParameter.Value is DBNull)
+                        throw new InvalidOperationException("sp_folio_app no devolvio el folio generado.");
 
-                await command.ExecuteNonQueryAsync(cancellationToken);
+                    folio = Convert.ToInt64(folioParameter.Value);
+                }
+
+                await using (var bitacoraCommand = new SqlCommand("dbo.sp_Bitacora_APP", connection, transaction)
+                {
+                    CommandType = CommandType.StoredProcedure
+                })
+                {
+                    bitacoraCommand.Parameters.AddWithValue("@intTPV", request.Tpv);
+                    bitacoraCommand.Parameters.AddWithValue("@intTipoVenta", request.TipoVenta);
+                    bitacoraCommand.Parameters.AddWithValue("@intDispensario", request.Dispensario);
+                    bitacoraCommand.Parameters.AddWithValue("@intManguera", request.Manguera);
+                    bitacoraCommand.Parameters.AddWithValue("@intProducto", request.Producto);
+                    bitacoraCommand.Parameters.AddWithValue("@intUsuario", request.Usuario);
+                    bitacoraCommand.Parameters.AddWithValue("@strTarjeta", request.Tarjeta ?? string.Empty);
+                    bitacoraCommand.Parameters.AddWithValue("@intTipoProgramado", request.TipoProgramado);
+                    bitacoraCommand.Parameters.AddWithValue("@dblProgramado", request.Programado);
+                    bitacoraCommand.Parameters.AddWithValue("@intFolioSecuencia", folio);
+                    bitacoraCommand.Parameters.AddWithValue("@strCliente", request.Cliente ?? string.Empty);
+                    bitacoraCommand.Parameters.AddWithValue("@strBandaMagnetica", request.BandaMagnetica ?? string.Empty);
+                    bitacoraCommand.Parameters.AddWithValue("@strVehiculo", request.Vehiculo ?? string.Empty);
+                    bitacoraCommand.Parameters.AddWithValue("@strOdometro", request.Odometro ?? string.Empty);
+                    bitacoraCommand.Parameters.AddWithValue("@strPie1", "Adm.Cargas");
+                    bitacoraCommand.Parameters.AddWithValue("@strPie2", string.Empty);
+                    bitacoraCommand.Parameters.AddWithValue("@strPie3", string.Empty);
+                    bitacoraCommand.Parameters.AddWithValue("@strPie4", string.Empty);
+
+                    await bitacoraCommand.ExecuteNonQueryAsync(cancellationToken);
+                }
+
+                LastAuthorizationUtc[request.Dispensario] = DateTime.UtcNow;
+                await transaction.CommitAsync(cancellationToken);
+
+                await LogAndReturnAsync(new ConsoleCommandResult
+                {
+                    IsSuccess = true,
+                    CommandName = "database",
+                    RequestFrame = $"EXEC dbo.sp_Bitacora_APP @intTPV={request.Tpv}, @intDispensario={request.Dispensario}, @intManguera={request.Manguera}, @intProducto={request.Producto}, @intTipoProgramado={request.TipoProgramado}, @dblProgramado={request.Programado}, @intFolioSecuencia={folio}",
+                    ResponseFrame = $"Folio: {folio}",
+                    UserMessage = "Folio y bitacora registrados correctamente."
+                }, cancellationToken);
+
+                return (int)folio;
             }
+            catch
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
+        }
+        finally
+        {
+            // El candado de sesion SIEMPRE debe liberarse explicitamente.
+            // Si la conexion se cierra sin liberarlo, SQL Server lo libera
+            // automaticamente al terminar la sesion.
+            if (lockAcquired)
+            {
+                try
+                {
+                    await using var releaseLock = new SqlCommand("sp_releaseapplock", connection)
+                    {
+                        CommandType = CommandType.StoredProcedure
+                    };
+                    releaseLock.Parameters.AddWithValue("@Resource", lockResource);
+                    releaseLock.Parameters.AddWithValue("@LockOwner", "Session");
+                    await releaseLock.ExecuteNonQueryAsync(CancellationToken.None);
+                }
+                catch { }
+            }
+        }
+    }
+    catch (DispenserBusyException)
+    {
+        throw; // se propaga al controlador, que devuelve 409.
+    }
+    catch (Exception ex)
+    {
+        await LogAndReturnAsync(CreateErrorResult(
+            "EXEC dbo.sp_folio_app + dbo.sp_Bitacora_APP",
+            "No se pudo generar el folio ni registrar la bitacora de autorizacion.",
+            ex), cancellationToken);
+        throw;
+    }
+}
+
+    public async Task<int> RegisterImpressionAsync(int transaccion, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await using var connection = await OpenConnectionAsync(cancellationToken);
+
+            // Inserta el registro de impresion y devuelve el numero de ticket = total de
+            // impresiones del folio. intTipo = 1 la primera vez, 2 en reimpresiones.
+            await using var command = new SqlCommand("""
+                DECLARE @prev INT = (SELECT COUNT(*) FROM dbo.tblImpresiones WHERE intTransaccion = @t);
+                INSERT INTO dbo.tblImpresiones (intTransaccion, intTipo, datFechaHora)
+                VALUES (@t, CASE WHEN @prev = 0 THEN 1 ELSE 2 END, GETDATE());
+                SELECT COUNT(*) FROM dbo.tblImpresiones WHERE intTransaccion = @t;
+                """, connection);
+            command.Parameters.AddWithValue("@t", transaccion);
+
+            var scalar = await command.ExecuteScalarAsync(cancellationToken);
+            var ticketNumber = scalar is null || scalar is DBNull ? 0 : Convert.ToInt32(scalar);
 
             await LogAndReturnAsync(new ConsoleCommandResult
             {
                 IsSuccess = true,
                 CommandName = "database",
-                RequestFrame = $"EXEC dbo.sp_Bitacora_APP @intTPV={request.Tpv}, @intDispensario={request.Dispensario}, @intManguera={request.Manguera}, @intProducto={request.Producto}, @intTipoProgramado={request.TipoProgramado}, @dblProgramado={request.Programado}, @intFolioSecuencia={folio}",
-                ResponseFrame = $"Folio: {folio}",
-                UserMessage = "Folio y bitacora registrados correctamente."
+                RequestFrame = $"INSERT dbo.tblImpresiones intTransaccion={transaccion}",
+                ResponseFrame = $"Ticket #{ticketNumber}",
+                UserMessage = "Impresion registrada correctamente."
             }, cancellationToken);
 
-            return (int)folio;
+            return ticketNumber;
         }
         catch (Exception ex)
         {
             await LogAndReturnAsync(CreateErrorResult(
-                "EXEC dbo.sp_folio_app + dbo.sp_Bitacora_APP",
-                "No se pudo generar el folio ni registrar la bitacora de autorizacion.",
+                "INSERT dbo.tblImpresiones",
+                "No se pudo registrar la impresion del ticket.",
                 ex), cancellationToken);
             throw;
         }
@@ -400,11 +576,16 @@ public sealed class GasStationService(
                     b.*,
                     tp.strDescripcion AS ProductoDescripcion,
                     tp.dblPrecioU AS ProductoPrecio,
+                    tparam.strMarcaGasolinera AS MarcaGasolinera,
+                    tparam.strRFC AS Rfc,
+                    tparam.strNomEmpresa AS NombreEmpresa,
+                    tparam.intEstUG AS EstacionUG,
                     CASE WHEN EXISTS (
                         SELECT 1 FROM dbo.tblTransacciones t WHERE t.intSecuencia = b.intSecuencia
                     ) THEN 1 ELSE 0 END AS EstaCerrada
                 FROM dbo.tblBitacora b
                 LEFT JOIN dbo.tblProductos tp ON tp.intProducto = b.intProducto
+                CROSS JOIN dbo.tblParametros tparam
                 WHERE @folio IS NULL
                    OR CONVERT(varchar(50), b.intSecuencia) LIKE @folioLike
                    {folioPredicate}
@@ -432,7 +613,11 @@ public sealed class GasStationService(
                     Price = SqlDataReaderHelper.GetFirstDecimal(reader, "dblPrecioUnitario", "dblPrecioU", "ProductoPrecio", "dblPrecio"),
                     CreatedAt = SqlDataReaderHelper.GetFirstDateTime(reader, "datFechaHora", "dtmFecha", "dtFecha", "Fecha", "fecFecha", "dteFecha"),
                     IsCanceled = SqlDataReaderHelper.GetFirstBool(reader, "bitCancelada", "bitCancelado", "Cancelada", "Cancelado"),
-                    IsClosed = SqlDataReaderHelper.GetFirstBool(reader, "EstaCerrada")
+                    IsClosed = SqlDataReaderHelper.GetFirstBool(reader, "EstaCerrada"),
+                    MarcaGasolinera = SqlDataReaderHelper.GetFirstString(reader, "MarcaGasolinera"),
+                    Rfc = SqlDataReaderHelper.GetFirstString(reader, "Rfc"),
+                    NombreEmpresa = SqlDataReaderHelper.GetFirstString(reader, "NombreEmpresa"),
+                    EstacionUG = SqlDataReaderHelper.GetFirstInt(reader, "EstacionUG")
                 });
             }
 

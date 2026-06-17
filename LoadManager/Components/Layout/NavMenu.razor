@@ -1,14 +1,25 @@
 @inject NavigationManager NavigationManager
 @inject IAppSettingsService SettingsProvider
+@inject IActiveDispatchTracker DispatchTracker
+@implements IDisposable
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">Administrador de cargas</a>
+        @if (IsDispatchActive)
+        {
+            <span class="navbar-brand">Administrador de cargas</span>
+        }
+        else
+        {
+            <a class="navbar-brand" href="">Administrador de cargas</a>
+        }
     </div>
 </div>
 
-<input type="checkbox" id="nav-menu-toggle" title="Navigation menu" class="navbar-toggler" />
-<label for="nav-menu-toggle" class="navbar-toggler-button" aria-label="Abrir menu">
+<input type="checkbox" id="nav-menu-toggle" title="Navigation menu" class="navbar-toggler"
+       disabled="@IsDispatchActive" />
+<label for="nav-menu-toggle" class="navbar-toggler-button @(IsDispatchActive ? "is-disabled" : string.Empty)"
+       aria-label="Abrir menu" aria-disabled="@IsDispatchActive">
     <span></span>
     <span></span>
     <span></span>
@@ -84,6 +95,23 @@
 }
 
 @code {
+    private bool IsDispatchActive => DispatchTracker.ActiveDispenser is not null;
+
+    protected override void OnInitialized()
+    {
+        DispatchTracker.StateChanged += OnTrackerStateChanged;
+    }
+
+    private void OnTrackerStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        DispatchTracker.StateChanged -= OnTrackerStateChanged;
+    }
+
     private bool showConfigurationGate;
     private string configurationPassword = string.Empty;
     private string? configurationError;

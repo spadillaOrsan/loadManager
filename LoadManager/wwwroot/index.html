@@ -74,6 +74,29 @@
             setTimeout(() => frame.remove(), 1000);
         };
 
+        // Imprime un documento HTML completo abriendo el dialogo de impresion del
+        // sistema (permite ELEGIR la impresora). Funciona en Windows (WebView2) y en
+        // Android (el WebView lo enruta al framework de impresion con selector).
+        window.uaacPrintHtml = function (html) {
+            const frame = document.createElement("iframe");
+            frame.style.position = "fixed";
+            frame.style.right = "0";
+            frame.style.bottom = "0";
+            frame.style.width = "0";
+            frame.style.height = "0";
+            frame.style.border = "0";
+            document.body.appendChild(frame);
+
+            const doc = frame.contentWindow.document;
+            doc.open();
+            doc.write(html);
+            doc.close();
+
+            frame.contentWindow.focus();
+            frame.contentWindow.print();
+            setTimeout(() => frame.remove(), 1500);
+        };
+
         window.uaacHideKeyboardOnEnter = function () {
             if (window.__uaacKeyboardHandlerAttached) {
                 return;

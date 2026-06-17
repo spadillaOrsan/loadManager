@@ -30,5 +30,14 @@ public sealed class DispatchHistoryRecord
 
     public bool IsClosed { get; init; }
 
+    // Datos de la estacion (tblParametros) para el ticket.
+    public string MarcaGasolinera { get; init; } = string.Empty;
+
+    public string Rfc { get; init; } = string.Empty;
+
+    public string NombreEmpresa { get; init; } = string.Empty;
+
+    public int EstacionUG { get; init; }
+
     public string Status => IsCanceled ? "Cancelada" : IsClosed ? "Cerrada" : "Abierta";
 }

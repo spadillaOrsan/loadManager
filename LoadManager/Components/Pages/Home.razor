@@ -7,6 +7,8 @@
 @inject IConnectionValidationService ConnectionState
 @inject IDevModeService DevMode
 @inject IActiveDispatchTracker DispatchTracker
+@inject IReceiptPrinterService ReceiptPrinter
+@inject IConsoleLogService Logger
 @inject IJSRuntime JsRuntime
 
 <section class="console-shell">
@@ -210,7 +212,7 @@
 
             @if (currentDispatchFolio is int dispatchFolio)
             {
-                <div class="dispatch-folio-banner">Folio <strong>#@dispatchFolio</strong></div>
+                <div class="dispatch-folio-banner"><strong>#@dispatchFolio</strong></div>
             }
 
             @if (isFueling)
@@ -255,10 +257,13 @@
             }
             else
             {
-                <div class="countdown-display" role="timer" aria-live="polite">
-                    <strong>@remainingAuthorizationSeconds</strong>
-                    <span>segundos</span>
-                </div>
+                @if (DevMode.ShouldShowCountdown)
+                {
+                    <div class="countdown-display" role="timer" aria-live="polite">
+                        <strong>@remainingAuthorizationSeconds</strong>
+                        <span>segundos</span>
+                    </div>
+                }
 
                 <article class="instruction-card instruction-card-single">
                     <div class="instruction-item">
@@ -1192,9 +1197,20 @@
                 Programado = amount
             };
 
-            var folio = await ConsoleClient.RegisterAuthorizationAsync(
-                authorizationRequest,
-                dispatchCancellation.Token);
+            int folio;
+            try
+            {
+                folio = await ConsoleClient.RegisterAuthorizationAsync(
+                    authorizationRequest,
+                    dispatchCancellation.Token);
+            }
+            catch (DispenserBusyException)
+            {
+                ShowToast($"El dispensario {dispenser:00} ya fue autorizado por otro equipo.", false);
+                ResetDispatchFormState();
+                return;
+            }
+
             currentDispatchFolio = folio;
 
             var interfaceType = settings.AppConfiguration.TipoInterfaz.Trim();
@@ -1357,6 +1373,7 @@
         if (!dispenser.IsAvailable)
         {
             ShowToast($"El dispensario {dispenser.Number} no esta disponible para autorizar.", false);
+            ResetDispatchFormState();
             return false;
         }
 
@@ -1458,8 +1475,6 @@
         StopFuelingMonitor();
         authorizedDispenserForCountdown = dispenser;
         DispatchTracker.ActiveDispenser = dispenser;
-        remainingAuthorizationSeconds = authorizationCountdownSeconds;
-        countdownWarningShown = false;
         isFueling = false;
         isCompletingDispatch = false;
         liveLiters = 0;
@@ -1467,9 +1482,20 @@
         liveDispenserStatus = null;
         dispatchTicket = null;
         isWaitingForDispatchHoseHang = false;
-        currentStep = 3;
         authorizationCountdownCancellation = CancellationTokenSource.CreateLinkedTokenSource(pageCancellation.Token);
-        _ = RunAuthorizationCountdownAsync(authorizationCountdownCancellation.Token);
+
+        currentStep = 3;
+
+        if (DevMode.ShouldShowCountdown)
+        {
+            remainingAuthorizationSeconds = authorizationCountdownSeconds;
+            countdownWarningShown = false;
+            _ = RunAuthorizationCountdownAsync(authorizationCountdownCancellation.Token);
+        }
+        else
+        {
+            _ = PollNoCountdownAsync(authorizationCountdownCancellation.Token);
+        }
     }
 
     private void StopAuthorizationCountdown(bool clearAuthorization = true)
@@ -1621,6 +1647,34 @@
                 {
                     await InvokeAsync(StateHasChanged);
                     break;
+                }
+
+                await Task.Delay(authorizationPollingMilliseconds, cancellationToken);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private async Task PollNoCountdownAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested && !isFueling && dispatchTicket is null)
+            {
+                await QueryAuthorizedDispenserDetailAsync(cancellationToken);
+
+                if (isFueling || dispatchTicket is not null)
+                {
+                    await InvokeAsync(StateHasChanged);
+                    break;
+                }
+
+                if (liveDispenserStatus == "2")
+                {
+                    await InvokeAsync(() => { ResetDispatchFlow(); StateHasChanged(); });
+                    return;
                 }
 
                 await Task.Delay(authorizationPollingMilliseconds, cancellationToken);
@@ -1833,7 +1887,7 @@
 
     private async Task PrintTicketAsync()
     {
-        if (dispatchTicket is null)
+        if (dispatchTicket is null || currentDispatchFolio is not int folio)
         {
             ShowToast("No hay ticket para imprimir.", false);
             return;
@@ -1841,11 +1895,72 @@
 
         try
         {
-            await JsRuntime.InvokeVoidAsync("uaacPrintTicket");
-            ShowToast("Ticket enviado a impresion.", true);
+            // Trae el registro del folio (incluye datos de la estacion: tblParametros).
+            // Si la API falla o no hay registro, se imprime el panel actual como respaldo.
+            DispatchHistoryRecord? record = null;
+            try
+            {
+                var records = await ConsoleClient.GetDispatchHistoryAsync(
+                    folio.ToString(CultureInfo.InvariantCulture),
+                    pageCancellation.Token);
+                record = records.FirstOrDefault(item => item.Sequence == folio) ?? records.FirstOrDefault();
+            }
+            catch
+            {
+                // No se pudo consultar; abajo se usa el respaldo (uaacPrintTicket).
+            }
+
+            // Solo se imprime si la transaccion existe en BD y esta cerrada.
+            if (record is null || !record.IsClosed)
+            {
+                ShowToast("No se encontro transaccion o transaccion no cerrada.", false);
+                return;
+            }
+
+            // Intenta registrar la impresion y obtener el numero de ticket (no bloquea si falla).
+            var ticketNumber = 0;
+            try
+            {
+                ticketNumber = await ConsoleClient.RegisterImpressionAsync(folio, pageCancellation.Token);
+            }
+            catch (Exception impEx)
+            {
+                await Logger.WriteAsync(new AppLogEntry
+                {
+                    Level = "Error",
+                    Service = "Despacho.ImprimirTicket",
+                    Message = "No se pudo registrar la impresion en la API (se imprime sin numero de ticket).",
+                    RequestBody = $"folio={folio}",
+                    Exception = impEx.ToString()
+                });
+            }
+
+            var html = TicketHtmlBuilder.Build(record, ticketNumber);
+
+            var handled = await ReceiptPrinter.PrintHtmlAsync(html, $"Ticket_{folio}");
+            if (!handled)
+            {
+                await JsRuntime.InvokeVoidAsync("uaacPrintHtml", html);
+            }
+
+            await Logger.WriteAsync(new AppLogEntry
+            {
+                Level = "Success",
+                Service = "Despacho.ImprimirTicket",
+                Message = $"Ticket enviado a impresion (nativo={handled}, ticket#={ticketNumber}).",
+                RequestBody = $"folio={folio}"
+            });
         }
         catch (Exception ex)
         {
+            await Logger.WriteAsync(new AppLogEntry
+            {
+                Level = "Error",
+                Service = "Despacho.ImprimirTicket",
+                Message = "Fallo al imprimir el ticket.",
+                RequestBody = $"folio={(currentDispatchFolio?.ToString() ?? "?")}",
+                Exception = ex.ToString()
+            });
             ShowToast($"No fue posible imprimir el ticket. {ex.Message}", false);
         }
     }

@@ -24,6 +24,7 @@ public interface IDevModeService
     bool SimulateFueling { get; set; }
     bool HidePrintButton { get; set; }
     bool CancelOnBackground { get; set; }
+    bool UseCountdown { get; set; }
 
     // Efectivos: combinan el interruptor maestro con cada interruptor individual.
     bool BypassTcpConnection { get; }
@@ -38,6 +39,8 @@ public interface IDevModeService
     bool BypassFueling { get; }
     bool IsPrintButtonHidden { get; }
     bool ShouldCancelOnBackground { get; }
+    /// <summary>true cuando debe mostrarse el contador en autorizacion (siempre fuera de DEV, o cuando UseCountdown == true en DEV).</summary>
+    bool ShouldShowCountdown { get; }
 
     /// <summary>Apaga el modo DEV y reinicia todos los interruptores.</summary>
     void Disable();

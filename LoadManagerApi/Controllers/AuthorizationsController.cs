@@ -13,7 +13,14 @@ public sealed class AuthorizationsController(IGasStationService gasStationServic
         FuelAuthorizationRequest request,
         CancellationToken cancellationToken)
     {
-        var folio = await gasStationService.RegisterAuthorizationAsync(request, cancellationToken);
-        return Ok(new AuthorizationRegistrationResult { Folio = folio });
+        try
+        {
+            var folio = await gasStationService.RegisterAuthorizationAsync(request, cancellationToken);
+            return Ok(new AuthorizationRegistrationResult { Folio = folio });
+        }
+        catch (DispenserBusyException ex)
+        {
+            return Conflict(new { message = ex.Message, dispenser = ex.Dispenser });
+        }
     }
 }

@@ -1,127 +1,88 @@
 using LoadManager.Services.Interfaces;
-using System.Net;
-using System.Text;
-using System.Text.RegularExpressions;
 
 #if ANDROID
-using Android.Content;
-using Android.OS;
+using Android.Print;
 using Microsoft.Maui.ApplicationModel;
+using AWebView = Android.Webkit.WebView;
+using AWebViewClient = Android.Webkit.WebViewClient;
 #endif
 
 namespace LoadManager.Services;
 
 public sealed class ReceiptPrinterService : IReceiptPrinterService
 {
-    private const string PeripheralsPackage = "com.verifone.peripherals.service";
-    private const string DirectPrintServiceClass = "com.verifone.peripherals.service.DirectPrintService";
-    private const string DirectPrintAction = "com.verifone.intent.action.DIRECT_PRINT";
-    private const string DirectPrintCategory = "com.verifone.intent.category.DIRECT_PRINT";
-    private const string IDirectPrintDescriptor = "com.verifone.peripherals.IDirectPrintService";
-
-    // AIDL transaction codes for IDirectPrintService
-    private const int TransactionPrintString = 1;
-    private const int TransactionPrintBitmap = 2;
-    private const int TransactionPrintFileDescriptor = 3;
-
-    public Task PrintHtmlAsync(string html, string jobName, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Imprime el HTML mostrando el dialogo del sistema (selector de impresora).
+    /// En Android usa PrintManager + WebView (nativo) y devuelve true (manejado).
+    /// En Windows devuelve false para que el llamador use window.print() (JS).
+    /// </summary>
+    public Task<bool> PrintHtmlAsync(string html, string jobName, CancellationToken cancellationToken = default)
     {
 #if ANDROID
-        return MainThread.InvokeOnMainThreadAsync(() => PrintAsync(html, jobName));
+        return MainThread.InvokeOnMainThreadAsync<bool>(() =>
+        {
+            try
+            {
+                PrintViaSystemDialog(html, jobName);
+                return true;
+            }
+            catch
+            {
+                return false; // si algo falla, el llamador hara fallback a JS.
+            }
+        });
 #else
-        return Task.CompletedTask;
+        return Task.FromResult(false); // Windows: el llamador usa el dialogo del navegador (JS).
 #endif
     }
 
 #if ANDROID
-    private static void PrintAsync(string html, string jobName)
+    // Se retiene el WebView mientras carga; despues PrintManager mantiene la referencia.
+    private static AWebView? printWebView;
+
+    private static void PrintViaSystemDialog(string html, string jobName)
     {
-        var text = HtmlToText(html);
-        var context = Android.App.Application.Context;
-
-        var conn = new PrintServiceConnection(text);
-        var intent = new Intent(DirectPrintAction);
-        intent.SetClassName(PeripheralsPackage, DirectPrintServiceClass);
-        intent.AddCategory(DirectPrintCategory);
-
-        bool bound = context.BindService(intent, conn, Bind.AutoCreate);
-        if (!bound)
+        var activity = Platform.CurrentActivity;
+        if (activity is null)
         {
-            // Fallback: try startService with extras
-            intent.PutExtra("printData", Encoding.UTF8.GetBytes(text));
-            intent.PutExtra("jobName", jobName);
-            context.StartService(intent);
+            return;
         }
+
+        var webView = new AWebView(activity);
+        webView.Settings.JavaScriptEnabled = false;
+        webView.SetWebViewClient(new PrintWebViewClient(jobName));
+        printWebView = webView;
+
+        webView.LoadDataWithBaseURL(null, html, "text/html", "UTF-8", null);
     }
 
-    private sealed class PrintServiceConnection(string text) : Java.Lang.Object, IServiceConnection
+    private sealed class PrintWebViewClient(string jobName) : AWebViewClient
     {
-        public void OnServiceConnected(ComponentName? name, IBinder? service)
+        public override void OnPageFinished(AWebView? view, string? url)
         {
-            if (service == null) return;
-            TryPrintString(service, text);
+            base.OnPageFinished(view, url);
+
+            if (view is null)
+            {
+                return;
+            }
+
+            var activity = Platform.CurrentActivity;
+            var printManager = activity?.GetSystemService(Android.Content.Context.PrintService) as PrintManager;
+            if (printManager is null)
+            {
+                return;
+            }
+
+            var adapter = view.CreatePrintDocumentAdapter(jobName);
+            var attributes = new PrintAttributes.Builder().Build();
+
+            // Muestra el dialogo de impresion del sistema (selector de impresora).
+            printManager.Print(jobName, adapter, attributes);
+
+            // PrintManager ya tiene el adapter (que referencia al WebView); soltamos el nuestro.
+            printWebView = null;
         }
-
-        public void OnServiceDisconnected(ComponentName? name) { }
-
-        private static void TryPrintString(IBinder binder, string text)
-        {
-            var data = Parcel.Obtain();
-            var reply = Parcel.Obtain();
-            try
-            {
-                data!.WriteInterfaceToken(IDirectPrintDescriptor);
-                data.WriteString(text);
-                binder.Transact(TransactionPrintString, data, reply, 0);
-                reply!.ReadException();
-            }
-            catch
-            {
-                TryPrintStringAlt(binder, text);
-            }
-            finally
-            {
-                data?.Recycle();
-                reply?.Recycle();
-            }
-        }
-
-        private static void TryPrintStringAlt(IBinder binder, string text)
-        {
-            // Try transaction code 3 as alternative
-            var data = Parcel.Obtain();
-            var reply = Parcel.Obtain();
-            try
-            {
-                data!.WriteInterfaceToken(IDirectPrintDescriptor);
-                data.WriteString(text);
-                binder.Transact(3, data, reply, 0);
-                reply!.ReadException();
-            }
-            catch { }
-            finally
-            {
-                data?.Recycle();
-                reply?.Recycle();
-            }
-        }
-    }
-
-    private static string HtmlToText(string html)
-    {
-        var block = Regex.Replace(html, @"<(div|p|br|tr|h[1-6])[^>]*>", "\n", RegexOptions.IgnoreCase);
-        var plain = Regex.Replace(block, "<[^>]+>", string.Empty);
-        plain = WebUtility.HtmlDecode(plain);
-
-        var sb = new StringBuilder();
-        foreach (var raw in plain.Split('\n'))
-        {
-            var line = raw.Trim();
-            if (string.IsNullOrWhiteSpace(line)) continue;
-            sb.AppendLine(line);
-        }
-
-        return sb.ToString();
     }
 #endif
 }

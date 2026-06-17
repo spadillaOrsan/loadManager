@@ -13,7 +13,18 @@ public sealed class ActiveDispatchTracker : IActiveDispatchTracker
         this.console = console;
     }
 
-    public int? ActiveDispenser { get; set; }
+    public event Action? StateChanged;
+
+    private int? activeDispenser;
+    public int? ActiveDispenser
+    {
+        get => activeDispenser;
+        set
+        {
+            activeDispenser = value;
+            StateChanged?.Invoke();
+        }
+    }
 
     public async Task CancelActiveDispatchAsync(CancellationToken cancellationToken = default)
     {

@@ -119,10 +119,13 @@
                         <span>Decimales de cantidad</span>
                         <input type="number" @bind="quantityDecimals" min="0" max="6" />
                     </label>
-                    <label class="settings-field">
-                        <span>Tiempo descolgar manguera (seg)</span>
-                        <input type="number" @bind="authorizationCountdownSeconds" min="1" />
-                    </label>
+                    @if (DevMode.ShouldShowCountdown)
+                    {
+                        <label class="settings-field">
+                            <span>Tiempo descolgar manguera (seg)</span>
+                            <input type="number" @bind="authorizationCountdownSeconds" min="1" />
+                        </label>
+                    }
                     <div class="settings-field">
                         <div class="settings-field-head">
                             <span>#Dispensarios</span>
@@ -157,7 +160,7 @@
     <section class="dev-section">
         <div class="dev-section-head">
             <div class="dev-section-title dev-tap-area" @onclick="OnDevTap" role="button" tabindex="0">
-                <h2>Version Adm.Carga: 1.0.0</h2>
+                <h5 style="text-align:center;">Version: 1.0.0</h5>
             </div>
             @if (DevMode.IsEnabled)
             {
@@ -289,6 +292,7 @@
         ("Simular surtido (ver contador y tanque)", () => DevMode.SimulateFueling, v => DevMode.SimulateFueling = v),
         ("Ocultar boton de impresion (historial y ticket)", () => DevMode.HidePrintButton, v => DevMode.HidePrintButton = v),
         ("Cancelar carga al pasar a segundo plano", () => DevMode.CancelOnBackground, v => DevMode.CancelOnBackground = v),
+        ("Contador en autorizacion", () => DevMode.UseCountdown, v => DevMode.UseCountdown = v),
     };
 
     private bool AreAllDevTogglesOn => DevToggles.All(toggle => toggle.Get());
@@ -532,7 +536,7 @@
             || string.IsNullOrWhiteSpace(tipoInterfaz)
             || limiteImporte <= 0 || limiteLitros <= 0 || cantidadTanqueLleno <= 0
             || quantityDecimals is < 0 or > 6
-            || authorizationCountdownSeconds <= 0
+            || (DevMode.ShouldShowCountdown && authorizationCountdownSeconds <= 0)
             || apiRequestTimeoutSeconds <= 0)
         {
             ShowToast("Revise los valores de configuracion.", false);

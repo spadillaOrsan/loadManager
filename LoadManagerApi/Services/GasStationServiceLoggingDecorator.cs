@@ -51,6 +51,16 @@ public sealed class GasStationServiceLoggingDecorator(
             folio => $"Folio={folio}",
             cancellationToken);
 
+    public Task<int> RegisterImpressionAsync(
+        int transaccion,
+        CancellationToken cancellationToken = default) =>
+        InvokeAsync(
+            nameof(RegisterImpressionAsync),
+            $"transaccion={transaccion}",
+            () => inner.RegisterImpressionAsync(transaccion, cancellationToken),
+            ticketNumber => $"Ticket #{ticketNumber}",
+            cancellationToken);
+
     public Task UpdateDispenserStatusAsync(
         int dispenser,
         int status,

@@ -4,6 +4,7 @@
 @inject IGasStationService GasStationService
 @inject IJSRuntime JsRuntime
 @inject IReceiptPrinterService ReceiptPrinter
+@inject IConsoleLogService Logger
 @inject IDevModeService DevMode
 
 <section class="console-shell history-shell @(isLoading ? "is-busy" : string.Empty)" aria-busy="@isLoading">
@@ -97,7 +98,8 @@
                                     <td>
                                         <button class="btn btn-outline-secondary history-print-button"
                                                 @onclick="() => PrintRecordAsync(record)"
-                                                disabled="@isLoading">
+                                                disabled="@(isLoading || !record.IsClosed)"
+                                                title="@(record.IsClosed ? null : "Solo se puede imprimir una transaccion cerrada")">
                                             Imprimir
                                         </button>
                                     </td>
@@ -112,6 +114,11 @@
     </section>
 
 </section>
+
+@if (!string.IsNullOrWhiteSpace(toastMessage))
+{
+    <div class="app-toast @toastCss">@toastMessage</div>
+}
 
 @if (isLoading)
 {
@@ -175,60 +182,83 @@
         folioSearch = Convert.ToString(args.Value) ?? string.Empty;
     }
 
+    private string? toastMessage;
+    private string toastCss = "is-success";
+
     private async Task PrintRecordAsync(DispatchHistoryRecord record)
     {
-        // Solo manda a imprimir el ticket, sin mostrar campos en pantalla.
-        await ReceiptPrinter.PrintHtmlAsync(BuildTicketHtml(record), $"Ticket_{record.Sequence}");
+        // Solo se imprime si la transaccion esta cerrada.
+        if (!record.IsClosed)
+        {
+            ShowToast("No se encontro transaccion o transaccion no cerrada.", false);
+            return;
+        }
+
+        try
+        {
+            // Reimpresion: intenta registrar la impresion y obtener el numero de ticket.
+            // NO debe bloquear la impresion: si la API no esta disponible, se imprime sin numero.
+            var ticketNumber = 0;
+            try
+            {
+                ticketNumber = await GasStationService.RegisterImpressionAsync(record.Sequence);
+            }
+            catch (Exception impEx)
+            {
+                await Logger.WriteAsync(new AppLogEntry
+                {
+                    Level = "Error",
+                    Service = "Historial.Imprimir",
+                    Message = "No se pudo registrar la impresion en la API (se imprime sin numero de ticket).",
+                    RequestBody = $"folio={record.Sequence}",
+                    Exception = impEx.ToString()
+                });
+            }
+
+            var html = TicketHtmlBuilder.Build(record, ticketNumber);
+
+            // Android: dialogo nativo del sistema (PrintManager) con selector de impresora.
+            // Windows: el servicio devuelve false y usamos el dialogo del navegador (JS).
+            var handled = await ReceiptPrinter.PrintHtmlAsync(html, $"Ticket_{record.Sequence}");
+            if (!handled)
+            {
+                await JsRuntime.InvokeVoidAsync("uaacPrintHtml", html);
+            }
+
+            await Logger.WriteAsync(new AppLogEntry
+            {
+                Level = "Success",
+                Service = "Historial.Imprimir",
+                Message = $"Ticket enviado a impresion (nativo={handled}, ticket#={ticketNumber}).",
+                RequestBody = $"folio={record.Sequence}"
+            });
+        }
+        catch (Exception ex)
+        {
+            await Logger.WriteAsync(new AppLogEntry
+            {
+                Level = "Error",
+                Service = "Historial.Imprimir",
+                Message = "Fallo al imprimir el ticket.",
+                RequestBody = $"folio={record.Sequence}",
+                Exception = ex.ToString()
+            });
+            ShowToast($"No se pudo imprimir: {ex.Message}", false);
+        }
     }
 
-    private string BuildTicketHtml(DispatchHistoryRecord record)
+    private void ShowToast(string message, bool success)
     {
-        static string Encode(string value) => WebUtility.HtmlEncode(value);
+        toastMessage = message;
+        toastCss = success ? "is-success" : "is-error";
+        _ = ClearToastAsync();
+    }
 
-        var printedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", culture);
-        var saleDate = FormatDate(record.CreatedAt);
-        var product = GetProductText(record);
-
-        return "<!doctype html><html><head><meta charset=\"utf-8\">" +
-            "<style>" +
-            "body{color:#111;font-family:'Courier New',monospace;margin:0;padding:10px;font-size:13px;font-weight:700;}" +
-            ".ticket{width:100%;max-width:280px;margin:0 auto;}" +
-            ".center{text-align:center;}" +
-            ".brand{font-size:14px;letter-spacing:.08em;margin-bottom:2px;}" +
-            ".title{font-size:13px;letter-spacing:.08em;margin-bottom:8px;}" +
-            ".line{border-top:1px dashed #111;margin:8px 0;}" +
-            ".folio-code{font-size:15px;letter-spacing:.04em;margin:7px 0;}" +
-            ".row{display:flex;justify-content:space-between;gap:8px;line-height:1.45;}" +
-            ".row span:first-child{white-space:nowrap;}" +
-            ".row strong{text-align:right;}" +
-            ".section-title{text-align:center;letter-spacing:.08em;margin:8px 0 6px;}" +
-            ".product{font-size:14px;margin:8px 0 5px;}" +
-            ".print-date{margin-top:18px;text-align:center;}" +
-            ".end{margin-top:22px;text-align:center;font-size:15px;letter-spacing:.12em;}" +
-            "</style></head><body><section class=\"ticket\">" +
-            "<div class=\"center brand\">Adm.Carga</div>" +
-            "<div class=\"center title\">ORIGINAL</div>" +
-            "<div class=\"line\"></div>" +
-            $"<div class=\"center folio-code\">{record.Sequence}</div>" +
-            "<div class=\"center\">ADMINISTRADOR DE CARGAS</div>" +
-            "<div class=\"line\"></div>" +
-            $"<div class=\"row\"><span>Folio :</span><strong>{record.Sequence}</strong></div>" +
-            $"<div class=\"row\"><span>Fecha :</span><strong>{Encode(saleDate)}</strong></div>" +
-            $"<div class=\"row\"><span>Bomba :</span><strong>{record.Dispenser}</strong></div>" +
-            $"<div class=\"row\"><span>Dispensario :</span><strong>{record.Dispenser}</strong></div>" +
-            $"<div class=\"row\"><span>Manguera :</span><strong>{record.Hose}</strong></div>" +
-            $"<div class=\"row\"><span>Estatus :</span><strong>{Encode(record.Status)}</strong></div>" +
-            "<div class=\"section-title\">-------DESPACHO-------</div>" +
-            $"<div class=\"product\">{Encode(product)}</div>" +
-            $"<div class=\"row\"><span>Tipo</span><strong>{record.DispatchTypeId}</strong></div>" +
-            $"<div class=\"row\"><span>Cantidad</span><strong>{Encode(FormatDecimal(record.ProgrammedAmount))}</strong></div>" +
-            $"<div class=\"row\"><span>Precio</span><strong>${record.Price:N2}</strong></div>" +
-            $"<div class=\"row\"><span>Litros</span><strong>{record.Liters:N2}</strong></div>" +
-            $"<div class=\"row\"><span>Importe</span><strong>${record.Amount:N2}</strong></div>" +
-            "<div class=\"print-date\">FechaImpresion<br/>" +
-            $"{Encode(printedAt)}</div>" +
-            "<div class=\"end\">FIN DE TICKET</div>" +
-            "</section></body></html>";
+    private async Task ClearToastAsync()
+    {
+        await Task.Delay(3500);
+        toastMessage = null;
+        await InvokeAsync(StateHasChanged);
     }
 
     private static string GetStatusClass(DispatchHistoryRecord record)

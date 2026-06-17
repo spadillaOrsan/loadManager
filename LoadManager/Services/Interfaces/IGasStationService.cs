@@ -30,6 +30,10 @@ public interface IGasStationService
         FuelAuthorizationRequest request,
         CancellationToken cancellationToken = default);
 
+    Task<int> RegisterImpressionAsync(
+        int transaccion,
+        CancellationToken cancellationToken = default);
+
     Task UpdateDispenserStatusAsync(
         int dispenser,
         int status,

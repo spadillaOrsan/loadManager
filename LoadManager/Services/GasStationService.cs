@@ -413,6 +413,13 @@ public sealed class GasStationService(
                 requestPath,
                 JsonContent.Create(request, options: JsonOptions),
                 cancellationToken);
+
+            // 409 Conflict = el dispensario ya tiene una carga activa (otro equipo ganó).
+            if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                throw new DispenserBusyException(request.Dispensario);
+            }
+
             await EnsureApiSuccessAsync(response, cancellationToken);
 
             var result = await response.Content.ReadFromJsonAsync<AuthorizationRegistrationResult>(
@@ -440,6 +447,37 @@ public sealed class GasStationService(
             await LogAndReturnAsync(CreateApiErrorResult(
                 $"POST {requestPath}",
                 "No se pudo generar el folio ni registrar la bitacora de autorizacion.",
+                ex.ToString()), cancellationToken);
+            throw;
+        }
+    }
+
+    public async Task<int> RegisterImpressionAsync(
+        int transaccion,
+        CancellationToken cancellationToken = default)
+    {
+        var requestPath = $"api/impressions/{transaccion}";
+
+        try
+        {
+            using var response = await SendApiAsync(
+                HttpMethod.Post,
+                requestPath,
+                content: null,
+                cancellationToken);
+            await EnsureApiSuccessAsync(response, cancellationToken);
+
+            var result = await response.Content.ReadFromJsonAsync<ImpressionResult>(
+                JsonOptions,
+                cancellationToken);
+
+            return result?.TicketNumber ?? 0;
+        }
+        catch (Exception ex)
+        {
+            await LogAndReturnAsync(CreateApiErrorResult(
+                $"POST {requestPath}",
+                "No se pudo registrar la impresion del ticket.",
                 ex.ToString()), cancellationToken);
             throw;
         }

@@ -19,6 +19,7 @@ public sealed class DevModeService : IDevModeService
     public bool SimulateFueling { get; set; }
     public bool HidePrintButton { get; set; }
     public bool CancelOnBackground { get; set; }
+    public bool UseCountdown { get; set; }
 
     public bool BypassTcpConnection => IsEnabled && SkipTcpConnection;
     public bool BypassDatabase => IsEnabled && SkipDatabase;
@@ -32,6 +33,7 @@ public sealed class DevModeService : IDevModeService
     public bool BypassFueling => IsEnabled && SimulateFueling;
     public bool IsPrintButtonHidden => IsEnabled && HidePrintButton;
     public bool ShouldCancelOnBackground => IsEnabled && CancelOnBackground;
+    public bool ShouldShowCountdown => !IsEnabled || UseCountdown;
 
     public void Disable()
     {
@@ -48,5 +50,6 @@ public sealed class DevModeService : IDevModeService
         SimulateFueling = false;
         HidePrintButton = false;
         CancelOnBackground = false;
+        UseCountdown = false;
     }
 }
