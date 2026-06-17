@@ -2,6 +2,7 @@
 @page "/despacho"
 @implements IAsyncDisposable
 @using System.Globalization
+@using Microsoft.JSInterop
 @inject IGasStationService ConsoleClient
 @inject IAppSettingsService SettingsProvider
 @inject IConnectionValidationService ConnectionState
@@ -55,18 +56,35 @@
                     }
                     else
                     {
-                        <div class="dispensers-grid">
-                            @foreach (var dispenser in dispensers)
-                            {
-                                <button class="dispenser-card @GetDispenserClass(dispenser)"
-                                        @onclick="() => SelectDispenserAsync(dispenser)"
-                                        disabled="@(IsSelectionWorkspaceLoading || isDispatching || !CanSelectDispenser(dispenser))">
-                                    <img src="@dispenser.ImagePath" alt="" />
-                                    <span class="dispenser-label">Dispensario</span>
-                                    <span class="dispenser-number">@dispenser.Number</span>
-                                    <span class="dispenser-status">@dispenser.StatusText</span>
-                                </button>
-                            }
+                        <div class="dispensers-carousel-shell">
+                            <div class="dispensers-grid" @ref="dispensersGridRef">
+                                @foreach (var dispenser in dispensers)
+                                {
+                                    <button class="dispenser-card @GetDispenserClass(dispenser)"
+                                            @onclick="() => SelectDispenserAsync(dispenser)"
+                                            disabled="@(IsSelectionWorkspaceLoading || isDispatching || !CanSelectDispenser(dispenser))">
+                                        <img src="@dispenser.ImagePath" alt="" />
+                                        <span class="dispenser-label">Dispensario</span>
+                                        <span class="dispenser-number">@dispenser.Number</span>
+                                        <span class="dispenser-status">@dispenser.StatusText</span>
+                                    </button>
+                                }
+                            </div>
+
+                            <button type="button"
+                                    class="dispensers-scroll-hint is-left @(showDispenserLeftHint ? "is-visible" : string.Empty)"
+                                    @onclick="() => ScrollDispensersAsync(-1)"
+                                    tabindex="-1"
+                                    aria-hidden="@(!showDispenserLeftHint)"
+                                    disabled="@(!showDispenserLeftHint)">&lt;
+                            </button>
+                            <button type="button"
+                                    class="dispensers-scroll-hint is-right @(showDispenserRightHint ? "is-visible" : string.Empty)"
+                                    @onclick="() => ScrollDispensersAsync(1)"
+                                    tabindex="-1"
+                                    aria-hidden="@(!showDispenserRightHint)"
+                                    disabled="@(!showDispenserRightHint)">&gt;
+                            </button>
                         </div>
                     }
                 </section>
@@ -555,8 +573,12 @@
     private string? startupStatusMessage;
     private string toastCss = "is-success";
     private int toastVersion;
+    private bool showDispenserLeftHint;
+    private bool showDispenserRightHint;
+    private ElementReference dispensersGridRef;
     private ConsoleCommandResult? lastResult;
     private int? currentDispatchFolio;
+    private DotNetObjectReference<Home>? dispensersScrollHintsRef;
     private readonly List<DispenserViewModel> dispensers = [];
     private readonly List<DispatchStep> steps =
     [
@@ -2566,6 +2588,48 @@
         ShowToast(message, "is-info");
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (currentStep != 2 || dispensers.Count == 0)
+        {
+            await JsRuntime.InvokeVoidAsync("uaacDispensersCarousel.dispose", dispensersGridRef);
+
+            if (showDispenserLeftHint || showDispenserRightHint)
+            {
+                showDispenserLeftHint = false;
+                showDispenserRightHint = false;
+                await InvokeAsync(StateHasChanged);
+            }
+
+            return;
+        }
+
+        dispensersScrollHintsRef ??= DotNetObjectReference.Create(this);
+
+        await JsRuntime.InvokeVoidAsync(
+            "uaacDispensersCarousel.init",
+            dispensersGridRef,
+            dispensersScrollHintsRef);
+    }
+
+    [JSInvokable]
+    public async Task UpdateDispenserScrollHints(bool canScrollLeft, bool canScrollRight)
+    {
+        if (showDispenserLeftHint == canScrollLeft && showDispenserRightHint == canScrollRight)
+        {
+            return;
+        }
+
+        showDispenserLeftHint = canScrollLeft;
+        showDispenserRightHint = canScrollRight;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ScrollDispensersAsync(int direction)
+    {
+        await JsRuntime.InvokeVoidAsync("uaacDispensersCarousel.scrollByPage", dispensersGridRef, direction);
+    }
+
     private static (string Message, bool IsSuccess) GetAuthorizationToastMessage(ConsoleCommandResult result)
     {
         // Mensajes amigables para el usuario. La trama cruda de respuesta queda
@@ -2630,6 +2694,15 @@
 
     public async ValueTask DisposeAsync()
     {
+        try
+        {
+            await JsRuntime.InvokeVoidAsync("uaacDispensersCarousel.dispose", dispensersGridRef);
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+
+        dispensersScrollHintsRef?.Dispose();
         await pageCancellation.CancelAsync();
         pageCancellation.Dispose();
         dispatchCancellation?.Dispose();
