@@ -34,8 +34,8 @@ public sealed class DevModeService : IDevModeService
     public bool BypassFueling => IsEnabled && SimulateFueling;
     public bool IsPrintButtonHidden => IsEnabled && HidePrintButton;
     public bool ShouldCancelOnBackground => IsEnabled && CancelOnBackground;
-    public bool ShouldShowCountdown => !IsEnabled || UseCountdown;
-    public bool ShouldShowLiveCounter => !IsEnabled || ShowLiveCounter;
+    public bool ShouldShowCountdown => UseCountdown;
+    public bool ShouldShowLiveCounter => ShowLiveCounter;
 
     public void Disable()
     {

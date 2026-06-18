@@ -40,9 +40,9 @@ public interface IDevModeService
     bool BypassFueling { get; }
     bool IsPrintButtonHidden { get; }
     bool ShouldCancelOnBackground { get; }
-    /// <summary>true cuando debe mostrarse el contador en autorizacion (siempre fuera de DEV, o cuando UseCountdown == true en DEV).</summary>
+    /// <summary>true cuando debe mostrarse el contador de 35 s en autorizacion. Depende solo de UseCountdown, no del switch maestro.</summary>
     bool ShouldShowCountdown { get; }
-    /// <summary>true cuando debe mostrarse el contador de litros/moneda durante el surtido (siempre fuera de DEV, o cuando ShowLiveCounter == true en DEV).</summary>
+    /// <summary>true cuando debe mostrarse el contador de litros/moneda durante el surtido. Depende solo de ShowLiveCounter, no del switch maestro.</summary>
     bool ShouldShowLiveCounter { get; }
 
     /// <summary>Apaga el modo DEV y reinicia todos los interruptores.</summary>
