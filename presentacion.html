@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>LoadManager — Presentación</title>
+<title>UAFLOW / UAHUB — Presentación</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -13,6 +13,7 @@
     --blue-light: #eff6ff;
     --green:      #16855f;
     --red:        #c43131;
+    --ua-red:     #d42b2b;
     --gray:       #6b7280;
     --text:       #111827;
     --white:      #ffffff;
@@ -74,43 +75,93 @@
     position: absolute;
     top: 0; left: 0; right: 0;
     height: 5px;
-    background: linear-gradient(90deg, var(--blue-dark), var(--blue-mid));
+    background: linear-gradient(90deg, var(--blue-dark), var(--ua-red));
   }
 
-  /* ── SLIDE 1: PORTADA ── */
+  /* ── SLIDE PORTADA ── */
   .slide-cover {
-    background: linear-gradient(145deg, var(--blue-dark) 0%, #3a0647 100%);
+    background: linear-gradient(145deg, #0c1a3a 0%, #1a0a0a 100%);
   }
   .slide-cover .card {
     background: rgba(255,255,255,.06);
     border: 1px solid rgba(255,255,255,.15);
     box-shadow: 0 20px 60px rgba(0,0,0,.5);
     text-align: center;
-    padding: 4rem 3.5rem;
+    padding: 3.5rem 3.5rem;
   }
-  .slide-cover .card::before { background: linear-gradient(90deg,#fff3,#fff1); }
-  .cover-logo {
-    width: 72px; height: 72px;
-    background: rgba(255,255,255,.12);
-    border: 2px solid rgba(255,255,255,.3);
-    border-radius: 18px;
-    display: inline-flex; align-items: center; justify-content: center;
+  .slide-cover .card::before { background: linear-gradient(90deg, #d42b2b, #1f6fbf); }
+
+  /* Logo principal en portada */
+  .cover-logos {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-bottom: 1.75rem;
+    flex-wrap: wrap;
+  }
+  .cover-logos img {
+    height: 52px;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
+  }
+  .cover-logos .logo-divider {
+    width: 1px;
+    height: 40px;
+    background: rgba(255,255,255,.25);
+  }
+
+  .cover-ua-icon {
+    width: 64px;
+    height: 64px;
+    background: rgba(212,43,43,.2);
+    border: 2px solid rgba(212,43,43,.5);
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     margin-bottom: 1.5rem;
   }
-  .cover-logo svg { width: 38px; height: 38px; stroke: #fff; fill: none;
-    stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
+  .cover-ua-icon img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+  }
+
   .cover-title {
-    font-size: 3rem; font-weight: 900; color: #fff; letter-spacing: -.5px;
-    line-height: 1.1; margin-bottom: .5rem;
+    font-size: 2.8rem; font-weight: 900; color: #fff; letter-spacing: -.5px;
+    line-height: 1.1; margin-bottom: .25rem;
+  }
+  .cover-title span { color: var(--ua-red); }
+  .cover-app-name {
+    font-size: 1.1rem; font-weight: 700; color: rgba(255,255,255,.5);
+    letter-spacing: .12em; text-transform: uppercase; margin-bottom: .35rem;
   }
   .cover-subtitle {
-    font-size: 1.15rem; color: rgba(255,255,255,.65); margin-bottom: 2.5rem;
+    font-size: 1rem; color: rgba(255,255,255,.6); margin-bottom: 2rem;
   }
   .cover-pills { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; }
   .pill {
-    background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22);
-    color: #fff; font-size: .8rem; font-weight: 700; letter-spacing: .05em;
+    background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
+    color: #fff; font-size: .78rem; font-weight: 700; letter-spacing: .05em;
     text-transform: uppercase; border-radius: 999px; padding: .35rem .9rem;
+  }
+
+  /* Logo inline (slides interiores) */
+  .slide-logo-bar {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: 1rem;
+  }
+  .slide-logo-bar img.logo-ia {
+    height: 28px;
+    object-fit: contain;
+  }
+  .slide-logo-bar img.logo-ua {
+    height: 20px;
+    object-fit: contain;
+    opacity: .55;
   }
 
   /* ── TYPOGRAPHY ── */
@@ -202,9 +253,27 @@
   .info-row strong { color: var(--text); }
   .info-row span   { color: var(--gray); margin-left: auto; font-size: .8rem; }
 
-  /* ── TANK PREVIEW ── */
-  .tank-wrap { text-align: center; margin: .5rem 0; }
-  .tank-wrap svg { width: 140px; height: auto; }
+  /* ── SPLIT LAYOUT ── */
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start; }
+  .split-visual {
+    background: linear-gradient(145deg, var(--blue-dark), var(--blue-mid));
+    border-radius: 12px; padding: 1.75rem 1.5rem; text-align: center;
+    color: #fff; display: flex; flex-direction: column; gap: 1rem; align-items: center;
+  }
+  .split-visual h4 { font-size: 1rem; font-weight: 800; }
+  .split-visual p  { font-size: .82rem; opacity: .75; line-height: 1.5; }
+
+  /* ── TICKET MOCK ── */
+  .ticket-mock {
+    background: #fff; border: 2px dashed #d1d5db; border-radius: 8px;
+    padding: .9rem 1rem; font-size: .75rem; color: var(--text);
+    text-align: left; width: 100%; max-width: 210px;
+  }
+  .ticket-mock .t-header { text-align: center; font-weight: 900; font-size: .85rem; border-bottom: 1px solid #e5e7eb; padding-bottom: .4rem; margin-bottom: .5rem; }
+  .ticket-mock .t-row { display: flex; justify-content: space-between; padding: .15rem 0; }
+  .ticket-mock .t-row span:last-child { font-weight: 700; }
+  .ticket-mock .t-sep { border-top: 1px dashed #d1d5db; margin: .4rem 0; }
+  .ticket-mock .t-total { font-size: .9rem; font-weight: 900; color: var(--blue-dark); text-align: center; margin-top: .25rem; }
 
   /* ── NAVIGATION ── */
   .nav-bar {
@@ -236,34 +305,12 @@
   .dot.active { background: #fff; width: 20px; border-radius: 999px; }
   .slide-counter { color: rgba(255,255,255,.6); font-size: .78rem; font-weight: 700; min-width: 38px; text-align: center; }
 
-  /* ── SPLIT LAYOUT ── */
-  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start; }
-  .split-visual {
-    background: linear-gradient(145deg, var(--blue-dark), var(--blue-mid));
-    border-radius: 12px; padding: 1.75rem 1.5rem; text-align: center;
-    color: #fff; display: flex; flex-direction: column; gap: 1rem; align-items: center;
-  }
-  .split-visual h4 { font-size: 1rem; font-weight: 800; }
-  .split-visual p  { font-size: .82rem; opacity: .75; line-height: 1.5; }
-
-  /* ── TICKET MOCK ── */
-  .ticket-mock {
-    background: #fff; border: 2px dashed #d1d5db; border-radius: 8px;
-    padding: .9rem 1rem; font-size: .75rem; color: var(--text);
-    text-align: left; width: 100%; max-width: 210px;
-  }
-  .ticket-mock .t-header { text-align: center; font-weight: 900; font-size: .85rem; border-bottom: 1px solid #e5e7eb; padding-bottom: .4rem; margin-bottom: .5rem; }
-  .ticket-mock .t-row { display: flex; justify-content: space-between; padding: .15rem 0; }
-  .ticket-mock .t-row span:last-child { font-weight: 700; }
-  .ticket-mock .t-sep { border-top: 1px dashed #d1d5db; margin: .4rem 0; }
-  .ticket-mock .t-total { font-size: .9rem; font-weight: 900; color: var(--blue-dark); text-align: center; margin-top: .25rem; }
-
   /* ── RESPONSIVE ── */
   @media (max-width: 640px) {
     .card { padding: 1.75rem 1.25rem; }
     .slide-title { font-size: 1.3rem; }
     .grid-2, .grid-3, .grid-4, .split { grid-template-columns: 1fr; }
-    .cover-title { font-size: 2.1rem; }
+    .cover-title { font-size: 2rem; }
   }
 </style>
 </head>
@@ -274,11 +321,23 @@
   <!-- ══ SLIDE 1: PORTADA ══ -->
   <div class="slide slide-cover active" data-index="0">
     <div class="card">
-      <div class="cover-logo">
-        <svg viewBox="0 0 24 24"><path d="M5 20V5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v15"/><path d="M3 20h15"/><path d="M8 7h5v5H8z"/><path d="M16 8h2l2 2v7a2 2 0 0 1-4 0v-4"/></svg>
+      <!-- Ícono UA -->
+      <div class="cover-ua-icon">
+        <img src="assets/UA4.png" alt="UA" />
       </div>
-      <div class="cover-title">LoadManager</div>
+
+      <!-- Nombre de la app -->
+      <div class="cover-title">UAFLOW <span>/</span> UAHUB</div>
+      <div class="cover-app-name">by Ultra Access</div>
       <div class="cover-subtitle">Sistema de Administración de Cargas de Combustible</div>
+
+      <!-- Logos Ultra Access y ORSAN -->
+      <div class="cover-logos" style="margin-bottom:2rem;">
+        <img src="assets/UA3.png" alt="Ultra Access" />
+        <div class="logo-divider"></div>
+        <img src="assets/UA5.png" alt="ORSAN" />
+      </div>
+
       <div class="cover-pills">
         <span class="pill">Windows</span>
         <span class="pill">Android</span>
@@ -292,11 +351,15 @@
   <!-- ══ SLIDE 2: ¿QUÉ ES? ══ -->
   <div class="slide" data-index="1">
     <div class="card">
+      <div class="slide-logo-bar">
+        <img class="logo-ia" src="assets/UA4.png" alt="UA" />
+        <img class="logo-ua" src="assets/UA3.png" alt="Ultra Access" />
+      </div>
       <div class="section-badge">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
         Descripción General
       </div>
-      <div class="slide-title">¿Qué es LoadManager?</div>
+      <div class="slide-title">¿Qué es UAFLOW / UAHUB?</div>
       <div class="slide-lead">Aplicación híbrida de escritorio y móvil para controlar, autorizar y registrar despachos de combustible en estaciones de servicio.</div>
 
       <div class="grid-3">
@@ -354,7 +417,7 @@
           <div class="step-num">3</div>
           <div class="step-body">
             <h4>Ticket de despacho</h4>
-            <p>Al finalizar el surtido se muestra el resumen completo: folio, dispensario, manguera, producto, litros, importe y precio. El ticket puede imprimirse al instante.</p>
+            <p>Al finalizar el surtido se muestra el resumen completo: folio, dispensario, producto, litros, importe y precio. El ticket puede imprimirse al instante.</p>
           </div>
         </div>
       </div>
@@ -373,7 +436,6 @@
 
       <div class="split">
         <div class="split-visual">
-          <!-- TANK SVG PREVIEW -->
           <svg viewBox="0 0 160 110" xmlns="http://www.w3.org/2000/svg" style="width:180px;height:auto;">
             <defs>
               <clipPath id="c1"><rect x="12" y="18" width="136" height="68" rx="34"/></clipPath>
@@ -442,7 +504,7 @@
           </div>
           <div class="info-row">
             <svg viewBox="0 0 24 24"><path d="M5 20V5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v15"/></svg>
-            <strong>Dispensario y manguera</strong><span>Número identificador</span>
+            <strong>Dispensario y producto</strong><span>Número identificador</span>
           </div>
           <div class="info-row">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
@@ -467,7 +529,6 @@
             <div class="t-header">⛽ TICKET DE DESPACHO</div>
             <div class="t-row"><span>Folio</span><span>#4821</span></div>
             <div class="t-row"><span>Dispensario</span><span>#02</span></div>
-            <div class="t-row"><span>Manguera</span><span>1</span></div>
             <div class="t-row"><span>Producto</span><span>EXTRA</span></div>
             <div class="t-row"><span>Tipo</span><span>Importe</span></div>
             <div class="t-row"><span>Precio</span><span>$22.30/L</span></div>
@@ -490,7 +551,7 @@
         Módulo 2
       </div>
       <div class="slide-title">Historial de Cargas</div>
-      <div class="slide-lead">Consulta los registros históricos de despachos filtrando por dispensario, manguera y producto.</div>
+      <div class="slide-lead">Consulta los registros históricos de despachos filtrando por dispensario y producto.</div>
 
       <div class="split">
         <div class="steps" style="gap:.65rem;">
@@ -498,34 +559,26 @@
             <div class="step-num">1</div>
             <div class="step-body">
               <h4>Seleccionar dispensario</h4>
-              <p>Elige el dispensario del que deseas consultar el historial.</p>
+              <p>Elige el dispensario del que deseas consultar el historial. Se muestra el conteo total y la lista con scroll.</p>
             </div>
           </div>
           <div class="step">
             <div class="step-num">2</div>
             <div class="step-body">
-              <h4>Filtrar por manguera</h4>
-              <p>Refina la búsqueda seleccionando la manguera del dispensario.</p>
+              <h4>Elegir producto</h4>
+              <p>Selecciona el tipo de combustible (Magna, Premium, Diésel) para acotar los resultados.</p>
             </div>
           </div>
           <div class="step">
             <div class="step-num">3</div>
             <div class="step-body">
-              <h4>Elegir producto</h4>
-              <p>Selecciona el tipo de combustible para acotar los resultados.</p>
-            </div>
-          </div>
-          <div class="step">
-            <div class="step-num">4</div>
-            <div class="step-body">
               <h4>Resultados en tarjetas</h4>
-              <p>Cada despacho muestra folio, hora, preset, litros, importe y estatus. Permite reimprimir el ticket.</p>
+              <p>Cada despacho muestra folio, hora, cantidad e importe. Permite reimprimir el ticket.</p>
             </div>
           </div>
         </div>
 
         <div style="display:flex;flex-direction:column;gap:.75rem;">
-          <!-- Card mock abierta -->
           <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #1f6fbf;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);">
             <div style="background:#eff6ff;display:flex;justify-content:space-between;align-items:center;padding:.55rem .85rem;border-bottom:1px solid #e5e7eb;">
               <strong style="font-size:.88rem;color:#111827;">Folio #4821</strong>
@@ -533,11 +586,10 @@
             </div>
             <div style="padding:.5rem .85rem;font-size:.78rem;color:#374151;">
               <div style="display:flex;justify-content:space-between;padding:.18rem 0;border-bottom:1px solid #f3f4f6;"><span style="color:#6b7280;text-transform:uppercase;font-size:.7rem;">Hora</span><strong>14:32</strong></div>
-              <div style="display:flex;justify-content:space-between;padding:.18rem 0;border-bottom:1px solid #f3f4f6;"><span style="color:#6b7280;text-transform:uppercase;font-size:.7rem;">Litros</span><strong>8.969</strong></div>
-              <div style="display:flex;justify-content:space-between;padding:.18rem 0;"><span style="color:#6b7280;text-transform:uppercase;font-size:.7rem;">Importe</span><strong>$200.00</strong></div>
+              <div style="display:flex;justify-content:space-between;padding:.18rem 0;border-bottom:1px solid #f3f4f6;"><span style="color:#6b7280;text-transform:uppercase;font-size:.7rem;">Cantidad</span><strong>$200.00</strong></div>
+              <div style="display:flex;justify-content:space-between;padding:.18rem 0;"><span style="color:#6b7280;text-transform:uppercase;font-size:.7rem;">Litros</span><strong>8.969</strong></div>
             </div>
           </div>
-          <!-- Card mock cerrada -->
           <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #1f6fbf;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);">
             <div style="background:#eff6ff;display:flex;justify-content:space-between;align-items:center;padding:.55rem .85rem;border-bottom:1px solid #e5e7eb;">
               <strong style="font-size:.88rem;color:#111827;">Folio #4820</strong>
@@ -545,8 +597,8 @@
             </div>
             <div style="padding:.5rem .85rem;font-size:.78rem;color:#374151;">
               <div style="display:flex;justify-content:space-between;padding:.18rem 0;border-bottom:1px solid #f3f4f6;"><span style="color:#6b7280;text-transform:uppercase;font-size:.7rem;">Hora</span><strong>13:10</strong></div>
-              <div style="display:flex;justify-content:space-between;padding:.18rem 0;border-bottom:1px solid #f3f4f6;"><span style="color:#6b7280;text-transform:uppercase;font-size:.7rem;">Litros</span><strong>22.100</strong></div>
-              <div style="display:flex;justify-content:space-between;padding:.18rem 0;"><span style="color:#6b7280;text-transform:uppercase;font-size:.7rem;">Importe</span><strong>$493.00</strong></div>
+              <div style="display:flex;justify-content:space-between;padding:.18rem 0;border-bottom:1px solid #f3f4f6;"><span style="color:#6b7280;text-transform:uppercase;font-size:.7rem;">Cantidad</span><strong>$493.00</strong></div>
+              <div style="display:flex;justify-content:space-between;padding:.18rem 0;"><span style="color:#6b7280;text-transform:uppercase;font-size:.7rem;">Litros</span><strong>22.100</strong></div>
             </div>
           </div>
         </div>
@@ -597,7 +649,7 @@
         Arquitectura
       </div>
       <div class="slide-title">Componentes del Sistema</div>
-      <div class="slide-lead">LoadManager opera con tres capas independientes que se comunican en tiempo real.</div>
+      <div class="slide-lead">UAFLOW / UAHUB opera con tres capas independientes que se comunican en tiempo real.</div>
 
       <div class="grid-3" style="margin-bottom:1.5rem;">
         <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:1.1rem;text-align:center;">
@@ -607,7 +659,7 @@
         </div>
         <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:1.1rem;text-align:center;">
           <div style="font-size:1.8rem;margin-bottom:.4rem;">⚙️</div>
-          <h3 style="font-size:.9rem;font-weight:800;color:var(--blue-dark);margin-bottom:.2rem;">LoadManagerApi</h3>
+          <h3 style="font-size:.9rem;font-weight:800;color:var(--blue-dark);margin-bottom:.2rem;">API Backend</h3>
           <p style="font-size:.75rem;color:var(--gray);">ASP.NET Core<br>Registros · Historial · Logs</p>
         </div>
         <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:1.1rem;text-align:center;">
@@ -672,11 +724,20 @@
   <!-- ══ SLIDE 10: CIERRE ══ -->
   <div class="slide slide-cover" data-index="9">
     <div class="card">
-      <div class="cover-logo">
-        <svg viewBox="0 0 24 24"><path d="M5 20V5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v15"/><path d="M3 20h15"/><path d="M8 7h5v5H8z"/><path d="M16 8h2l2 2v7a2 2 0 0 1-4 0v-4"/></svg>
+      <!-- Logos en cierre -->
+      <div style="display:flex;align-items:center;justify-content:center;gap:1.25rem;margin-bottom:1.5rem;">
+        <img src="assets/UA4.png" alt="UA" style="height:44px;object-fit:contain;" />
+        <div style="width:1px;height:36px;background:rgba(255,255,255,.2);"></div>
+        <img src="assets/UA3.png" alt="Ultra Access" style="height:36px;object-fit:contain;filter:brightness(0) invert(1);" />
       </div>
-      <div class="cover-title">LoadManager</div>
-      <div class="cover-subtitle" style="margin-bottom:1.5rem;">Control total sobre cada despacho de combustible</div>
+
+      <div class="cover-title">UAFLOW <span style="color:var(--ua-red)">/</span> UAHUB</div>
+      <div class="cover-subtitle" style="margin-bottom:.5rem;">Control total sobre cada despacho de combustible</div>
+
+      <!-- Logo cliente -->
+      <div style="margin-bottom:1.75rem;">
+        <img src="assets/UA5.png" alt="ORSAN" style="height:32px;object-fit:contain;filter:brightness(0) invert(1);opacity:.7;" />
+      </div>
 
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.85rem;max-width:560px;margin:0 auto 2rem;">
         <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:.85rem;text-align:center;color:#fff;">
@@ -725,7 +786,6 @@
   const nextBtn = document.getElementById('nextBtn');
   let current = 0;
 
-  // Build dots
   slides.forEach((_, i) => {
     const d = document.createElement('div');
     d.className = 'dot' + (i === 0 ? ' active' : '');
@@ -737,12 +797,10 @@
     if (index < 0 || index >= slides.length) return;
     slides[current].classList.remove('active');
     slides[current].classList.add('exit');
-    setTimeout(() => slides[current - (index > current ? 0 : 0)].classList.remove('exit'), 450);
     const prev = current;
     current = index;
     slides[current].classList.add('active');
     setTimeout(() => slides[prev].classList.remove('exit'), 450);
-
     dotsEl.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === current));
     counter.textContent = (current + 1) + ' / ' + slides.length;
     prevBtn.disabled = current === 0;
@@ -751,13 +809,11 @@
 
   function navigate(dir) { goTo(current + dir); }
 
-  // Keyboard
   document.addEventListener('keydown', e => {
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') navigate(1);
     if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   navigate(-1);
   });
 
-  // Touch swipe
   let tx = 0;
   document.addEventListener('touchstart', e => { tx = e.touches[0].clientX; });
   document.addEventListener('touchend',   e => {

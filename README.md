@@ -14,10 +14,14 @@ LoadManager/
 │   ├── sp_folio_app.sql
 │   └── sp_bitacora_app.sql
 ├── publish_api/          # Binarios publicados listos para copiar al servidor IIS
+├── assets/               # Recursos para presentaciones (logos, imágenes)
+│   ├── UA4.png           # Ícono rojo "iA" de Ultra Access
+│   ├── UA3.png           # Logotipo "Ultra Access" (texto negro)
+│   └── UA5.png           # Logo ORSAN (empresa cliente)
 ├── LoadManager.slnx      # Solución Visual Studio
 ├── global.json           # Versión SDK .NET 8
 ├── DEPLOY-IIS.md         # Guía de despliegue en IIS
-└── presentacion.html     # Presentación del proyecto
+└── presentacion.html     # Presentación del proyecto (10 slides HTML)
 ```
 
 ---
@@ -173,8 +177,8 @@ Tipos de despacho: Importe / Litros / Lleno.
 #### `GET /api/history?folio={folio}`
 Consulta el registro completo de una transacción en `tblBitacora`.
 
-#### `GET /api/history/current?dispenser=&hose=&product=&top=3`
-Últimos N despachos para un dispensario/manguera/producto.
+#### `GET /api/history/current?dispenser=&product=&top=3`
+Últimos N despachos para un dispensario y producto.
 
 #### `POST /api/impressions/{transaccion}`
 Registra una impresión de ticket en `tblImpresiones`. Retorna número de impresión (1ª, 2ª, etc.).
@@ -386,3 +390,62 @@ dotnet run -f net8.0-android
 - **SQL injection**: Queries 100% parametrizados con `SqlCommand`
 - **Concurrencia**: Semáforos + locks distribuidos (`sp_getapplock`)
 - **Auditoría**: Logging completo de cada transacción con IP, MAC, device, duración
+
+---
+
+## Presentación (`presentacion.html`)
+
+### Imágenes y logos
+
+Todos los recursos visuales de la presentación se guardan en `assets/` (raíz del repositorio):
+
+| Archivo | Contenido | Uso |
+| --- | --- | --- |
+| `assets/UA4.png` | Ícono rojo "iA" de Ultra Access | Logo principal en portada y slides interiores |
+| `assets/UA3.png` | Logotipo "Ultra Access" texto negro | Barra de logos en portada y cierre |
+| `assets/UA5.png` | Logo ORSAN | Logo del cliente en portada y cierre |
+
+Al añadir imágenes futuras: copiarlas a `assets/` y referenciarlas como `src="assets/NombreArchivo.png"`.
+
+### Estructura de slides
+
+El archivo es un HTML standalone sin dependencias externas (funciona al abrir directo en el navegador). Tiene **10 slides**:
+
+| # | Slide | Clase CSS |
+| --- | --- | --- |
+| 1 | Portada con logos y nombre app | `slide-cover` |
+| 2 | ¿Qué es? — descripción general | — |
+| 3 | Módulo 1: Despacho (flujo 3 pasos) | — |
+| 4 | Surtido en tiempo real (tanque animado) | — |
+| 5 | Ticket de despacho | — |
+| 6 | Módulo 2: Historial | — |
+| 7 | Módulo 3: Configuración | — |
+| 8 | Arquitectura del sistema | — |
+| 9 | Multiplataforma Windows / Android | — |
+| 10 | Cierre con logos y pills de tecnología | `slide-cover` |
+
+### Cómo añadir un slide nuevo
+
+```html
+<!-- dentro de <div class="deck" id="deck"> -->
+<div class="slide" data-index="N">   <!-- N = índice 0-based -->
+  <div class="card">
+    <div class="section-badge">...</div>
+    <div class="slide-title">Título del slide</div>
+    <div class="slide-lead">Descripción corta.</div>
+    <!-- contenido: .grid-2/.grid-3, .steps, .split, .feat, etc. -->
+  </div>
+</div>
+```
+
+El JS detecta automáticamente todos los `.slide` y genera los puntos de navegación.
+
+### Nombre de la app en la presentación
+
+El nombre usado en `presentacion.html` es **UAFLOW / UAHUB** (nombre comercial del producto). El nombre interno del repositorio y el código sigue siendo `LoadManager`. **No cambiar** el nombre en el código fuente.
+
+### Navegación de la presentación
+
+- **Teclado**: `←` / `→` o `↑` / `↓`
+- **Mouse**: botones de la barra inferior
+- **Touch**: swipe izquierda/derecha
