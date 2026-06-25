@@ -9,13 +9,12 @@ public sealed class DatabaseScriptService(
     IWebHostEnvironment environment,
     IAppLogService logService) : IDatabaseScriptService
 {
-    // Solo se asegura sp_folio_app (compatible con compat 100). La bitacora usa el SP
-    // existente sp_Bitacora_APP con parametros individuales, porque el script @Json
-    // requiere OPENJSON (compatibilidad 130+) y la BD esta en compat 100.
+    // Todos los scripts usan CREATE OR ALTER: se aplican una vez por arranque para
+    // garantizar que la BD siempre tenga la version del repositorio.
     private static readonly (string ObjectName, string ScriptPath)[] StoredProcedureScripts =
     [
-        ("dbo.sp_folio_app",            "Script/sp_folio_app.sql"),
-        ("dbo.sp_HistorialFolioCorte",  "Script/sp_historial_folio.sql")
+        ("dbo.sp_folio_app",    "Script/sp_folio_app.sql"),
+        ("dbo.sp_bitacora_app", "Script/sp_bitacora_app.sql")
     ];
 
     // Los scripts son CREATE OR ALTER: se aplican una sola vez por arranque del
@@ -42,47 +41,51 @@ public sealed class DatabaseScriptService(
 
             foreach (var (objectName, scriptPath) in StoredProcedureScripts)
             {
-                // 1) Validar si el SP YA existe en la base de datos.
-                if (await StoredProcedureExistsAsync(connection, objectName, cancellationToken))
-                {
-                    continue; // ya existe: no hay nada que hacer.
-                }
-
-                // 2) No existe: intentar crearlo desde el .sql de la carpeta Script.
                 var fullPath = Path.Combine(
                     environment.ContentRootPath,
                     scriptPath.Replace('/', Path.DirectorySeparatorChar));
 
                 if (!File.Exists(fullPath))
                 {
-                    // No existe el SP ni su script: se registra el error y se continua,
-                    // para no tronar la app aqui (en vez de lanzar FileNotFoundException).
                     await logService.WriteAsync(new ApiLogEntry
                     {
                         Level = "Error",
                         Service = nameof(DatabaseScriptService),
-                        Message = "El procedimiento no existe en la BD y tampoco se encontro su script para crearlo.",
+                        Message = "No se encontro el script para aplicar el procedimiento.",
                         RequestBody = $"Objeto={objectName} | Script={scriptPath}",
-                        ResponseBody = "No creado"
+                        ResponseBody = "No aplicado"
                     }, cancellationToken);
                     continue;
                 }
 
                 var script = await File.ReadAllTextAsync(fullPath, cancellationToken);
-                await using var command = new SqlCommand(script, connection)
+                try
                 {
-                    CommandType = CommandType.Text
-                };
-
-                await command.ExecuteNonQueryAsync(cancellationToken);
-                await logService.WriteAsync(new ApiLogEntry
+                    await using var command = new SqlCommand(script, connection)
+                    {
+                        CommandType = CommandType.Text
+                    };
+                    await command.ExecuteNonQueryAsync(cancellationToken);
+                    await logService.WriteAsync(new ApiLogEntry
+                    {
+                        Level = "Success",
+                        Service = nameof(DatabaseScriptService),
+                        Message = "Procedimiento almacenado aplicado desde script (CREATE OR ALTER).",
+                        RequestBody = $"Objeto={objectName} | Script={scriptPath}",
+                        ResponseBody = objectName
+                    }, cancellationToken);
+                }
+                catch (Exception ex)
                 {
-                    Level = "Success",
-                    Service = nameof(DatabaseScriptService),
-                    Message = "Procedimiento almacenado no existia: se creo desde el script.",
-                    RequestBody = $"Objeto={objectName} | Script={scriptPath}",
-                    ResponseBody = objectName
-                }, cancellationToken);
+                    await logService.WriteAsync(new ApiLogEntry
+                    {
+                        Level = "Error",
+                        Service = nameof(DatabaseScriptService),
+                        Message = "No se pudo aplicar el script del procedimiento almacenado.",
+                        RequestBody = $"Objeto={objectName} | Script={scriptPath}",
+                        Exception = ex.ToString()
+                    }, cancellationToken);
+                }
             }
 
             ensured = true;
@@ -93,15 +96,5 @@ public sealed class DatabaseScriptService(
         }
     }
 
-    private static async Task<bool> StoredProcedureExistsAsync(
-        SqlConnection connection,
-        string objectName,
-        CancellationToken cancellationToken)
-    {
-        await using var command = new SqlCommand("SELECT OBJECT_ID(@name, 'P');", connection);
-        command.Parameters.AddWithValue("@name", objectName);
 
-        var result = await command.ExecuteScalarAsync(cancellationToken);
-        return result is not null && result is not DBNull;
-    }
 }

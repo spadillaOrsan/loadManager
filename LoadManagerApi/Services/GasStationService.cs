@@ -4,7 +4,6 @@ using LoadManagerApi.Models;
 using Microsoft.Data.SqlClient;
 using System.Collections.Concurrent;
 using System.Data;
-using System.Text.Json;
 
 namespace LoadManagerApi.Services;
 
@@ -225,100 +224,73 @@ public sealed class GasStationService(
                 throw new DispenserBusyException(request.Dispensario);
             }
 
-            await using var transaction = connection.BeginTransaction();
-            try
+            // Sin transaccion exterior: sp_folio_app abre y commitea su propio
+            // contador antes del INSERT, asi que si el INSERT falla el contador ya
+            // quedo avanzado y el siguiente intento usa un folio nuevo (no hay loop).
+            // La serializacion la garantiza sp_getapplock (Session scope) arriba.
+            await using (var checkCmd = new SqlCommand(
+                """
+                SELECT TOP 1 1
+                WHERE EXISTS (
+                    SELECT 1 FROM dbo.tblBitacora WITH (READCOMMITTEDLOCK)
+                    WHERE intDispensario = @dispensario
+                      AND datFechaHora >= DATEADD(SECOND, -@ventana, GETDATE())
+                )
+                OR EXISTS (
+                    SELECT 1 FROM dbo.tblDispensarios WITH (READCOMMITTEDLOCK)
+                    WHERE intDispensario = @dispensario
+                      AND intEstatus IN (4, 5, 6)
+                )
+                """, connection))
             {
-                // Verificar autorizacion reciente en tblBitacora (double-tap) y
-                // estatus activo en tblDispensarios (dispensario en servicio).
-                // WITH (READCOMMITTEDLOCK) fuerza leer el estado committed actual
-                // aunque la BD use SNAPSHOT ISOLATION, garantizando que Device B
-                // vea el registro que Device A acaba de insertar y commitear.
-                // No se usa UPDATE en tblDispensarios porque sp_Bitacora_APP puede
-                // reescribir intEstatus dentro de la misma transaccion.
-                await using (var checkCmd = new SqlCommand(
-                    """
-                    SELECT TOP 1 1
-                    WHERE EXISTS (
-                        SELECT 1 FROM dbo.tblBitacora WITH (READCOMMITTEDLOCK)
-                        WHERE intDispensario = @dispensario
-                          AND datFechaHora >= DATEADD(SECOND, -@ventana, GETDATE())
-                    )
-                    OR EXISTS (
-                        SELECT 1 FROM dbo.tblDispensarios WITH (READCOMMITTEDLOCK)
-                        WHERE intDispensario = @dispensario
-                          AND intEstatus IN (4, 5, 6)
-                    )
-                    """, connection, transaction))
-                {
-                    checkCmd.Parameters.AddWithValue("@dispensario", request.Dispensario);
-                    checkCmd.Parameters.AddWithValue("@ventana", DoubleTapWindowSeconds);
-                    var exists = await checkCmd.ExecuteScalarAsync(cancellationToken);
-                    if (exists is not null)
-                        throw new DispenserBusyException(request.Dispensario);
-                }
-
-                long folio;
-                await using (var folioCommand = new SqlCommand("dbo.sp_folio_app", connection, transaction)
-                {
-                    CommandType = CommandType.StoredProcedure
-                })
-                {
-                    var folioParameter = folioCommand.Parameters.Add("@intFolioSecuencia", SqlDbType.BigInt);
-                    folioParameter.Direction = ParameterDirection.Output;
-                    await folioCommand.ExecuteNonQueryAsync(cancellationToken);
-
-                    if (folioParameter.Value is null || folioParameter.Value is DBNull)
-                        throw new InvalidOperationException("sp_folio_app no devolvio el folio generado.");
-
-                    folio = Convert.ToInt64(folioParameter.Value);
-                }
-
-                await using (var bitacoraCommand = new SqlCommand("dbo.sp_Bitacora_APP", connection, transaction)
-                {
-                    CommandType = CommandType.StoredProcedure
-                })
-                {
-                    bitacoraCommand.Parameters.AddWithValue("@intTPV", request.Tpv);
-                    bitacoraCommand.Parameters.AddWithValue("@intTipoVenta", request.TipoVenta);
-                    bitacoraCommand.Parameters.AddWithValue("@intDispensario", request.Dispensario);
-                    bitacoraCommand.Parameters.AddWithValue("@intManguera", request.Manguera);
-                    bitacoraCommand.Parameters.AddWithValue("@intProducto", request.Producto);
-                    bitacoraCommand.Parameters.AddWithValue("@intUsuario", request.Usuario);
-                    bitacoraCommand.Parameters.AddWithValue("@strTarjeta", request.Tarjeta ?? string.Empty);
-                    bitacoraCommand.Parameters.AddWithValue("@intTipoProgramado", request.TipoProgramado);
-                    bitacoraCommand.Parameters.AddWithValue("@dblProgramado", request.Programado);
-                    bitacoraCommand.Parameters.AddWithValue("@intFolioSecuencia", folio);
-                    bitacoraCommand.Parameters.AddWithValue("@strCliente", request.Cliente ?? string.Empty);
-                    bitacoraCommand.Parameters.AddWithValue("@strBandaMagnetica", request.BandaMagnetica ?? string.Empty);
-                    bitacoraCommand.Parameters.AddWithValue("@strVehiculo", request.Vehiculo ?? string.Empty);
-                    bitacoraCommand.Parameters.AddWithValue("@strOdometro", request.Odometro ?? string.Empty);
-                    bitacoraCommand.Parameters.AddWithValue("@strPie1", "Adm.Cargas");
-                    bitacoraCommand.Parameters.AddWithValue("@strPie2", string.Empty);
-                    bitacoraCommand.Parameters.AddWithValue("@strPie3", string.Empty);
-                    bitacoraCommand.Parameters.AddWithValue("@strPie4", string.Empty);
-
-                    await bitacoraCommand.ExecuteNonQueryAsync(cancellationToken);
-                }
-
-                LastAuthorizationUtc[request.Dispensario] = DateTime.UtcNow;
-                await transaction.CommitAsync(cancellationToken);
-
-                await LogAndReturnAsync(new ConsoleCommandResult
-                {
-                    IsSuccess = true,
-                    CommandName = "database",
-                    RequestFrame = $"EXEC dbo.sp_Bitacora_APP @intTPV={request.Tpv}, @intDispensario={request.Dispensario}, @intManguera={request.Manguera}, @intProducto={request.Producto}, @intTipoProgramado={request.TipoProgramado}, @dblProgramado={request.Programado}, @intFolioSecuencia={folio}",
-                    ResponseFrame = $"Folio: {folio}",
-                    UserMessage = "Folio y bitacora registrados correctamente."
-                }, cancellationToken);
-
-                return (int)folio;
+                checkCmd.Parameters.AddWithValue("@dispensario", request.Dispensario);
+                checkCmd.Parameters.AddWithValue("@ventana", DoubleTapWindowSeconds);
+                var exists = await checkCmd.ExecuteScalarAsync(cancellationToken);
+                if (exists is not null)
+                    throw new DispenserBusyException(request.Dispensario);
             }
-            catch
+
+            long folio;
+            await using (var bitacoraCommand = new SqlCommand("dbo.sp_bitacora_app", connection)
             {
-                await transaction.RollbackAsync(cancellationToken);
-                throw;
+                CommandType = CommandType.StoredProcedure
+            })
+            {
+                bitacoraCommand.Parameters.AddWithValue("@intTPV",            request.Tpv);
+                bitacoraCommand.Parameters.AddWithValue("@intTipoVenta",      request.TipoVenta);
+                bitacoraCommand.Parameters.AddWithValue("@intDispensario",    request.Dispensario);
+                bitacoraCommand.Parameters.AddWithValue("@intManguera",       request.Manguera);
+                bitacoraCommand.Parameters.AddWithValue("@intProducto",       request.Producto);
+                bitacoraCommand.Parameters.AddWithValue("@intUsuario",        request.Usuario);
+                bitacoraCommand.Parameters.AddWithValue("@strTarjeta",        request.Tarjeta ?? string.Empty);
+                bitacoraCommand.Parameters.AddWithValue("@intTipoProgramado", request.TipoProgramado);
+                bitacoraCommand.Parameters.AddWithValue("@dblProgramado",     (double)request.Programado);
+                bitacoraCommand.Parameters.AddWithValue("@strCliente",        request.Cliente ?? string.Empty);
+                bitacoraCommand.Parameters.AddWithValue("@strBandaMagnetica", request.BandaMagnetica ?? string.Empty);
+                bitacoraCommand.Parameters.AddWithValue("@strVehiculo",       request.Vehiculo ?? string.Empty);
+                bitacoraCommand.Parameters.AddWithValue("@strOdometro",       request.Odometro ?? string.Empty);
+                bitacoraCommand.Parameters.AddWithValue("@strPie1",           "Adm.Cargas");
+                bitacoraCommand.Parameters.AddWithValue("@strPie2",           string.Empty);
+                bitacoraCommand.Parameters.AddWithValue("@strPie3",           string.Empty);
+                bitacoraCommand.Parameters.AddWithValue("@strPie4",           string.Empty);
+                await using var reader = await bitacoraCommand.ExecuteReaderAsync(cancellationToken);
+                if (!await reader.ReadAsync(cancellationToken))
+                    throw new InvalidOperationException("sp_bitacora_app no devolvio el folio generado.");
+                folio = reader.GetInt64(reader.GetOrdinal("intFolioSecuencia"));
             }
+
+            LastAuthorizationUtc[request.Dispensario] = DateTime.UtcNow;
+
+            await LogAndReturnAsync(new ConsoleCommandResult
+            {
+                IsSuccess = true,
+                CommandName = "database",
+                RequestFrame = $"EXEC dbo.sp_Bitacora_APP @Json={{TPV={request.Tpv}, Disp={request.Dispensario}, Mang={request.Manguera}, Prod={request.Producto}, Tipo={request.TipoProgramado}, Prog={request.Programado}}}",
+                ResponseFrame = $"Folio: {folio}",
+                UserMessage = "Folio y bitacora registrados correctamente."
+            }, cancellationToken);
+
+            return (int)folio;
         }
         finally
         {
