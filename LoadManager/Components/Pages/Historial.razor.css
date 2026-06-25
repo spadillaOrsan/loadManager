@@ -6,29 +6,35 @@
 }
 
 .historial-stage-track.stage-1 .historial-dispensers-panel,
-.historial-stage-track.stage-2 .historial-hoses-panel,
-.historial-stage-track.stage-3 .historial-products-panel {
+.historial-stage-track.stage-2 .historial-products-panel {
     animation: stageSlideIn 180ms ease;
     display: grid;
 }
 
-.historial-stage-track.stage-4 .historial-results-panel {
+.historial-stage-track.stage-3 .historial-results-panel {
     animation: stageSlideIn 180ms ease;
     display: flex;
     flex-direction: column;
 }
 
-/* ---------- Cards de selección (dispensario / manguera / producto) — blanco ---------- */
+/* ---------- Cards de selección — texto centrado ---------- */
+
+.historial-dispensers-panel .dispenser-number,
+.historial-products-panel .dispenser-number {
+    align-self: center;
+    grid-row: 1 / 3;
+    text-align: center;
+}
+
+/* ---------- Cards de selección (dispensario / producto) — blanco ---------- */
 
 .historial-dispensers-panel .dispenser-card.is-available,
-.historial-hoses-panel .dispenser-card.is-available,
 .historial-products-panel .dispenser-card.is-available {
     background: #ffffff;
     border-color: #d1d5db;
 }
 
 .historial-dispensers-panel .dispenser-card.is-available .dispenser-status,
-.historial-hoses-panel .dispenser-card.is-available .dispenser-status,
 .historial-products-panel .dispenser-card.is-available .dispenser-status {
     color: #374151;
 }
@@ -65,7 +71,6 @@
 /* ---------- Selector cards grid ---------- */
 
 .historial-dispensers-panel .dispensers-grid,
-.historial-hoses-panel .dispensers-grid,
 .historial-products-panel .dispensers-grid {
     padding: 0.5rem 1rem 1.25rem;
 }
@@ -245,7 +250,6 @@
     }
 
     .historial-dispensers-panel .dispensers-grid,
-    .historial-hoses-panel .dispensers-grid,
     .historial-products-panel .dispensers-grid {
         padding: 0.5rem 1.25rem 1.5rem;
     }
@@ -277,7 +281,6 @@
     }
 
     .historial-dispensers-panel .dispensers-grid,
-    .historial-hoses-panel .dispensers-grid,
     .historial-products-panel .dispensers-grid {
         padding: 0.5rem 0.75rem 1rem;
     }

@@ -653,7 +653,6 @@ public sealed class GasStationService(
 
     public async Task<IReadOnlyList<DispatchHistoryRecord>> GetHistorialAsync(
         int dispenser,
-        int hose,
         int product,
         int top,
         CancellationToken cancellationToken = default)
@@ -691,14 +690,12 @@ public sealed class GasStationService(
                 LEFT JOIN dbo.tblProductos  tp     ON tp.intProducto  = b.intProducto
                 LEFT JOIN dbo.tblParametros tparam ON 1=1
                 WHERE b.intDispensario = @dispensario
-                  AND b.intManguera   = @manguera
                   AND b.intProducto   = @producto
                 ORDER BY b.datFechaHora DESC
                 """, connection);
 
             command.Parameters.AddWithValue("@intTop",      topClamped);
             command.Parameters.AddWithValue("@dispensario", dispenser);
-            command.Parameters.AddWithValue("@manguera",    hose);
             command.Parameters.AddWithValue("@producto",    product);
 
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -729,7 +726,7 @@ public sealed class GasStationService(
             {
                 IsSuccess = true,
                 CommandName = "database",
-                RequestFrame = $"tblBitacora disp={dispenser} mang={hose} prod={product} top={topClamped}",
+                RequestFrame = $"tblBitacora disp={dispenser} prod={product} top={topClamped}",
                 ResponseFrame = $"{records.Count} registros",
                 UserMessage = "Historial consultado correctamente."
             }, cancellationToken);

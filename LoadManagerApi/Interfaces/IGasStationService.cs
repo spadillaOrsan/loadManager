@@ -41,7 +41,6 @@ public interface IGasStationService
 
     Task<IReadOnlyList<DispatchHistoryRecord>> GetHistorialAsync(
         int dispenser,
-        int hose,
         int product,
         int top,
         CancellationToken cancellationToken = default);

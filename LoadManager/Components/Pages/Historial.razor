@@ -17,7 +17,7 @@
             <div class="historial-panel-heading">
                 <div>
                     <h2 class="historial-panel-title">Historial de cargas</h2>
-                    <p class="historial-panel-sub">Selecciona un dispensario</p>
+                    <p class="historial-panel-sub">@availableDispensers.Count Dispensarios &nbsp;·&nbsp; ↓ Desliza hacia abajo</p>
                 </div>
             </div>
             <div class="dispensers-grid">
@@ -27,46 +27,20 @@
                             @onclick="() => SelectDispenserAsync(d)"
                             disabled="@isLoading">
                         <img src="images/dispensers/inactivo.png" alt="" />
-                        <span class="dispenser-label">Dispensario</span>
-                        <span class="dispenser-number">@d.ToString("D2")</span>
+                        <span class="dispenser-number">Dispensario @d.ToString("D2")</span>
                     </button>
                 }
             </div>
         </section>
 
-        <!-- Etapa 2: Mangueras -->
-        <section class="historial-hoses-panel dispatch-stage-card">
-            <div class="historial-panel-heading">
-                <div>
-                    <h2 class="historial-panel-title">Manguera</h2>
-                    <p class="historial-panel-sub">Dispensario @selectedDispenser.ToString("D2")</p>
-                </div>
-                <button class="btn btn-outline-secondary historial-back-btn" @onclick="() => GoToStage(1)">
-                    ← Volver
-                </button>
-            </div>
-            <div class="dispensers-grid">
-                @foreach (var h in availableHoses)
-                {
-                    <button class="dispenser-card is-available"
-                            @onclick="() => SelectHose(h)"
-                            disabled="@isLoading">
-                        <img src="images/hose/hose.png" alt="" />
-                        <span class="dispenser-label">Manguera</span>
-                        <span class="dispenser-number">@h.ToString("D2")</span>
-                    </button>
-                }
-            </div>
-        </section>
-
-        <!-- Etapa 3: Productos -->
+        <!-- Etapa 2: Productos -->
         <section class="historial-products-panel dispatch-stage-card">
             <div class="historial-panel-heading">
                 <div>
                     <h2 class="historial-panel-title">Producto</h2>
-                    <p class="historial-panel-sub">Disp. @selectedDispenser.ToString("D2") &middot; Mang. @selectedHose.ToString("D2")</p>
+                    <p class="historial-panel-sub">Dispensario @selectedDispenser.ToString("D2") &nbsp;·&nbsp; @availableProducts.Count productos  &nbsp;·&nbsp; ↓ Desliza hacia abajo</p>
                 </div>
-                <button class="btn btn-outline-secondary historial-back-btn" @onclick="() => GoToStage(2)">
+                <button class="btn btn-outline-secondary historial-back-btn" @onclick="() => GoToStage(1)">
                     ← Volver
                 </button>
             </div>
@@ -77,26 +51,25 @@
                             @onclick="() => SelectProductAsync(p.Id)"
                             disabled="@isLoading">
                         <img src="@GetProductImagePath(p.Description)" alt="" />
-                        <span class="dispenser-label">Producto</span>
-                        <span class="dispenser-status">@p.Description</span>
+                        <span class="dispenser-number">@p.Description</span>
                     </button>
                 }
             </div>
         </section>
 
-        <!-- Etapa 4: Resultados -->
+        <!-- Etapa 3: Resultados -->
         <section class="historial-results-panel dispatch-stage-card">
             <div class="historial-results-header">
                 <button class="btn btn-outline-secondary historial-back-btn" @onclick="() => GoToStage(1)" disabled="@isLoading">
                     ← Nuevo filtro
                 </button>
                 <span class="historial-filter-summary">
-                    Disp. @selectedDispenser &middot; Mang. @selectedHose &middot; @SelectedProductDescription
+                    Disp. @selectedDispenser &middot; @SelectedProductDescription
                 </span>
                 <button class="btn btn-outline-secondary historial-back-btn" @onclick="RefreshAsync" disabled="@isLoading">
                     Refrescar
                 </button>
-                <button class="btn btn-outline-secondary historial-back-btn" @onclick="() => GoToStage(3)" disabled="@isLoading">
+                <button class="btn btn-outline-secondary historial-back-btn" @onclick="() => GoToStage(2)" disabled="@isLoading">
                     ← Volver
                 </button>
             </div>
@@ -127,10 +100,6 @@
                                     <strong>@FormatTime(record.CreatedAt)</strong>
                                 </div>
                                 <div class="historial-card-row">
-                                    <span>Preset</span>
-                                    <strong>@FormatDecimal(record.ProgrammedAmount)</strong>
-                                </div>
-                                <div class="historial-card-row">
                                     <span>Cantidad</span>
                                     <strong>$@record.Amount.ToString("N2", culture)</strong>
                                 </div>
@@ -138,13 +107,6 @@
                                     <span>Litros</span>
                                     <strong>@record.Liters.ToString("N3", culture)</strong>
                                 </div>
-                                @if (!string.IsNullOrWhiteSpace(record.Observations))
-                                {
-                                    <div class="historial-card-row historial-card-obs">
-                                        <span>Observaciones</span>
-                                        <strong>@record.Observations</strong>
-                                    </div>
-                                }
                             </div>
 
                             <footer class="historial-card-footer">
@@ -193,12 +155,9 @@
     private bool printEnabled => !DevMode.IsPrintButtonHidden;
 
     private List<int> availableDispensers = [];
-    private List<int> availableHoses = [];
-    private List<DispenserProductOption> loadedHoseData = [];
     private List<DispatchTypeOption> availableProducts = [];
 
     private int selectedDispenser;
-    private int selectedHose;
     private int selectedProduct;
 
     private int historialTop = 3;
@@ -235,10 +194,7 @@
     private async Task SelectDispenserAsync(int dispenser)
     {
         selectedDispenser = dispenser;
-        selectedHose = 0;
         selectedProduct = 0;
-        availableHoses.Clear();
-        loadedHoseData.Clear();
         availableProducts.Clear();
 
         isLoading = true;
@@ -246,12 +202,14 @@
         try
         {
             var hoseData = await GasStationService.GetDispenserProductsAsync(selectedDispenser);
-            loadedHoseData = hoseData.ToList();
-            availableHoses = loadedHoseData.Select(h => h.Hose).Distinct().OrderBy(h => h).ToList();
+            availableProducts = hoseData
+                .Select(h => new DispatchTypeOption { Id = h.ProductId, Description = h.Description })
+                .DistinctBy(p => p.Id)
+                .ToList();
 
-            if (availableHoses.Count == 0)
+            if (availableProducts.Count == 0)
             {
-                ShowToast("No se encontraron mangueras para este dispensario.", false);
+                ShowToast("No se encontraron productos para este dispensario.", false);
                 return;
             }
 
@@ -261,20 +219,6 @@
         {
             isLoading = false;
         }
-    }
-
-    private void SelectHose(int hose)
-    {
-        selectedHose = hose;
-        selectedProduct = 0;
-
-        availableProducts = loadedHoseData
-            .Where(h => h.Hose == hose)
-            .Select(h => new DispatchTypeOption { Id = h.ProductId, Description = h.Description })
-            .DistinctBy(p => p.Id)
-            .ToList();
-
-        historialStage = 3;
     }
 
     private async Task SelectProductAsync(int product)
@@ -294,25 +238,25 @@
                 Level   = "Info",
                 Service = nameof(Historial),
                 Message = "Busqueda historial iniciada",
-                RequestBody = $"Disp={selectedDispenser:D2}; Mang={selectedHose:D2}; Prod={selectedProduct} ({SelectedProductDescription}); Top={historialTop}"
+                RequestBody = $"Disp={selectedDispenser:D2}; Prod={selectedProduct} ({SelectedProductDescription}); Top={historialTop}"
             });
 
             records = (await GasStationService.GetHistorialAsync(
-                selectedDispenser, selectedHose, selectedProduct, historialTop)).ToList();
+                selectedDispenser, selectedProduct, historialTop)).ToList();
 
             await Logger.WriteAsync(new AppLogEntry
             {
                 Level   = records.Count > 0 ? "Success" : "Info",
                 Service = nameof(Historial),
                 Message = $"Historial: {records.Count} registro(s)",
-                RequestBody  = $"Disp={selectedDispenser:D2}; Mang={selectedHose:D2}; Prod={SelectedProductDescription}",
+                RequestBody  = $"Disp={selectedDispenser:D2}; Prod={SelectedProductDescription}",
                 ResponseBody = records.Count > 0
                     ? string.Join(" | ", records.Select(r =>
                         $"Sec={r.Sequence} {r.CreatedAt:HH:mm} ${r.Amount:N2} {r.Liters:N3}L [{r.Status}]"))
                     : "Sin registros"
             });
 
-            historialStage = 4;
+            historialStage = 3;
         }
         finally
         {
@@ -327,7 +271,7 @@
         try
         {
             records = (await GasStationService.GetHistorialAsync(
-                selectedDispenser, selectedHose, selectedProduct, historialTop)).ToList();
+                selectedDispenser, selectedProduct, historialTop)).ToList();
         }
         finally
         {
@@ -341,22 +285,14 @@
         if (stage <= 1)
         {
             selectedDispenser = 0;
-            selectedHose = 0;
             selectedProduct = 0;
-            availableHoses.Clear();
-            loadedHoseData.Clear();
             availableProducts.Clear();
             records.Clear();
         }
         else if (stage == 2)
         {
-            selectedHose = 0;
             selectedProduct = 0;
-            availableProducts.Clear();
-        }
-        else if (stage == 3)
-        {
-            selectedProduct = 0;
+            records.Clear();
         }
     }
 

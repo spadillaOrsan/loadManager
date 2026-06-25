@@ -21,7 +21,6 @@ public sealed class HistoryController(
     [HttpGet("current")]
     public async Task<ActionResult<IReadOnlyList<DispatchHistoryRecord>>> GetCurrentAsync(
         [FromQuery] int dispenser,
-        [FromQuery] int hose,
         [FromQuery] int product,
         [FromQuery] int top = 3,
         CancellationToken cancellationToken = default)
@@ -33,18 +32,18 @@ public sealed class HistoryController(
             Message  = "Consulta historial recibida",
             Method   = "GET",
             Url      = "api/history/current",
-            RequestBody  = $"dispensario={dispenser}; manguera={hose}; producto={product}; top={top}",
-            ResponseBody = "Metodo: SELECT TOP(@top) tblBitacora WHERE disp+mang+prod ORDER BY datFechaHora DESC"
+            RequestBody  = $"dispensario={dispenser}; producto={product}; top={top}",
+            ResponseBody = "Metodo: SELECT TOP(@top) tblBitacora WHERE disp+prod ORDER BY datFechaHora DESC"
         }, cancellationToken);
 
-        var result = await gasStationService.GetHistorialAsync(dispenser, hose, product, top, cancellationToken);
+        var result = await gasStationService.GetHistorialAsync(dispenser, product, top, cancellationToken);
 
         await logService.WriteAsync(new ApiLogEntry
         {
             Level   = result.Count > 0 ? "Success" : "Info",
             Service = "HistoryController.GetCurrentAsync",
             Message = $"Historial: {result.Count} registro(s) encontrado(s)",
-            RequestBody  = $"dispensario={dispenser}; manguera={hose}; producto={product}; top={top}",
+            RequestBody  = $"dispensario={dispenser}; producto={product}; top={top}",
             ResponseBody = result.Count > 0
                 ? string.Join(" | ", result.Select(r =>
                     $"Sec={r.Sequence} {r.CreatedAt:HH:mm} ${r.Amount:N2} {r.Liters:N3}L"))

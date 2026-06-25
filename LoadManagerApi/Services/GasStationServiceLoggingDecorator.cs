@@ -111,14 +111,13 @@ public sealed class GasStationServiceLoggingDecorator(
 
     public Task<IReadOnlyList<DispatchHistoryRecord>> GetHistorialAsync(
         int dispenser,
-        int hose,
         int product,
         int top,
         CancellationToken cancellationToken = default) =>
         InvokeAsync(
             nameof(GetHistorialAsync),
-            $"dispensario={dispenser}; manguera={hose}; producto={product}; top={top}",
-            () => inner.GetHistorialAsync(dispenser, hose, product, top, cancellationToken),
+            $"dispensario={dispenser}; producto={product}; top={top}",
+            () => inner.GetHistorialAsync(dispenser, product, top, cancellationToken),
             result => $"{result.Count} registros",
             cancellationToken);
 
