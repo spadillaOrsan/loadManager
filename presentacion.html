@@ -100,10 +100,16 @@
     margin-bottom: 1.75rem;
     flex-wrap: wrap;
   }
-  .cover-logos img {
-    height: 52px;
+  .cover-logos .logo-pill {
+    background: rgba(255,255,255,.92);
+    border-radius: 10px;
+    padding: .4rem .9rem;
+    display: flex;
+    align-items: center;
+  }
+  .cover-logos .logo-pill img {
+    height: 38px;
     object-fit: contain;
-    filter: brightness(0) invert(1);
   }
   .cover-logos .logo-divider {
     width: 1px;
@@ -333,9 +339,9 @@
 
       <!-- Logos Ultra Access y ORSAN -->
       <div class="cover-logos" style="margin-bottom:2rem;">
-        <img src="assets/UA3.png" alt="Ultra Access" />
+        <div class="logo-pill"><img src="assets/UA3.png" alt="Ultra Access" /></div>
         <div class="logo-divider"></div>
-        <img src="assets/UA5.png" alt="ORSAN" />
+        <div class="logo-pill"><img src="assets/UA5.png" alt="ORSAN" /></div>
       </div>
 
       <div class="cover-pills">
@@ -728,7 +734,9 @@
       <div style="display:flex;align-items:center;justify-content:center;gap:1.25rem;margin-bottom:1.5rem;">
         <img src="assets/UA4.png" alt="UA" style="height:44px;object-fit:contain;" />
         <div style="width:1px;height:36px;background:rgba(255,255,255,.2);"></div>
-        <img src="assets/UA3.png" alt="Ultra Access" style="height:36px;object-fit:contain;filter:brightness(0) invert(1);" />
+        <div style="background:rgba(255,255,255,.92);border-radius:8px;padding:.3rem .7rem;">
+          <img src="assets/UA3.png" alt="Ultra Access" style="height:32px;object-fit:contain;" />
+        </div>
       </div>
 
       <div class="cover-title">UAFLOW <span style="color:var(--ua-red)">/</span> UAHUB</div>
@@ -736,7 +744,9 @@
 
       <!-- Logo cliente -->
       <div style="margin-bottom:1.75rem;">
-        <img src="assets/UA5.png" alt="ORSAN" style="height:32px;object-fit:contain;filter:brightness(0) invert(1);opacity:.7;" />
+        <div style="display:inline-block;background:rgba(255,255,255,.92);border-radius:8px;padding:.3rem .7rem;">
+          <img src="assets/UA5.png" alt="ORSAN" style="height:28px;object-fit:contain;" />
+        </div>
       </div>
 
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.85rem;max-width:560px;margin:0 auto 2rem;">

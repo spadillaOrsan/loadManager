@@ -12,3 +12,7 @@ build-check-*/
 Thumbs.db
 .DS_Store
 .codegraph/
+
+# Documentación y skills locales
+*.md
+.claude/skills/

@@ -61,8 +61,10 @@
                                         @onclick="() => SelectDispenserAsync(dispenser)"
                                         disabled="@(IsSelectionWorkspaceLoading || isDispatching || !CanSelectDispenser(dispenser))">
                                     <img src="@dispenser.ImagePath" alt="" />
-                                    <span class="dispenser-number">Dispensario @dispenser.Number</span>
-                                    <span class="dispenser-status">@dispenser.StatusText</span>
+                                    <div class="dispenser-text">
+                                        <span class="dispenser-number">Dispensario @dispenser.Number</span>
+                                        <span class="dispenser-status">@dispenser.StatusText</span>
+                                    </div>
                                 </button>
                             }
                         </div>

@@ -22,8 +22,7 @@
 .historial-dispensers-panel .dispenser-number,
 .historial-products-panel .dispenser-number {
     align-self: center;
-    grid-row: 1 / 3;
-    text-align: center;
+    text-align: left;
 }
 
 /* ---------- Cards de selección (dispensario / producto) — blanco ---------- */
