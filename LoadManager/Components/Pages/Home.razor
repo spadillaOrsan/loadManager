@@ -1249,6 +1249,26 @@
                 UserMessage = "Solicitud de servicio cancelada por el usuario."
             };
         }
+        catch (HttpRequestException ex)
+        {
+            lastResult = new ConsoleCommandResult
+            {
+                IsSuccess = false,
+                UserMessage = "El equipo se encuentra desconectado.",
+                TechnicalMessage = ex.ToString()
+            };
+            ShowToast("El equipo se encuentra desconectado. Verifique la red e intente nuevamente.", false);
+        }
+        catch (IOException ex)
+        {
+            lastResult = new ConsoleCommandResult
+            {
+                IsSuccess = false,
+                UserMessage = "Se perdio la conexion con la consola.",
+                TechnicalMessage = ex.ToString()
+            };
+            ShowToast("Se perdio la conexion con la consola. Verifique la red e intente nuevamente.", false);
+        }
         catch (Exception ex)
         {
             // El detalle tecnico (incluida la peticion HTTP) se guarda en el log
