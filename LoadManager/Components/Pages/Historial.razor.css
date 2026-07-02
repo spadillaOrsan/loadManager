@@ -17,25 +17,66 @@
     flex-direction: column;
 }
 
-/* ---------- Cards de selección — texto centrado ---------- */
+/* ---------- Cards de selección — texto centrado verticalmente ----------
+   El texto va dentro de .dispenser-text (flex:1, como en despacho) para que
+   empuje la palomita del seleccionado hasta el borde derecho de la tarjeta. */
 
-.historial-dispensers-panel .dispenser-number,
-.historial-products-panel .dispenser-number {
-    align-self: center;
-    text-align: left;
+.historial-dispensers-panel .dispenser-text,
+.historial-products-panel .dispenser-text {
+    justify-content: center;
 }
 
-/* ---------- Cards de selección (dispensario / producto) — blanco ---------- */
+/* ---------- Cards de selección (dispensario / producto) ----------
+   Sin overrides de fondo/color: heredan el mismo estilo global que las
+   tarjetas del modulo de despacho (app.css), incluido el tema oscuro. */
 
-.historial-dispensers-panel .dispenser-card.is-available,
-.historial-products-panel .dispenser-card.is-available {
-    background: #ffffff;
-    border-color: #d1d5db;
+/* Icono como mosaico redondeado — misma regla que .dispenser-card img del
+   modulo de despacho (app.css); explicita aqui para que el historial no
+   dependa de la regla global. */
+.historial-dispensers-panel .dispenser-card img,
+.historial-products-panel .dispenser-card img {
+    border-radius: 8px;
+    flex-shrink: 0;
+    height: 48px;
+    object-fit: cover;
+    object-position: top;
+    width: 48px;
 }
 
-.historial-dispensers-panel .dispenser-card.is-available .dispenser-status,
-.historial-products-panel .dispenser-card.is-available .dispenser-status {
-    color: #374151;
+/* Selector de producto: la tarjeta toma el color del combustible (tono oscuro,
+   el mismo de los PNG) con el borde en el tono brillante y texto blanco.
+   La clase fuel-* la asigna FuelProductHelper.GetCssClass en el markup. */
+.historial-products-panel .dispenser-card.fuel-premium {
+    background: #b91c1c;
+    border-color: #d71920;
+    color: #ffffff;
+}
+
+.historial-products-panel .dispenser-card.fuel-extra {
+    background: #1d4ed8;
+    border-color: #2563eb;
+    color: #ffffff;
+}
+
+.historial-products-panel .dispenser-card.fuel-diesel {
+    /* Grafito en lugar de negro puro: sobre el fondo oscuro de la pagina el
+       negro se pierde; asi la tarjeta se distingue y el icono negro resalta. */
+    background: #374151;
+    border-color: #6b7280;
+    color: #ffffff;
+}
+
+.historial-products-panel .dispenser-card.fuel-magna {
+    background: #17803d;
+    border-color: #20a54a;
+    color: #ffffff;
+}
+
+/* Seleccionado (visible al regresar con Volver): el contorno blanco neon manda
+   sobre el borde de color del producto. El halo y la palomita vienen del global. */
+.historial-dispensers-panel .dispenser-card.is-selected,
+.historial-products-panel .dispenser-card.is-selected {
+    border-color: #ffffff;
 }
 
 /* ---------- Panel heading ---------- */
@@ -67,6 +108,16 @@
     min-height: 2.25rem;
 }
 
+/* Volver del paso de Producto: anclado arriba a la derecha, en la misma
+   posicion que el Volver de la cabecera de resultados. */
+.historial-panel-heading .historial-back-btn {
+    margin-left: auto;
+}
+
+.historial-panel-heading > div {
+    min-width: 0;
+}
+
 /* ---------- Selector cards grid ---------- */
 
 .historial-dispensers-panel .dispensers-grid,
@@ -87,7 +138,7 @@
 .historial-filter-summary {
     flex: 1;
     font-size: 0.85rem;
-    color: #6b7280;
+    color: #a8b3c3;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -105,16 +156,44 @@
 
 /* ---------- Card individual ---------- */
 
+/* Paleta oscura de la app: tarjeta #0f172a, bordes #334155, texto claro. */
 .historial-card {
-    background: #fff;
-    border: 1px solid #e5e7eb;
+    background: #0f172a;
+    border: 1px solid #334155;
     border-left-width: 4px;
     border-left-color: #1f6fbf;
     border-radius: 12px;
+    /* Toda la tarjeta es tocable: imprime el ticket (antes boton Imprimir). */
+    cursor: pointer;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    transition: box-shadow 0.15s, transform 0.1s;
+}
+
+/* Acento izquierdo segun el estatus (mismos colores del badge). */
+.historial-card.is-authorized {
+    border-left-color: #16855f;
+}
+
+.historial-card.is-closed,
+.historial-card.is-canceled {
+    border-left-color: #c43131;
+}
+
+/* Al pasar/presionar: el mismo contorno blanco neon del resto de la app. */
+.historial-card:hover,
+.historial-card:active {
+    box-shadow:
+        0 0 0 1px #ffffff,
+        0 0 8px rgba(255, 255, 255, 0.85),
+        0 0 18px rgba(255, 255, 255, 0.5),
+        0 0 34px rgba(255, 255, 255, 0.28);
+}
+
+.historial-card:active {
+    transform: scale(0.98);
 }
 
 .historial-card-header {
@@ -122,13 +201,13 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.65rem 1rem;
-    background: #eff6ff;
-    border-bottom: 1px solid #e5e7eb;
+    background: #172136;
+    border-bottom: 1px solid #243245;
     gap: 0.5rem;
 }
 
 .historial-card-folio {
-    color: #111827;
+    color: #f8fafc;
     font-weight: 700;
     font-size: 0.95rem;
 }
@@ -148,7 +227,7 @@
     gap: 0.5rem;
     font-size: 0.875rem;
     padding: 0.35rem 0;
-    border-bottom: 1px solid #f3f4f6;
+    border-bottom: 1px solid #1e293b;
 }
 
 .historial-card-row:last-child {
@@ -156,7 +235,7 @@
 }
 
 .historial-card-row span {
-    color: #6b7280;
+    color: #a8b3c3;
     font-size: 0.8rem;
     font-weight: 500;
     letter-spacing: 0.01em;
@@ -165,7 +244,7 @@
 }
 
 .historial-card-row strong {
-    color: #111827;
+    color: #f8fafc;
     font-size: 0.92rem;
     font-weight: 600;
     text-align: right;
@@ -176,7 +255,7 @@
     flex-direction: column;
     align-items: center;
     gap: 0.15rem;
-    border-top: 1px solid #f3f4f6;
+    border-top: 1px solid #1e293b;
     margin-top: 0.35rem;
     padding-top: 0.45rem;
     text-align: center;
@@ -184,32 +263,8 @@
 
 .historial-card-obs strong {
     font-size: 0.82rem;
-    color: #374151;
+    color: #dbe6f3;
     font-weight: 500;
-}
-
-.historial-card-footer {
-    display: flex;
-    justify-content: center;
-    padding: 0.65rem 1rem 0.85rem;
-    border-top: 1px solid #f3f4f6;
-}
-
-.historial-print-btn {
-    font-size: 0.85rem;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    min-height: 2.25rem;
-    padding: 0.4rem 1.4rem;
-    width: 100%;
-    max-width: 200px;
-    border-radius: 8px;
-    transition: opacity 0.15s;
-}
-
-.historial-print-btn:disabled {
-    opacity: 0.4;
-    pointer-events: none;
 }
 
 /* ---------- Estado vacío ---------- */
@@ -221,7 +276,7 @@
     gap: 1rem;
     padding: 3rem 1rem;
     text-align: center;
-    color: #6b7280;
+    color: #a8b3c3;
 }
 
 /* ==========================================================================
@@ -272,7 +327,9 @@
 
     .historial-panel-heading {
         padding: 0.75rem 0.75rem 0.35rem;
-        flex-wrap: wrap;
+        /* Sin wrap: el boton Volver se mantiene arriba a la derecha (igual que
+           en resultados) y el titulo/subtitulo se acomodan en su columna. */
+        flex-wrap: nowrap;
     }
 
     .historial-panel-title {
@@ -334,11 +391,5 @@
 
     .historial-card-row strong {
         font-size: 0.8rem;
-    }
-
-    .historial-print-btn {
-        font-size: 0.78rem;
-        max-width: none;
-        padding: 0.35rem 0.5rem;
     }
 }

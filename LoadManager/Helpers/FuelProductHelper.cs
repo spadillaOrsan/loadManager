@@ -26,6 +26,23 @@ public static class FuelProductHelper
         return "fuel-magna";
     }
 
+    // Icono del producto (mosaico usado en despacho e historial).
+    public static string GetImagePath(string description)
+    {
+        if (description.Contains("diesel", StringComparison.OrdinalIgnoreCase))
+        {
+            return "images/products/DIESEL.png";
+        }
+
+        if (description.Contains("supreme", StringComparison.OrdinalIgnoreCase) ||
+            description.Contains("premium", StringComparison.OrdinalIgnoreCase))
+        {
+            return "images/products/SUPREME.png";
+        }
+
+        return "images/products/EXTRA.png";
+    }
+
     public static string GetAuthorizationProductCode(string description, int productId)
     {
         if (description.Contains("premium", StringComparison.OrdinalIgnoreCase))

@@ -718,6 +718,16 @@ a, .btn-link {
     margin-left: auto;
 }
 
+/* Boton de regreso compacto en el encabezado del panel: mismo estilo y
+   posicion (arriba a la derecha) que el Volver del historial. */
+.panel-back-btn {
+    flex-shrink: 0;
+    font-size: 0.82rem;
+    margin-left: auto;
+    min-height: 2.25rem;
+    padding: 0.35rem 0.8rem;
+}
+
 .refresh-dispensers-button {
     font-size: 0.78rem;
     min-height: 2rem;
@@ -989,11 +999,15 @@ a, .btn-link {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    max-height: 90px;
+    /* Hasta 5 tarjetas visibles (90px c/u + gap) mas el aire del halo;
+       con mas configurados se hace swipe. */
+    max-height: calc(5 * 90px + 4 * 0.5rem + 20px);
     overflow-y: auto;
     overscroll-behavior-y: contain;
-    padding: 0;
-    scroll-padding-block: 0;
+    /* Aire interno: el contenedor recorta en sus bordes (overflow) y sin
+       padding el contorno neon del seleccionado se pierde arriba/costados. */
+    padding: 10px;
+    scroll-padding-block: 10px;
     scroll-snap-type: y mandatory;
     scrollbar-width: none;
     touch-action: pan-y;
@@ -1042,18 +1056,41 @@ a, .btn-link {
 }
 
 .dispenser-card.is-selected {
-    border-color: #e30613;
-    box-shadow: 0 0 0 4px rgba(227, 6, 19, 0.18), 0 12px 26px rgba(227, 6, 19, 0.16);
+    /* Contorno blanco neon: anillo encendido + halo brillante en capas. */
+    border-color: #ffffff;
+    box-shadow:
+        0 0 0 1px #ffffff,
+        0 0 8px rgba(255, 255, 255, 0.85),
+        0 0 18px rgba(255, 255, 255, 0.5),
+        0 0 34px rgba(255, 255, 255, 0.28);
     outline: 0;
     transform: translateY(-2px);
 }
 
 .dispenser-card.is-selected .dispenser-number {
-    color: #e30613;
+    color: #ffffff;
 }
 
-/* Todos los estados usan fondo claro: forzar texto oscuro para que el numero
-   sea visible tambien en tema oscuro. */
+/* Palomita al lado derecho del dispensario seleccionado: confirma cual quedo
+   elegido al regresar a la lista con el boton Atras. */
+.dispenser-card.is-selected::after {
+    align-items: center;
+    background: #ffffff;
+    border-radius: 999px;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.55);
+    color: #0f172a;
+    content: "\2713";
+    display: flex;
+    flex-shrink: 0;
+    font-size: 0.9rem;
+    font-weight: 800;
+    height: 1.6rem;
+    justify-content: center;
+    width: 1.6rem;
+}
+
+/* Estados con fondo claro (temas claros). En tema oscuro se sobreescriben mas
+   abajo para usar el mismo fondo que las opciones de producto. */
 .dispenser-card.is-checking,
 .dispenser-card.is-authorized,
 .dispenser-card.is-available,
@@ -1146,15 +1183,71 @@ a, .btn-link {
     color: #a31313;
 }
 
+/* Tema oscuro: las tarjetas de dispensario usan el mismo fondo que las opciones
+   de producto (.theme-dark .fuel-option); el estatus se distingue por el color
+   del borde y del texto de estatus. */
+.theme-dark .dispenser-card.is-checking,
+.theme-dark .dispenser-card.is-authorized,
+.theme-dark .dispenser-card.is-available,
+.theme-dark .dispenser-card.is-hose-lifted,
+.theme-dark .dispenser-card.is-serving,
+.theme-dark .dispenser-card.is-busy,
+.theme-dark .dispenser-card.is-offline {
+    background: #0f172a;
+    color: #f8fafc;
+}
+
+.theme-dark .dispenser-card.is-checking,
+.theme-dark .dispenser-card.is-authorized,
+.theme-dark .dispenser-card.is-offline {
+    border-color: #334155;
+}
+
+.theme-dark .dispenser-card.is-offline .dispenser-number {
+    color: #f8fafc;
+}
+
+.theme-dark .dispenser-card.is-available .dispenser-status,
+.theme-dark .dispenser-card.is-serving .dispenser-status,
+.theme-dark .dispenser-card.is-busy .dispenser-status {
+    color: #57d98c;
+}
+
+.theme-dark .dispenser-card.is-hose-lifted .dispenser-status {
+    color: #69d7e4;
+}
+
+.theme-dark .dispenser-card.is-authorized .dispenser-status {
+    color: #a8b3c3;
+}
+
+.theme-dark .dispenser-card:not(.is-available):not(.is-hose-lifted):not(.is-checking):not(.is-authorized):not(.is-offline):not(.is-busy) {
+    background: #0f172a;
+}
+
+.theme-dark .dispenser-card:not(.is-available):not(.is-hose-lifted):not(.is-checking):not(.is-authorized):not(.is-offline):not(.is-busy) .dispenser-status {
+    color: #ff7b7b;
+}
+
+/* El seleccionado manda sobre el borde de estatus (verde/gris): blanco neon. */
+.dispenser-card.is-selected,
+.theme-dark .dispenser-card.is-selected {
+    border-color: #ffffff;
+}
+
 .dispenser-card:disabled {
     cursor: not-allowed;
     opacity: 0.72;
 }
 
 .dispenser-card img {
+    /* Los PNG de dispensario son 512x640 con el pie vacio: cover anclado arriba
+       llena el mosaico completo y el radio se nota sin franjas transparentes. */
+    border-radius: 8px;
     flex-shrink: 0;
     height: 48px;
-    object-fit: contain;
+    object-fit: cover;
+    object-position: top;
     width: 48px;
 }
 
@@ -1207,6 +1300,8 @@ a, .btn-link {
 
 .fuel-option-text {
     display: grid;
+    /* flex:1 empuja la palomita del seleccionado al borde derecho. */
+    flex: 1;
     gap: 0.15rem;
     min-width: 0;
     text-align: left;
@@ -1234,74 +1329,93 @@ a, .btn-link {
     opacity: 0.55;
 }
 
-.fuel-option.is-selected {
-    border-color: #e30613;
-    box-shadow: 0 8px 22px rgba(227, 6, 19, 0.14);
-}
 
-/* Al seleccionar, el fondo se aclara: forzar texto oscuro para que sea legible
-   tambien en tema oscuro. */
-.fuel-option.is-selected .fuel-option-text strong {
-    color: #17212b;
-}
-
-.fuel-option.is-selected .fuel-option-text small {
-    color: #5a6977;
-}
-
-.fuel-swatch {
-    border-radius: 999px;
-    display: inline-block;
-    height: 1rem;
-    width: 1rem;
+/* Icono del producto: mismo mosaico redondeado que en el historial. */
+.fuel-option img {
+    border-radius: 8px;
+    flex-shrink: 0;
+    height: 48px;
+    object-fit: cover;
+    width: 48px;
 }
 
 .fuel-premium {
     border-color: #b91c1c;
 }
 
-.fuel-premium .fuel-swatch {
-    background: #d71920;
-}
-
-.fuel-premium.is-selected {
-    background: #fff0f0;
-}
-
 .fuel-extra {
     border-color: #1d4ed8;
-}
-
-.fuel-extra .fuel-swatch {
-    background: #2563eb;
-}
-
-.fuel-extra.is-selected {
-    background: #eff6ff;
 }
 
 .fuel-diesel {
     border-color: #111827;
 }
 
-.fuel-diesel .fuel-swatch {
-    background: #111;
-}
-
-.fuel-diesel.is-selected {
-    background: #f1f3f5;
-}
-
 .fuel-magna {
     border-color: #17803d;
 }
 
-.fuel-magna .fuel-swatch {
-    background: #20a54a;
+/* Tarjetas de producto: el fondo toma el color del combustible (tono oscuro
+   para que el texto blanco sea legible; el borde usa el tono brillante y el
+   swatch pasa a blanco). El color se conserva tambien al seleccionar. */
+.fuel-option.fuel-premium {
+    background: #b91c1c;
+    border-color: #d71920;
+    color: #ffffff;
 }
 
-.fuel-magna.is-selected {
-    background: #eef9f1;
+.fuel-option.fuel-extra {
+    background: #1d4ed8;
+    border-color: #2563eb;
+    color: #ffffff;
+}
+
+.fuel-option.fuel-diesel {
+    /* Grafito en lugar de negro puro para que no se funda con el tema oscuro. */
+    background: #374151;
+    border-color: #6b7280;
+    color: #ffffff;
+}
+
+.fuel-option.fuel-magna {
+    background: #17803d;
+    border-color: #20a54a;
+    color: #ffffff;
+}
+
+.fuel-option .fuel-option-text strong {
+    color: #ffffff;
+}
+
+.fuel-option .fuel-option-text small {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+/* Producto seleccionado: mismo formato que el dispensario seleccionado —
+   contorno blanco neon y palomita al borde derecho. */
+.fuel-option.is-selected {
+    border-color: #ffffff;
+    box-shadow:
+        0 0 0 1px #ffffff,
+        0 0 8px rgba(255, 255, 255, 0.85),
+        0 0 18px rgba(255, 255, 255, 0.5),
+        0 0 34px rgba(255, 255, 255, 0.28);
+}
+
+.fuel-option.is-selected::after {
+    align-items: center;
+    background: #ffffff;
+    border-radius: 999px;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.55);
+    color: #0f172a;
+    content: "\2713";
+    display: flex;
+    flex-shrink: 0;
+    font-size: 0.9rem;
+    font-weight: 800;
+    height: 1.6rem;
+    justify-content: center;
+    width: 1.6rem;
 }
 
 .amount-layout {
@@ -1310,21 +1424,23 @@ a, .btn-link {
     grid-template-columns: minmax(220px, 0.75fr) minmax(260px, 1.25fr);
 }
 
+/* Tipos de despacho como tarjetas separadas (antes barra segmentada fusionada),
+   con el mismo formato de seleccion que dispensarios y producto. */
 .amount-mode-group {
-    border: 1px solid #d8e0e6;
-    border-radius: 8px;
     display: grid;
+    gap: 0.75rem;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    overflow: hidden;
 }
 
 .amount-mode {
     background: #fff;
-    border: 0;
+    border: 1px solid #d8e0e6;
+    border-radius: 8px;
     color: #344353;
     font-weight: 800;
     min-height: 3rem;
     padding: 0.65rem 0.85rem;
+    position: relative;
     text-align: center;
     white-space: normal;
     width: 100%;
@@ -1332,20 +1448,37 @@ a, .btn-link {
 
 .theme-dark .amount-mode {
     background: #0f172a;
+    border-color: #334155;
     color: #dbe6f3;
 }
 
-.amount-mode + .amount-mode {
-    border-left: 1px solid #d8e0e6;
-}
-
-.theme-dark .amount-mode + .amount-mode {
-    border-left-color: #243245;
-}
-
 .amount-mode.is-selected {
-    background: #e30613;
-    color: #fff;
+    border-color: #ffffff;
+    box-shadow:
+        0 0 0 1px #ffffff,
+        0 0 8px rgba(255, 255, 255, 0.85),
+        0 0 18px rgba(255, 255, 255, 0.5),
+        0 0 34px rgba(255, 255, 255, 0.28);
+}
+
+/* El texto va centrado, asi que la palomita se ancla absoluta a la derecha. */
+.amount-mode.is-selected::after {
+    align-items: center;
+    background: #ffffff;
+    border-radius: 999px;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.55);
+    color: #0f172a;
+    content: "\2713";
+    display: flex;
+    font-size: 0.9rem;
+    font-weight: 800;
+    height: 1.6rem;
+    justify-content: center;
+    position: absolute;
+    right: 0.55rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1.6rem;
 }
 
 .amount-input-wrap {
@@ -1437,9 +1570,15 @@ a, .btn-link {
 .charge-circle {
     align-items: center;
     background: #e30613;
-    border: 0;
+    /* Contorno blanco neon, como el de las tarjetas seleccionadas. */
+    border: 2px solid #ffffff;
     border-radius: 999px;
-    box-shadow: 0 12px 26px rgba(227, 6, 19, 0.32);
+    box-shadow:
+        0 0 0 1px #ffffff,
+        0 0 8px rgba(255, 255, 255, 0.85),
+        0 0 18px rgba(255, 255, 255, 0.5),
+        0 0 34px rgba(255, 255, 255, 0.28),
+        0 12px 26px rgba(227, 6, 19, 0.32);
     color: #ffffff;
     cursor: pointer;
     display: flex;
@@ -1455,7 +1594,12 @@ a, .btn-link {
 
 .charge-circle:hover:not(:disabled) {
     background: #b0000b;
-    box-shadow: 0 14px 30px rgba(176, 0, 11, 0.38);
+    box-shadow:
+        0 0 0 1px #ffffff,
+        0 0 8px rgba(255, 255, 255, 0.85),
+        0 0 18px rgba(255, 255, 255, 0.5),
+        0 0 34px rgba(255, 255, 255, 0.28),
+        0 14px 30px rgba(176, 0, 11, 0.38);
 }
 
 .charge-circle:active:not(:disabled) {
@@ -1464,6 +1608,7 @@ a, .btn-link {
 
 .charge-circle:disabled {
     background: #c2ccd6;
+    border-color: transparent;
     box-shadow: none;
     color: #eef2f6;
     cursor: not-allowed;
@@ -2729,11 +2874,6 @@ a, .btn-link {
 
     .amount-mode-group {
         grid-template-columns: 1fr;
-    }
-
-    .amount-mode + .amount-mode {
-        border-left: 0;
-        border-top: 1px solid #d8e0e6;
     }
 
     .tester-command-grid {

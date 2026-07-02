@@ -73,8 +73,13 @@
 
                 <section class="fuel-panel dispatch-stage-card">
                     <div class="panel-heading">
-                        <h2>Producto</h2>
-                        <span>@GetProductSummary()</span>
+                        <div>
+                            <h2>Producto</h2>
+                            <span>@GetProductSummary()</span>
+                        </div>
+                        <button class="btn btn-outline-secondary panel-back-btn" @onclick="GoBack" disabled="@isDispatching">
+                            ← Volver
+                        </button>
                     </div>
 
                     @if (SelectedDispenser is null)
@@ -89,7 +94,7 @@
                                 <button class="fuel-option @product.CssClass @(selectedProductKey == product.Key ? "is-selected" : string.Empty)"
                                         @onclick="() => SelectProduct(product)"
                                         disabled="@(IsSelectionWorkspaceLoading || isDispatching || !CanEditSelectedDispenser)">
-                                    <span class="fuel-swatch"></span>
+                                    <img src="@FuelProductHelper.GetImagePath(product.Name)" alt="" />
                                     <span class="fuel-option-text">
                                         <strong>@product.Name</strong>
                                         <small>@GetProductPriceText(product)</small>
@@ -107,8 +112,13 @@
 
                 <section class="quantity-panel dispatch-stage-card">
                     <div class="panel-heading">
-                        <h2>Tipo de despacho</h2>
-                        <span>@(SelectedDispatchType?.Description ?? "Seleccione")</span>
+                        <div>
+                            <h2>Tipo de despacho</h2>
+                            <span>@(SelectedDispatchType?.Description ?? "Seleccione")</span>
+                        </div>
+                        <button class="btn btn-outline-secondary panel-back-btn" @onclick="GoBack" disabled="@isDispatching">
+                            ← Volver
+                        </button>
                     </div>
 
                     @if (SelectedProduct is null)
@@ -146,8 +156,13 @@
 
                 <section class="amount-panel dispatch-stage-card">
                     <div class="panel-heading">
-                        <h2>@(SelectedDispatchType?.IsFull == true ? "Confirmar carga" : "Monto a surtir")</h2>
-                        <span>@(SelectedDispatchType?.Description ?? "Seleccione")</span>
+                        <div>
+                            <h2>@(SelectedDispatchType?.IsFull == true ? "Confirmar carga" : "Monto a surtir")</h2>
+                            <span>@(SelectedDispatchType?.Description ?? "Seleccione")</span>
+                        </div>
+                        <button class="btn btn-outline-secondary panel-back-btn" @onclick="GoBack" disabled="@isDispatching">
+                            ← Volver
+                        </button>
                     </div>
 
                     @if (SelectedDispatchType?.IsFull != true)
@@ -195,12 +210,6 @@
                 </div>
             }
         </div>
-
-        <section class="actions-panel dispatch-stage-actions">
-            <button class="btn btn-outline-secondary action-button" @onclick="GoBack" disabled="@(isDispatching || dispatchFormStage == 1)">
-                ← Atras
-            </button>
-        </section>
 
     }
     else if (currentStep == 3)

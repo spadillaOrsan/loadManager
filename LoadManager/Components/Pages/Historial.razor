@@ -23,11 +23,13 @@
             <div class="dispensers-grid">
                 @foreach (var d in availableDispensers)
                 {
-                    <button class="dispenser-card is-available"
+                    <button class="dispenser-card is-available @(selectedDispenser == d ? "is-selected" : null)"
                             @onclick="() => SelectDispenserAsync(d)"
                             disabled="@isLoading">
                         <img src="images/dispensers/inactivo.png" alt="" />
-                        <span class="dispenser-number">Dispensario @d.ToString("D2")</span>
+                        <div class="dispenser-text">
+                            <span class="dispenser-number">Dispensario @d.ToString("D2")</span>
+                        </div>
                     </button>
                 }
             </div>
@@ -47,11 +49,13 @@
             <div class="dispensers-grid">
                 @foreach (var p in availableProducts)
                 {
-                    <button class="dispenser-card is-available"
+                    <button class="dispenser-card is-available @FuelProductHelper.GetCssClass(p.Description) @(selectedProduct == p.Id ? "is-selected" : null)"
                             @onclick="() => SelectProductAsync(p.Id)"
                             disabled="@isLoading">
-                        <img src="@GetProductImagePath(p.Description)" alt="" />
-                        <span class="dispenser-number">@p.Description</span>
+                        <img src="@FuelProductHelper.GetImagePath(p.Description)" alt="" />
+                        <div class="dispenser-text">
+                            <span class="dispenser-number">@p.Description</span>
+                        </div>
                     </button>
                 }
             </div>
@@ -72,13 +76,16 @@
                 <button class="btn btn-outline-secondary historial-back-btn" @onclick="() => GoToStage(2)" disabled="@isLoading">
                     ← Volver
                 </button>
+                <button class="btn btn-outline-secondary historial-back-btn" @onclick="ResetFilters" disabled="@isLoading">
+                    ⟳ Reiniciar
+                </button>
             </div>
 
             @if (records.Count == 0)
             {
                 <div class="historial-empty">
                     <p>No se encontraron registros para este filtro.</p>
-                    <button class="btn btn-outline-secondary" @onclick="() => GoToStage(1)">
+                    <button class="btn btn-outline-secondary" @onclick="ResetFilters">
                         Limpiar filtros
                     </button>
                 </div>
@@ -88,7 +95,9 @@
                 <div class="historial-cards">
                     @foreach (var record in records)
                     {
-                        <article class="historial-card @GetStatusClass(record)">
+                        <article class="historial-card @GetStatusClass(record)"
+                                 role="button"
+                                 @onclick="() => OnRecordCardClickAsync(record)">
                             <header class="historial-card-header">
                                 <span class="historial-card-folio">Folio #@record.Sequence</span>
                                 <span class="history-status @GetStatusClass(record)">@record.Status</span>
@@ -109,17 +118,6 @@
                                 </div>
                             </div>
 
-                            <footer class="historial-card-footer">
-                                @if (printEnabled)
-                                {
-                                    <button class="historial-print-btn btn btn-primary"
-                                            @onclick="() => PrintRecordAsync(record)"
-                                            disabled="@(isLoading || !record.IsClosed)"
-                                            title="@(record.IsClosed ? null : "Solo se puede imprimir una transaccion cerrada")">
-                                        🖨 Imprimir
-                                    </button>
-                                }
-                            </footer>
                         </article>
                     }
                 </div>
@@ -282,18 +280,31 @@
     private void GoToStage(int stage)
     {
         historialStage = stage;
+
+        // La seleccion (dispensario/producto) se conserva al regresar para que
+        // la tarjeta elegida se vea marcada (contorno neon + palomita), igual
+        // que en el despacho. Solo se limpian los datos derivados; al volver a
+        // tocar una tarjeta, SelectDispenserAsync/SelectProductAsync recargan.
         if (stage <= 1)
         {
-            selectedDispenser = 0;
-            selectedProduct = 0;
             availableProducts.Clear();
             records.Clear();
         }
         else if (stage == 2)
         {
-            selectedProduct = 0;
             records.Clear();
         }
+    }
+
+    // Reinicio total: borra los filtros (a diferencia de Volver/Nuevo filtro,
+    // que conservan la seleccion marcada) y regresa a la seccion de dispensarios.
+    private void ResetFilters()
+    {
+        selectedDispenser = 0;
+        selectedProduct = 0;
+        availableProducts.Clear();
+        records.Clear();
+        historialStage = 1;
     }
 
     private static List<int> GetConfiguredDispenserNumbers(AppConfigurationOptions cfg)
@@ -328,14 +339,6 @@
         return record.IsClosed ? "is-closed" : "is-authorized";
     }
 
-    private static string GetProductImagePath(string description)
-    {
-        var upper = description.ToUpperInvariant();
-        if (upper.Contains("DIESEL")) return "images/products/DIESEL.png";
-        if (upper.Contains("SUPREME") || upper.Contains("PREMIUM")) return "images/products/SUPREME.png";
-        return "images/products/EXTRA.png";
-    }
-
     private void ShowToast(string message, bool success)
     {
         toastMessage = message;
@@ -348,6 +351,28 @@
         await Task.Delay(3500);
         toastMessage = null;
         await InvokeAsync(StateHasChanged);
+    }
+
+    // La tarjeta completa dispara la impresion (antes lo hacia el boton Imprimir).
+    // isPrinting evita que un doble tap registre dos impresiones en tblImpresiones.
+    private bool isPrinting;
+
+    private async Task OnRecordCardClickAsync(DispatchHistoryRecord record)
+    {
+        if (isLoading || isPrinting || !printEnabled)
+        {
+            return;
+        }
+
+        isPrinting = true;
+        try
+        {
+            await PrintRecordAsync(record);
+        }
+        finally
+        {
+            isPrinting = false;
+        }
     }
 
     private async Task PrintRecordAsync(DispatchHistoryRecord record)
