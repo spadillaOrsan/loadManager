@@ -23,7 +23,7 @@
             <div class="dispensers-grid">
                 @foreach (var d in availableDispensers)
                 {
-                    <button class="dispenser-card is-available @(selectedDispenser == d ? "is-selected" : null)"
+                    <button class="dispenser-card is-checking @(selectedDispenser == d ? "is-selected" : null)"
                             @onclick="() => SelectDispenserAsync(d)"
                             disabled="@isLoading">
                         <img src="images/dispensers/inactivo.png" alt="" />

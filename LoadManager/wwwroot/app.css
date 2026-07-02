@@ -462,6 +462,18 @@ a, .btn-link {
     padding: 1.1rem;
 }
 
+/* Paneles del historial: mismo lienzo (fondo/borde/sombra por tema) que los
+   paneles del despacho. Sin padding propio: el espaciado interno lo aportan
+   sus hijos (heading/grids/cards en Historial.razor.css). */
+.historial-dispensers-panel,
+.historial-products-panel,
+.historial-results-panel {
+    background: var(--ua-panel-bg, #fff);
+    border: 1px solid var(--ua-panel-border, #d8e0e6);
+    border-radius: 8px;
+    box-shadow: var(--ua-panel-shadow, 0 10px 28px rgba(23, 33, 43, 0.06));
+}
+
 .theme-dark .command-panel,
 .theme-dark .response-panel,
 .theme-dark .diagnostics-panel,
@@ -2694,10 +2706,6 @@ a, .btn-link {
     display: grid;
     gap: 1rem;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.history-shell {
-    max-width: none;
 }
 
 .history-panel {

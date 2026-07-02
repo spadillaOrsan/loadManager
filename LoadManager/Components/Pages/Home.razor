@@ -160,9 +160,14 @@
                             <h2>@(SelectedDispatchType?.IsFull == true ? "Confirmar carga" : "Monto a surtir")</h2>
                             <span>@(SelectedDispatchType?.Description ?? "Seleccione")</span>
                         </div>
-                        <button class="btn btn-outline-secondary panel-back-btn" @onclick="GoBack" disabled="@isDispatching">
-                            ← Volver
-                        </button>
+                        <div class="panel-heading-actions">
+                            <button class="btn btn-outline-secondary panel-back-btn" @onclick="GoBack" disabled="@isDispatching">
+                                ← Volver
+                            </button>
+                            <button class="btn btn-outline-secondary panel-back-btn" @onclick="ClearDispatchFilters" disabled="@isDispatching">
+                                Limpiar filtros
+                            </button>
+                        </div>
                     </div>
 
                     @if (SelectedDispatchType?.IsFull != true)
@@ -1131,6 +1136,21 @@
         SelectDispatchType(dispatchType);
         amountInputRenderKey++;
         dispatchFormStage = 4;
+    }
+
+    // Limpia la seleccion (dispensario/producto/tipo/monto) y regresa a la
+    // etapa de dispensarios, igual que "Limpiar filtros" en el historial.
+    private void ClearDispatchFilters()
+    {
+        selectedDispenser = null;
+        selectedProductKey = null;
+        selectedDispatchTypeId = null;
+        amountValue = null;
+        amountInputRenderKey++;
+        productLoadMessage = null;
+        hoseNumber = 1;
+        products.Clear();
+        dispatchFormStage = 1;
     }
 
     private void GoBack()
