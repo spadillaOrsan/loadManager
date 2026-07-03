@@ -905,6 +905,14 @@ a, .btn-link {
     gap: 1rem;
 }
 
+.authorization-panel {
+    position: relative;
+}
+
+.authorization-panel.is-printing .ticket-panel {
+    pointer-events: none;
+}
+
 .selection-workspace {
     display: grid;
     gap: 1rem;

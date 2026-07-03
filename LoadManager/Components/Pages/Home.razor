@@ -309,7 +309,7 @@
     }
     else if (currentStep == 4)
     {
-        <section class="authorization-panel">
+        <section class="authorization-panel @(isPrintingTicket ? "is-printing" : string.Empty)">
             <div class="panel-heading">
                 <h2>Ticket de despacho</h2>
                 <span>Despacho finalizado</span>
@@ -371,14 +371,22 @@
                     <div class="ticket-actions">
                         @if (!DevMode.IsPrintButtonHidden)
                         {
-                            <button class="btn btn-outline-secondary action-button" @onclick="PrintTicketAsync">
+                            <button class="btn btn-outline-secondary action-button" @onclick="PrintTicketAsync" disabled="@isPrintingTicket">
                                 Imprimir ticket
                             </button>
                         }
-                        <button class="btn btn-primary action-button ticket-home-button" @onclick="ReturnToStart">
+                        <button class="btn btn-primary action-button ticket-home-button" @onclick="ReturnToStart" disabled="@isPrintingTicket">
                             Volver a inicio
                         </button>
                     </div>
+                </div>
+            }
+
+            @if (isPrintingTicket)
+            {
+                <div class="selection-loading" role="status">
+                    <span class="loading-spinner" aria-hidden="true"></span>
+                    <strong>Imprimiendo ticket...</strong>
                 </div>
             }
         </section>
@@ -574,6 +582,8 @@
     private bool CanEditSelectedDispenser => SelectedDispenser?.IsAvailable == true;
 
     private bool IsSelectionWorkspaceLoading => isLoadingDispensers || isSelectingDispenser;
+
+    private bool isPrintingTicket;
 
     private bool CanGoNext =>
         CanEditSelectedDispenser &&
@@ -1950,6 +1960,9 @@
             return;
         }
 
+        isPrintingTicket = true;
+        await InvokeAsync(StateHasChanged);
+
         try
         {
             // Trae el registro del folio (incluye datos de la estacion: tblParametros).
@@ -2019,6 +2032,11 @@
                 Exception = ex.ToString()
             });
             ShowToast($"No fue posible imprimir el ticket. {ex.Message}", false);
+        }
+        finally
+        {
+            isPrintingTicket = false;
+            await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -2403,9 +2421,7 @@
 
         if (isFueling)
         {
-            return string.IsNullOrWhiteSpace(liveDispenserStatus)
-                ? "Surtiendo"
-                : $"Estatus {liveDispenserStatus}";
+            return "Surtiendo";
         }
 
         return "Esperando manguera";
