@@ -617,11 +617,6 @@
             dispatchTypes.Add(new DispatchTypeViewModel(type.Id, type.Description));
         }
 
-        if (selectedDispatchTypeId is null && dispatchTypes.Count > 0)
-        {
-            SelectDispatchType(dispatchTypes[0]);
-        }
-
         if (dispatchTypes.Count == 0)
         {
             ShowToast("No se encontraron tipos de despacho activos.", false);
