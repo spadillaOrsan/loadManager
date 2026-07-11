@@ -2454,16 +2454,11 @@
     }
 
     // Porcentaje de avance del surtido (0-100) para la simulacion del tanque.
-    // Devuelve null cuando no hay meta definida (despacho "Lleno") y no aplica.
+    // Para "Lleno" la meta es CantidadTanqueLleno (asignada a amountValue al seleccionarlo).
     private int? FuelProgressPercent
     {
         get
         {
-            if (SelectedDispatchType?.IsFull == true)
-            {
-                return null;
-            }
-
             if (!TryGetAmount(out var requested) || requested <= 0)
             {
                 return null;

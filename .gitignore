@@ -16,3 +16,6 @@ Thumbs.db
 # Documentación y skills locales
 *.md
 .claude/skills/
+
+publish_windows/
+publish_android/
