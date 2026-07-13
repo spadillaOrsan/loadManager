@@ -27,6 +27,7 @@
                 <span>Comando</span>
                 <select @bind="graphicCommand" disabled="@isSendingGraphic">
                     <option value="AUTH">Autorizacion de carga</option>
+                    <option value="CAUTH">Cancelacion de carga</option>
                     <option value="TDE">Consulta de detalle de dispensario</option>
                     <option value="TD">Consulta de sin detalle de dispensario</option>
                     <option value="SDI">Consulta de estatus del dispensario</option>
@@ -175,6 +176,7 @@
     private string SelectedCommandDescription => graphicCommand switch
     {
         "AUTH" => "Autorizacion de carga",
+        "CAUTH" => "Cancelacion de carga",
         "TDE" => "Consulta de detalle de dispensario",
         "TD" => "Consulta de sin detalle de dispensario",
         "SDI" => "Consulta de estatus del dispensario",
@@ -232,6 +234,7 @@
 
         return commandCode switch
         {
+            "CAUTH" => $"CAUTH|{dispenser}",
             "TDE" => $"TDE|{dispenser}",
             "TD" => $"TD|{dispenser}",
             "SDI" => $"SDI|{dispenser}",
