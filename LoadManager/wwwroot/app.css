@@ -3034,3 +3034,45 @@ h1:focus {
         padding-left: env(safe-area-inset-left);
     }
 }
+
+/* Escala global para pantallas anchas (tablet GETAC / monitores Full HD):
+   la UI esta dimensionada para ~1280px de ancho; en resoluciones mayores se
+   agranda todo el contenido de forma uniforme para abarcar la pantalla.
+   El zoom multiplica tambien las unidades vh, asi que las alturas de
+   pantalla completa se compensan (100vh / zoom) para que el layout siga
+   cabiendo en la ventana y no se corte la parte baja (boton Configuracion). */
+@media (min-width: 1600px) {
+    body {
+        zoom: 1.25;
+    }
+
+    body,
+    #app,
+    .theme-dark,
+    .theme-red,
+    .theme-black {
+        min-height: calc(100vh / 1.25);
+    }
+
+    .page .sidebar {
+        height: calc(100vh / 1.25) !important;
+    }
+}
+
+@media (min-width: 2000px) {
+    body {
+        zoom: 1.5;
+    }
+
+    body,
+    #app,
+    .theme-dark,
+    .theme-red,
+    .theme-black {
+        min-height: calc(100vh / 1.5);
+    }
+
+    .page .sidebar {
+        height: calc(100vh / 1.5) !important;
+    }
+}
