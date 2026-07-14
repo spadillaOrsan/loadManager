@@ -187,7 +187,10 @@
         display: none;
     }
 
-    .nav-scrollable {
+    /* El checkbox del menu movil no debe alterar el layout en pantallas anchas
+       (cada click dentro del menu lo togglea y rompia el anclaje del boton). */
+    .nav-scrollable,
+    .navbar-toggler:checked ~ .nav-scrollable {
         /* Never collapse the sidebar for wide screens */
         display: flex;
         flex-direction: column;
