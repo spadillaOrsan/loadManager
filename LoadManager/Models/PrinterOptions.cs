@@ -12,8 +12,13 @@ public sealed class PrinterOptions
 
     public string Mode { get; set; } = ModeWindows;
 
-    // Puerto serie Bluetooth (ej. "COM4") cuando Mode = BluetoothCom.
+    // Puerto serie Bluetooth (ej. "COM4") cuando Mode = BluetoothCom (Windows).
     public string ComPort { get; set; } = string.Empty;
+
+    // Direccion MAC y nombre del dispositivo vinculado cuando Mode = BluetoothCom (Android).
+    public string BluetoothAddress { get; set; } = string.Empty;
+
+    public string BluetoothName { get; set; } = string.Empty;
 
     public int BaudRate { get; set; } = 115200;
 

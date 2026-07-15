@@ -194,51 +194,51 @@
             @if (openSections[4])
             {
                 <div class="accordion-body">
-                    @if (OperatingSystem.IsWindows())
+                    <label class="settings-field">
+                        <span>Tipo de impresora</span>
+                        <select @bind="printerMode" @bind:after="OnPrinterModeChangedAsync">
+                            <option value="@PrinterOptions.ModeWindows">
+                                @(OperatingSystem.IsWindows() ? "Impresora de Windows (dialogo del sistema)" : "Dialogo de impresion de Android")
+                            </option>
+                            <option value="@PrinterOptions.ModeBluetoothCom">
+                                @(OperatingSystem.IsWindows() ? "Termica Bluetooth (puerto COM)" : "Termica Bluetooth (vinculada)")
+                            </option>
+                        </select>
+                    </label>
+
+                    @if (printerMode == PrinterOptions.ModeBluetoothCom)
                     {
                         <label class="settings-field">
-                            <span>Tipo de impresora</span>
-                            <select @bind="printerMode" @bind:after="OnPrinterModeChangedAsync">
-                                <option value="@PrinterOptions.ModeWindows">Impresora de Windows (dialogo del sistema)</option>
-                                <option value="@PrinterOptions.ModeBluetoothCom">Termica Bluetooth (puerto COM)</option>
+                            <span>@(OperatingSystem.IsWindows() ? "Puerto COM Bluetooth" : "Impresora Bluetooth vinculada")</span>
+                            <select @bind="printerEndpointId">
+                                <option value="">@(printerEndpoints.Count == 0 ? "(sin dispositivos detectados)" : "Seleccione...")</option>
+                                @foreach (var endpoint in printerEndpoints)
+                                {
+                                    <option value="@endpoint.Id">@endpoint.DisplayName</option>
+                                }
                             </select>
                         </label>
-
-                        @if (printerMode == PrinterOptions.ModeBluetoothCom)
+                        @if (OperatingSystem.IsWindows())
                         {
-                            <label class="settings-field">
-                                <span>Puerto COM Bluetooth</span>
-                                <select @bind="printerComPort">
-                                    <option value="">@(bluetoothPorts.Count == 0 ? "(sin puertos detectados)" : "Seleccione un puerto...")</option>
-                                    @foreach (var comPort in bluetoothPorts)
-                                    {
-                                        <option value="@comPort">@comPort</option>
-                                    }
-                                </select>
-                            </label>
                             <label class="settings-field">
                                 <span>BaudRate</span>
                                 <input type="number" @bind="printerBaudRate" min="1200" placeholder="Ej: 115200" />
                             </label>
-                            <label class="settings-field">
-                                <span>Columnas de papel (32 = 58mm, 48 = 80mm)</span>
-                                <input type="number" @bind="printerPaperColumns" min="16" max="64" />
-                            </label>
-                            <div class="settings-actions">
-                                <button class="btn btn-outline-secondary action-button" type="button"
-                                        @onclick="RefreshBluetoothPortsAsync" disabled="@IsPrinterBusy">
-                                    @(isRefreshingPorts ? "Buscando..." : "Actualizar puertos")
-                                </button>
-                                <button class="btn btn-outline-secondary action-button" type="button"
-                                        @onclick="TestPrinterPortAsync" disabled="@IsPrinterBusy">
-                                    @(isTestingPort ? "Probando..." : "Probar conexion")
-                                </button>
-                            </div>
                         }
-                    }
-                    else
-                    {
-                        <p>En Android se usa el dialogo de impresion del sistema.</p>
+                        <label class="settings-field">
+                            <span>Columnas de papel (32 = 58mm, 48 = 80mm)</span>
+                            <input type="number" @bind="printerPaperColumns" min="16" max="64" />
+                        </label>
+                        <div class="settings-actions">
+                            <button class="btn btn-outline-secondary action-button" type="button"
+                                    @onclick="RefreshPrinterEndpointsAsync" disabled="@IsPrinterBusy">
+                                @(isRefreshingPorts ? "Buscando..." : (OperatingSystem.IsWindows() ? "Actualizar puertos" : "Actualizar dispositivos"))
+                            </button>
+                            <button class="btn btn-outline-secondary action-button" type="button"
+                                    @onclick="TestPrinterAsync" disabled="@IsPrinterBusy">
+                                @(isTestingPort ? "Probando..." : "Probar conexion")
+                            </button>
+                        </div>
                     }
                 </div>
             }
@@ -364,11 +364,12 @@
     private readonly bool[] openSections = [false, false, false, false, false];
 
     // --- Impresora ---
+    // printerEndpointId: puerto COM en Windows, direccion MAC en Android.
     private string printerMode = PrinterOptions.ModeWindows;
-    private string printerComPort = string.Empty;
+    private string printerEndpointId = string.Empty;
     private int printerBaudRate = 115200;
     private int printerPaperColumns = 32;
-    private List<string> bluetoothPorts = [];
+    private List<BluetoothPrinterEndpoint> printerEndpoints = [];
     private bool isRefreshingPorts;
     private bool isTestingPort;
 
@@ -518,6 +519,8 @@
             {
                 Mode = current.Printer.Mode,
                 ComPort = current.Printer.ComPort,
+                BluetoothAddress = current.Printer.BluetoothAddress,
+                BluetoothName = current.Printer.BluetoothName,
                 BaudRate = current.Printer.BaudRate,
                 DataBits = current.Printer.DataBits,
                 StopBits = current.Printer.StopBits,
@@ -551,12 +554,25 @@
         databaseStatus = ConnectionState.DatabaseStatus;
 
         printerMode = settings.Printer.Mode;
-        printerComPort = settings.Printer.ComPort;
         printerBaudRate = settings.Printer.BaudRate;
         printerPaperColumns = settings.Printer.PaperColumns;
-        if (!string.IsNullOrWhiteSpace(printerComPort))
+        printerEndpointId = OperatingSystem.IsWindows()
+            ? settings.Printer.ComPort
+            : settings.Printer.BluetoothAddress;
+        if (!string.IsNullOrWhiteSpace(printerEndpointId))
         {
-            bluetoothPorts = [printerComPort];
+            // Semilla con lo guardado para que el select muestre la seleccion
+            // persistida sin necesidad de re-enumerar.
+            printerEndpoints =
+            [
+                new BluetoothPrinterEndpoint
+                {
+                    Id = printerEndpointId,
+                    DisplayName = OperatingSystem.IsWindows() || string.IsNullOrWhiteSpace(settings.Printer.BluetoothName)
+                        ? printerEndpointId
+                        : settings.Printer.BluetoothName
+                }
+            ];
         }
 
         ParseApiUrl(settings.Api.BaseUrl);
@@ -625,37 +641,48 @@
         NavigationManager.NavigateTo("tester");
     }
 
-    // Al cambiar a Bluetooth se enumeran los puertos COM Bluetooth disponibles.
+    // Al cambiar a Bluetooth se enumeran los destinos disponibles
+    // (puertos COM en Windows, dispositivos vinculados en Android).
     private async Task OnPrinterModeChangedAsync()
     {
-        if (printerMode == PrinterOptions.ModeBluetoothCom && OperatingSystem.IsWindows())
+        if (printerMode == PrinterOptions.ModeBluetoothCom)
         {
-            await RefreshBluetoothPortsAsync();
+            await RefreshPrinterEndpointsAsync();
         }
     }
 
-    private async Task RefreshBluetoothPortsAsync()
+    private async Task RefreshPrinterEndpointsAsync()
     {
         isRefreshingPorts = true;
         await InvokeAsync(StateHasChanged);
         try
         {
-            var detectedPorts = (await BluetoothPrinter.GetBluetoothPortsAsync()).ToList();
+            var detected = (await BluetoothPrinter.GetPrintersAsync()).ToList();
 
-            // Conserva el puerto guardado aunque el dispositivo no este visible ahora,
+            // Conserva el destino guardado aunque el dispositivo no este visible ahora,
             // para que el select no pierda la seleccion persistida.
-            if (!string.IsNullOrWhiteSpace(printerComPort)
-                && !detectedPorts.Contains(printerComPort, StringComparer.OrdinalIgnoreCase))
+            if (!string.IsNullOrWhiteSpace(printerEndpointId)
+                && !detected.Any(endpoint => string.Equals(endpoint.Id, printerEndpointId, StringComparison.OrdinalIgnoreCase)))
             {
-                detectedPorts.Insert(0, printerComPort);
+                var savedName = printerEndpoints
+                    .FirstOrDefault(endpoint => string.Equals(endpoint.Id, printerEndpointId, StringComparison.OrdinalIgnoreCase))
+                    ?.DisplayName ?? printerEndpointId;
+                detected.Insert(0, new BluetoothPrinterEndpoint { Id = printerEndpointId, DisplayName = savedName });
             }
 
-            bluetoothPorts = detectedPorts;
+            printerEndpoints = detected;
 
-            if (bluetoothPorts.Count == 0)
+            if (printerEndpoints.Count == 0)
             {
-                ShowToast("No se detectaron puertos COM Bluetooth. Empareje la impresora en Windows.", false);
+                ShowToast(OperatingSystem.IsWindows()
+                    ? "No se detectaron puertos COM Bluetooth. Empareje la impresora en Windows."
+                    : "No hay impresoras Bluetooth vinculadas. Vincule la impresora en los ajustes de Android.", false);
             }
+        }
+        catch (Exception ex)
+        {
+            // Bluetooth apagado o permiso denegado (Android): mensaje claro del servicio.
+            ShowToast(ex.Message, false);
         }
         finally
         {
@@ -663,11 +690,11 @@
         }
     }
 
-    private async Task TestPrinterPortAsync()
+    private async Task TestPrinterAsync()
     {
-        if (string.IsNullOrWhiteSpace(printerComPort))
+        if (string.IsNullOrWhiteSpace(printerEndpointId))
         {
-            ShowToast("Seleccione un puerto COM.", false);
+            ShowToast("Seleccione una impresora Bluetooth.", false);
             return;
         }
 
@@ -675,10 +702,10 @@
         await InvokeAsync(StateHasChanged);
         try
         {
-            var outcome = await BluetoothPrinter.TestPortAsync(printerComPort);
+            var outcome = await BluetoothPrinter.TestAsync(printerEndpointId);
             ShowToast(outcome.Success
-                ? $"Conexion correcta con {printerComPort}."
-                : outcome.ErrorMessage ?? $"No se pudo abrir {printerComPort}.", outcome.Success);
+                ? $"Conexion correcta con {GetPrinterEndpointName()}."
+                : outcome.ErrorMessage ?? $"No se pudo conectar con {GetPrinterEndpointName()}.", outcome.Success);
         }
         finally
         {
@@ -686,16 +713,19 @@
         }
     }
 
+    private string GetPrinterEndpointName() =>
+        printerEndpoints
+            .FirstOrDefault(endpoint => string.Equals(endpoint.Id, printerEndpointId, StringComparison.OrdinalIgnoreCase))
+            ?.DisplayName ?? printerEndpointId;
+
     private string GetPrinterIndicatorText()
     {
-        if (!OperatingSystem.IsWindows())
+        if (printerMode == PrinterOptions.ModeBluetoothCom)
         {
-            return "Sistema (Android)";
+            return $"Bluetooth · {(string.IsNullOrWhiteSpace(printerEndpointId) ? "sin dispositivo" : GetPrinterEndpointName())}";
         }
 
-        return printerMode == PrinterOptions.ModeBluetoothCom
-            ? $"Bluetooth · {(string.IsNullOrWhiteSpace(printerComPort) ? "sin puerto" : printerComPort)}"
-            : "Windows";
+        return OperatingSystem.IsWindows() ? "Windows" : "Sistema (Android)";
     }
 
     private static List<int> ParseDispenserNumbers(string raw)
@@ -747,15 +777,17 @@
             return false;
         }
 
-        if (OperatingSystem.IsWindows() && printerMode == PrinterOptions.ModeBluetoothCom)
+        if (printerMode == PrinterOptions.ModeBluetoothCom)
         {
-            if (string.IsNullOrWhiteSpace(printerComPort))
+            if (string.IsNullOrWhiteSpace(printerEndpointId))
             {
-                ShowToast("Seleccione el puerto COM Bluetooth de la impresora.", false);
+                ShowToast(OperatingSystem.IsWindows()
+                    ? "Seleccione el puerto COM Bluetooth de la impresora."
+                    : "Seleccione la impresora Bluetooth vinculada.", false);
                 return false;
             }
 
-            if (printerBaudRate <= 0)
+            if (OperatingSystem.IsWindows() && printerBaudRate <= 0)
             {
                 ShowToast("Capture un BaudRate valido (ej. 115200).", false);
                 return false;
@@ -793,7 +825,15 @@
         settings.Api.BaseUrl = apiUrl;
         settings.Api.RequestTimeoutSeconds = apiRequestTimeoutSeconds;
         settings.Printer.Mode = printerMode;
-        settings.Printer.ComPort = printerComPort.Trim();
+        if (OperatingSystem.IsWindows())
+        {
+            settings.Printer.ComPort = printerEndpointId.Trim();
+        }
+        else
+        {
+            settings.Printer.BluetoothAddress = printerEndpointId.Trim();
+            settings.Printer.BluetoothName = GetPrinterEndpointName();
+        }
         settings.Printer.BaudRate = printerBaudRate > 0 ? printerBaudRate : 115200;
         settings.Printer.PaperColumns = Math.Clamp(printerPaperColumns, 16, 64);
 

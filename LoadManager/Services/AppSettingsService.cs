@@ -191,6 +191,8 @@ public sealed class AppSettingsService : IAppSettingsService
 
         EncryptString(jsonNode, "Printer", "Mode");
         EncryptString(jsonNode, "Printer", "ComPort");
+        EncryptString(jsonNode, "Printer", "BluetoothAddress");
+        EncryptString(jsonNode, "Printer", "BluetoothName");
         EncryptNumber(jsonNode, "Printer", "BaudRate");
         EncryptNumber(jsonNode, "Printer", "DataBits");
         EncryptString(jsonNode, "Printer", "StopBits");
@@ -234,6 +236,8 @@ public sealed class AppSettingsService : IAppSettingsService
 
         DecryptString(jsonNode, "Printer", "Mode");
         DecryptString(jsonNode, "Printer", "ComPort");
+        DecryptString(jsonNode, "Printer", "BluetoothAddress");
+        DecryptString(jsonNode, "Printer", "BluetoothName");
         DecryptNumber(jsonNode, "Printer", "BaudRate");
         DecryptNumber(jsonNode, "Printer", "DataBits");
         DecryptString(jsonNode, "Printer", "StopBits");

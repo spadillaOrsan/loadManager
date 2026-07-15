@@ -5,14 +5,19 @@ using LoadManager.Services.Interfaces;
 #if WINDOWS
 using System.IO.Ports;
 using Microsoft.Win32;
+#elif ANDROID
+using Android.Bluetooth;
+using Android.Content;
+using Microsoft.Maui.ApplicationModel;
 #endif
 
 namespace LoadManager.Services;
 
 /// <summary>
-/// Impresora termica ESC/POS por puerto serie Bluetooth (perfil SPP), solo Windows.
-/// Enumera unicamente los COM registrados bajo BTHENUM, abre el puerto con la
-/// configuracion de PrinterOptions y lo libera siempre al terminar (using/finally).
+/// Impresora termica ESC/POS por Bluetooth. En Windows abre el puerto serie COM
+/// (perfil SPP) con SerialPort; en Android se conecta por socket Bluetooth directo
+/// al dispositivo vinculado (UUID SPP estandar). La conexion se libera siempre al
+/// terminar (using/finally).
 /// </summary>
 public sealed class BluetoothEscPosPrinterService(IAppSettingsService settingsProvider) : IBluetoothEscPosPrinterService
 {
@@ -20,46 +25,74 @@ public sealed class BluetoothEscPosPrinterService(IAppSettingsService settingsPr
 
     public async Task<PrintOutcome> PrintAsync(ReceiptPrintJob job, CancellationToken cancellationToken = default)
     {
-#if WINDOWS
         var options = (await settingsProvider.GetSettingsAsync(cancellationToken)).Printer;
-        var route = $"ESC/POS {options.ComPort}";
+        var route = $"ESC/POS {EndpointLabel(options)}";
 
-        if (string.IsNullOrWhiteSpace(options.ComPort))
+        var endpointId = GetConfiguredEndpointId(options);
+        if (string.IsNullOrWhiteSpace(endpointId))
         {
-            return PrintOutcome.Fail(route, "No hay puerto COM configurado. Seleccione uno en Configuracion > Impresora.");
+            return PrintOutcome.Fail(route, "No hay impresora Bluetooth configurada. Seleccionela en Configuracion > Impresora.");
         }
 
         var payload = TicketEscPosBuilder.Build(job.Record, job.TicketNumber, options.PaperColumns);
 
         try
         {
-            await Task.Run(() =>
-            {
-                using var port = CreatePort(options.ComPort, options);
-                port.Open();
-                port.Write(payload, 0, payload.Length);
-
-                // Espera a que el buffer salga antes de cerrar (algunas termicas
-                // pierden el final del ticket si el puerto se cierra de inmediato).
-                port.BaseStream.Flush();
-            }, cancellationToken);
-
+            await SendAsync(endpointId, payload, options, cancellationToken);
             return PrintOutcome.Ok(route);
         }
         catch (Exception exception)
         {
-            return PrintOutcome.Fail(route, TranslatePortError(options.ComPort, exception));
+            return PrintOutcome.Fail(route, TranslateError(EndpointLabel(options), exception));
         }
-#else
-        _ = settingsProvider;
-        await Task.CompletedTask;
-        return PrintOutcome.Fail("ESC/POS", "La impresion Bluetooth por COM solo esta disponible en Windows.");
-#endif
     }
 
-    public Task<IReadOnlyList<string>> GetBluetoothPortsAsync(CancellationToken cancellationToken = default)
+    public async Task<PrintOutcome> TestAsync(string endpointId, CancellationToken cancellationToken = default)
     {
+        var route = $"ESC/POS {endpointId}";
+
+        if (string.IsNullOrWhiteSpace(endpointId))
+        {
+            return PrintOutcome.Fail(route, "Seleccione una impresora Bluetooth.");
+        }
+
+        var options = (await settingsProvider.GetSettingsAsync(cancellationToken)).Printer;
+
+        try
+        {
+            // Conectar y cerrar sin enviar datos valida que el destino responda.
+            await SendAsync(endpointId, [], options, cancellationToken);
+            return PrintOutcome.Ok(route);
+        }
+        catch (Exception exception)
+        {
+            return PrintOutcome.Fail(route, TranslateError(endpointId, exception));
+        }
+    }
+
+    // Windows guarda el puerto COM; Android la direccion MAC del dispositivo.
+    private static string GetConfiguredEndpointId(PrinterOptions options) =>
+        OperatingSystem.IsWindows() ? options.ComPort : options.BluetoothAddress;
+
+    private static string EndpointLabel(PrinterOptions options)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return string.IsNullOrWhiteSpace(options.ComPort) ? "(sin puerto)" : options.ComPort;
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.BluetoothName))
+        {
+            return options.BluetoothName;
+        }
+
+        return string.IsNullOrWhiteSpace(options.BluetoothAddress) ? "(sin impresora)" : options.BluetoothAddress;
+    }
+
 #if WINDOWS
+
+    public Task<IReadOnlyList<BluetoothPrinterEndpoint>> GetPrintersAsync(CancellationToken cancellationToken = default)
+    {
         return Task.Run(() =>
         {
             var availablePorts = SerialPort.GetPortNames()
@@ -69,48 +102,31 @@ public sealed class BluetoothEscPosPrinterService(IAppSettingsService settingsPr
                 .Where(availablePorts.Contains)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .OrderBy(ExtractPortNumber)
+                .Select(port => new BluetoothPrinterEndpoint { Id = port, DisplayName = port })
                 .ToList();
 
-            return (IReadOnlyList<string>)bluetoothPorts;
+            return (IReadOnlyList<BluetoothPrinterEndpoint>)bluetoothPorts;
         }, cancellationToken);
-#else
-        return Task.FromResult<IReadOnlyList<string>>([]);
-#endif
     }
 
-    public async Task<PrintOutcome> TestPortAsync(string portName, CancellationToken cancellationToken = default)
+    private static Task SendAsync(string portName, byte[] payload, PrinterOptions options, CancellationToken cancellationToken)
     {
-#if WINDOWS
-        var route = $"ESC/POS {portName}";
-
-        if (string.IsNullOrWhiteSpace(portName))
+        return Task.Run(() =>
         {
-            return PrintOutcome.Fail(route, "Seleccione un puerto COM.");
-        }
+            using var port = CreatePort(portName, options);
+            port.Open();
 
-        var options = (await settingsProvider.GetSettingsAsync(cancellationToken)).Printer;
-
-        try
-        {
-            await Task.Run(() =>
+            if (payload.Length > 0)
             {
-                using var port = CreatePort(portName, options);
-                port.Open();
-            }, cancellationToken);
+                port.Write(payload, 0, payload.Length);
 
-            return PrintOutcome.Ok(route);
-        }
-        catch (Exception exception)
-        {
-            return PrintOutcome.Fail(route, TranslatePortError(portName, exception));
-        }
-#else
-        await Task.CompletedTask;
-        return PrintOutcome.Fail($"ESC/POS {portName}", "La impresion Bluetooth por COM solo esta disponible en Windows.");
-#endif
+                // Espera a que el buffer salga antes de cerrar (algunas termicas
+                // pierden el final del ticket si el puerto se cierra de inmediato).
+                port.BaseStream.Flush();
+            }
+        }, cancellationToken);
     }
 
-#if WINDOWS
     private static SerialPort CreatePort(string portName, PrinterOptions options)
     {
         if (!Enum.TryParse<StopBits>(options.StopBits, ignoreCase: true, out var stopBits) || stopBits == StopBits.None)
@@ -169,7 +185,7 @@ public sealed class BluetoothEscPosPrinterService(IAppSettingsService settingsPr
     private static int ExtractPortNumber(string portName) =>
         int.TryParse(portName.AsSpan(3), out var number) ? number : int.MaxValue;
 
-    private static string TranslatePortError(string portName, Exception exception) => exception switch
+    private static string TranslateError(string portName, Exception exception) => exception switch
     {
         UnauthorizedAccessException =>
             $"El puerto {portName} esta ocupado por otra aplicacion. Cierre el programa que lo usa e intente de nuevo.",
@@ -184,5 +200,137 @@ public sealed class BluetoothEscPosPrinterService(IAppSettingsService settingsPr
         _ =>
             $"Error al usar el puerto {portName}: {exception.Message}"
     };
+
+#elif ANDROID
+
+    // UUID estandar del perfil serie Bluetooth (SPP), el que usan las termicas.
+    private static readonly Java.Util.UUID SppUuid =
+        Java.Util.UUID.FromString("00001101-0000-1000-8000-00805F9B34FB")!;
+
+    public async Task<IReadOnlyList<BluetoothPrinterEndpoint>> GetPrintersAsync(CancellationToken cancellationToken = default)
+    {
+        await EnsureBluetoothPermissionAsync();
+
+        var adapter = GetAdapter();
+        if (adapter is null || !adapter.IsEnabled)
+        {
+            throw new InvalidOperationException("Bluetooth desactivado. Activelo en los ajustes del equipo.");
+        }
+
+        var devices = adapter.BondedDevices;
+        if (devices is null)
+        {
+            return [];
+        }
+
+        return devices
+            .Where(device => !string.IsNullOrWhiteSpace(device.Address))
+            .Select(device => new BluetoothPrinterEndpoint
+            {
+                Id = device.Address!,
+                DisplayName = string.IsNullOrWhiteSpace(device.Name) ? device.Address! : device.Name!
+            })
+            .OrderBy(endpoint => endpoint.DisplayName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static async Task SendAsync(string address, byte[] payload, PrinterOptions options, CancellationToken cancellationToken)
+    {
+        _ = options; // BaudRate/paridad no aplican al socket Bluetooth.
+        await EnsureBluetoothPermissionAsync();
+
+        await Task.Run(() =>
+        {
+            var adapter = GetAdapter();
+            if (adapter is null || !adapter.IsEnabled)
+            {
+                throw new InvalidOperationException("Bluetooth desactivado. Activelo en los ajustes del equipo.");
+            }
+
+            var device = adapter.GetRemoteDevice(address)
+                ?? throw new InvalidOperationException("La impresora ya no esta vinculada. Vuelva a vincularla y seleccionela en Configuracion.");
+
+            using var socket = device.CreateRfcommSocketToServiceRecord(SppUuid)
+                ?? throw new InvalidOperationException("No se pudo crear la conexion Bluetooth con la impresora.");
+
+            try
+            {
+                // La busqueda activa de dispositivos hace lenta/inestable la conexion.
+                // En Android 12+ CancelDiscovery pide BLUETOOTH_SCAN (no declarado);
+                // si lo niega, se ignora: conectar sigue siendo posible.
+                try { adapter.CancelDiscovery(); } catch (Java.Lang.SecurityException) { }
+                socket.Connect();
+
+                if (payload.Length > 0)
+                {
+                    var stream = socket.OutputStream
+                        ?? throw new InvalidOperationException("No se pudo abrir el canal de datos con la impresora.");
+                    stream.Write(payload, 0, payload.Length);
+                    stream.Flush();
+
+                    // Da tiempo a que la impresora reciba todo antes de cerrar el
+                    // socket (algunas termicas pierden el final del ticket).
+                    Thread.Sleep(300);
+                }
+            }
+            finally
+            {
+                socket.Close();
+            }
+        }, cancellationToken);
+    }
+
+    private static BluetoothAdapter? GetAdapter()
+    {
+        var manager = Android.App.Application.Context.GetSystemService(Context.BluetoothService) as BluetoothManager;
+        return manager?.Adapter;
+    }
+
+    // Android 12+ exige el permiso BLUETOOTH_CONNECT en runtime; se pide la
+    // primera vez que se usa la impresora.
+    private static async Task EnsureBluetoothPermissionAsync()
+    {
+        if (!OperatingSystem.IsAndroidVersionAtLeast(31))
+        {
+            return;
+        }
+
+        var status = await MainThread.InvokeOnMainThreadAsync(() =>
+            Permissions.CheckStatusAsync<Permissions.Bluetooth>());
+
+        if (status != PermissionStatus.Granted)
+        {
+            status = await MainThread.InvokeOnMainThreadAsync(() =>
+                Permissions.RequestAsync<Permissions.Bluetooth>());
+        }
+
+        if (status != PermissionStatus.Granted)
+        {
+            throw new InvalidOperationException(
+                "Permiso de Bluetooth denegado. Autorice 'Dispositivos cercanos' para la app en los ajustes de Android.");
+        }
+    }
+
+    private static string TranslateError(string printerName, Exception exception) => exception switch
+    {
+        InvalidOperationException invalid => invalid.Message,
+        Java.IO.IOException =>
+            $"La impresora {printerName} no responde. Verifique que este encendida, con papel y dentro del alcance Bluetooth.",
+        OperationCanceledException =>
+            "Impresion cancelada.",
+        _ =>
+            $"Error al imprimir en {printerName}: {exception.Message}"
+    };
+
+#else
+
+    public Task<IReadOnlyList<BluetoothPrinterEndpoint>> GetPrintersAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<BluetoothPrinterEndpoint>>([]);
+
+    private static Task SendAsync(string endpointId, byte[] payload, PrinterOptions options, CancellationToken cancellationToken) =>
+        throw new PlatformNotSupportedException("La impresion Bluetooth solo esta disponible en Windows y Android.");
+
+    private static string TranslateError(string endpointId, Exception exception) => exception.Message;
+
 #endif
 }

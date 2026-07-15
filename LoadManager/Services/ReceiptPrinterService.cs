@@ -27,9 +27,8 @@ public sealed class ReceiptPrinterService(
         };
 
         var options = (await settingsProvider.GetSettingsAsync(cancellationToken)).Printer;
-        var useBluetooth = options.IsBluetoothMode && OperatingSystem.IsWindows();
 
-        return useBluetooth
+        return options.IsBluetoothMode
             ? await bluetoothPrinter.PrintAsync(job, cancellationToken)
             : await windowsPrinter.PrintAsync(job, cancellationToken);
     }
