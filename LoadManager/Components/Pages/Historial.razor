@@ -400,10 +400,24 @@
             }
             catch { }
 
-            var html = TicketHtmlBuilder.Build(record, ticketNumber);
-            var handled = await ReceiptPrinter.PrintHtmlAsync(html, $"Ticket_{record.Sequence}");
-            if (!handled)
-                await JsRuntime.InvokeVoidAsync("uaacPrintHtml", html);
+            // El router decide la ruta: dialogo del sistema o termica Bluetooth ESC/POS.
+            var outcome = await ReceiptPrinter.PrintReceiptAsync(record, ticketNumber, $"Ticket_{record.Sequence}");
+            if (!outcome.Handled && outcome.Html is not null)
+                await JsRuntime.InvokeVoidAsync("uaacPrintHtml", outcome.Html);
+
+            if (!outcome.Success)
+            {
+                ShowToast(outcome.ErrorMessage ?? "Error al imprimir.", false);
+                await Logger.WriteAsync(new AppLogEntry
+                {
+                    Level     = "Error",
+                    Service   = nameof(Historial),
+                    Message   = "Error al imprimir ticket.",
+                    RequestBody  = $"Sec={record.Sequence}; Ticket#{ticketNumber}",
+                    ResponseBody = $"{outcome.Route}: {outcome.ErrorMessage}"
+                });
+                return;
+            }
 
             await Logger.WriteAsync(new AppLogEntry
             {
@@ -411,7 +425,7 @@
                 Service = nameof(Historial),
                 Message = "Ticket impreso",
                 RequestBody  = $"Sec={record.Sequence}; Ticket#{ticketNumber}",
-                ResponseBody = handled ? "Impresora nativa" : "Ventana del navegador"
+                ResponseBody = outcome.Handled ? outcome.Route : "Ventana del navegador"
             });
         }
         catch (Exception ex)

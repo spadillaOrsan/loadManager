@@ -120,6 +120,14 @@ public sealed class AppSettingsService : IAppSettingsService
 
         current.Api.BaseUrl = UseText(current.Api.BaseUrl, defaults.Api.BaseUrl);
         current.Api.RequestTimeoutSeconds = UsePositive(current.Api.RequestTimeoutSeconds, defaults.Api.RequestTimeoutSeconds);
+
+        current.Printer.Mode = UseText(current.Printer.Mode, defaults.Printer.Mode);
+        current.Printer.BaudRate = UsePositive(current.Printer.BaudRate, defaults.Printer.BaudRate);
+        current.Printer.DataBits = UsePositive(current.Printer.DataBits, defaults.Printer.DataBits);
+        current.Printer.StopBits = UseText(current.Printer.StopBits, defaults.Printer.StopBits);
+        current.Printer.Parity = UseText(current.Printer.Parity, defaults.Printer.Parity);
+        current.Printer.PaperColumns = UsePositive(current.Printer.PaperColumns, defaults.Printer.PaperColumns);
+
         current.ConsoleLogs.BasePath = UseText(current.ConsoleLogs.BasePath, defaults.ConsoleLogs.BasePath);
 
         return current;
@@ -180,6 +188,14 @@ public sealed class AppSettingsService : IAppSettingsService
 
         EncryptString(jsonNode, "Api", "BaseUrl");
         EncryptNumber(jsonNode, "Api", "RequestTimeoutSeconds");
+
+        EncryptString(jsonNode, "Printer", "Mode");
+        EncryptString(jsonNode, "Printer", "ComPort");
+        EncryptNumber(jsonNode, "Printer", "BaudRate");
+        EncryptNumber(jsonNode, "Printer", "DataBits");
+        EncryptString(jsonNode, "Printer", "StopBits");
+        EncryptString(jsonNode, "Printer", "Parity");
+        EncryptNumber(jsonNode, "Printer", "PaperColumns");
     }
 
     private static void DecryptSettingsNode(JsonNode jsonNode)
@@ -215,6 +231,14 @@ public sealed class AppSettingsService : IAppSettingsService
 
         DecryptString(jsonNode, "Api", "BaseUrl");
         DecryptNumber(jsonNode, "Api", "RequestTimeoutSeconds");
+
+        DecryptString(jsonNode, "Printer", "Mode");
+        DecryptString(jsonNode, "Printer", "ComPort");
+        DecryptNumber(jsonNode, "Printer", "BaudRate");
+        DecryptNumber(jsonNode, "Printer", "DataBits");
+        DecryptString(jsonNode, "Printer", "StopBits");
+        DecryptString(jsonNode, "Printer", "Parity");
+        DecryptNumber(jsonNode, "Printer", "PaperColumns");
     }
 
     private static void EncryptString(JsonNode jsonNode, string section, string property)

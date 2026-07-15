@@ -2005,19 +2005,32 @@
                 });
             }
 
-            var html = TicketHtmlBuilder.Build(record, ticketNumber);
-
-            var handled = await ReceiptPrinter.PrintHtmlAsync(html, $"Ticket_{folio}");
-            if (!handled)
+            // El router decide la ruta: dialogo del sistema o termica Bluetooth ESC/POS.
+            var outcome = await ReceiptPrinter.PrintReceiptAsync(record, ticketNumber, $"Ticket_{folio}");
+            if (!outcome.Handled && outcome.Html is not null)
             {
-                await JsRuntime.InvokeVoidAsync("uaacPrintHtml", html);
+                await JsRuntime.InvokeVoidAsync("uaacPrintHtml", outcome.Html);
+            }
+
+            if (!outcome.Success)
+            {
+                ShowToast(outcome.ErrorMessage ?? "No fue posible imprimir el ticket.", false);
+                await Logger.WriteAsync(new AppLogEntry
+                {
+                    Level = "Error",
+                    Service = "Despacho.ImprimirTicket",
+                    Message = "Fallo al imprimir el ticket.",
+                    RequestBody = $"folio={folio}",
+                    Exception = $"{outcome.Route}: {outcome.ErrorMessage}"
+                });
+                return;
             }
 
             await Logger.WriteAsync(new AppLogEntry
             {
                 Level = "Success",
                 Service = "Despacho.ImprimirTicket",
-                Message = $"Ticket enviado a impresion (nativo={handled}, ticket#={ticketNumber}).",
+                Message = $"Ticket enviado a impresion (ruta={outcome.Route}, ticket#={ticketNumber}).",
                 RequestBody = $"folio={folio}"
             });
         }

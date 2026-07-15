@@ -8,5 +8,7 @@ public sealed class AppSettings
 
     public ApiOptions Api { get; set; } = new();
 
+    public PrinterOptions Printer { get; set; } = new();
+
     public ConsoleLogOptions ConsoleLogs { get; set; } = new();
 }
