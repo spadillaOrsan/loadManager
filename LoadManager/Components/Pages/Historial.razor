@@ -145,6 +145,18 @@
     </div>
 }
 
+@if (isPrinting)
+{
+    <div class="app-modal-backdrop blocking-alert-backdrop">
+        <section class="app-modal hose-alert" role="alertdialog" aria-modal="true" aria-live="assertive">
+            <span class="loading-spinner" aria-hidden="true"></span>
+            <h2>Imprimiendo ticket</h2>
+            <p>Espere un momento...</p>
+            <span>La pantalla permanecera bloqueada hasta terminar la impresion.</span>
+        </section>
+    </div>
+}
+
 @code {
     private readonly CultureInfo culture = CultureInfo.GetCultureInfo("es-MX");
 
@@ -365,6 +377,7 @@
         }
 
         isPrinting = true;
+        await InvokeAsync(StateHasChanged);
         try
         {
             await PrintRecordAsync(record);
