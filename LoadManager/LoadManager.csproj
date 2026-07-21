@@ -14,6 +14,10 @@
 
     <EnableDefaultCssItems>false</EnableDefaultCssItems>
 
+    <!-- Evita que builds descartables en artifacts/ o build-check-*/ (ver README) sean
+         globbeados como fuente del proyecto y rompan el scoped-css discovery (BLAZOR102). -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);artifacts/**;build-check-*/**</DefaultItemExcludes>
+
     <ApplicationTitle>LoadManager</ApplicationTitle>
     <ApplicationId>com.companyname.loadmanager</ApplicationId>
 

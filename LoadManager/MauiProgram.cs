@@ -1,6 +1,7 @@
 using LoadManager.Services;
 using LoadManager.Services.Interfaces;
 using Microsoft.Extensions.Logging;
+using Microsoft.Maui.LifecycleEvents;
 
 namespace LoadManager
 {
@@ -36,6 +37,30 @@ namespace LoadManager
             builder.Services.AddSingleton<IConnectionValidationService, ConnectionValidationService>();
             builder.Services.AddSingleton<IDevModeService, DevModeService>();
             builder.Services.AddSingleton<IActiveDispatchTracker, ActiveDispatchTracker>();
+
+#if WINDOWS
+            // Se usa el hook de ciclo de vida OnWindowCreated (en vez de Window.HandlerChanged en
+            // App.xaml.cs) porque ese ultimo dispara antes de que MAUI termine de inicializar la
+            // ventana nativa: los cambios de presenter/titulo se aplicaban pero Windows los
+            // pisaba despues, y la barra de titulo seguia apareciendo pese a probar varias APIs.
+            builder.ConfigureLifecycleEvents(events =>
+            {
+                events.AddWindows(windows => windows.OnWindowCreated(nativeWindow =>
+                {
+                    nativeWindow.ExtendsContentIntoTitleBar = true;
+
+                    var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(nativeWindow);
+                    var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
+                    var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
+
+                    if (appWindow.Presenter is Microsoft.UI.Windowing.OverlappedPresenter presenter)
+                    {
+                        presenter.SetBorderAndTitleBar(hasBorder: false, hasTitleBar: false);
+                        presenter.Maximize();
+                    }
+                }));
+            });
+#endif
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();

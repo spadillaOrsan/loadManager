@@ -3,19 +3,6 @@
 @inject IActiveDispatchTracker DispatchTracker
 @implements IDisposable
 
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        @if (IsDispatchActive)
-        {
-            <span class="navbar-brand">Administrador de cargas</span>
-        }
-        else
-        {
-            <a class="navbar-brand" href="">Administrador de cargas</a>
-        }
-    </div>
-</div>
-
 <input type="checkbox" id="nav-menu-toggle" title="Navigation menu" class="navbar-toggler"
        disabled="@IsDispatchActive" />
 <label for="nav-menu-toggle" class="navbar-toggler-button @(IsDispatchActive ? "is-disabled" : string.Empty)"
@@ -52,13 +39,25 @@
         </div>
     </nav>
 
-    <button class="nav-settings-button" type="button" @onclick="OpenConfigurationGate" title="Configuracion">
-        <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
-            <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1A2 2 0 1 1 4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1A2 2 0 1 1 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1A2 2 0 1 1 19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.1a2 2 0 1 1 0 4H21a1.7 1.7 0 0 0-1.6 1Z" />
-        </svg>
-        <span>Configuracion</span>
-    </button>
+    <div class="nav-bottom-actions">
+        <button class="nav-settings-button" type="button" @onclick="OpenConfigurationGate" title="Configuracion">
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
+                <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1A2 2 0 1 1 4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1A2 2 0 1 1 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1A2 2 0 1 1 19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.1a2 2 0 1 1 0 4H21a1.7 1.7 0 0 0-1.6 1Z" />
+            </svg>
+            <span>Configuracion</span>
+        </button>
+
+        <button class="nav-settings-button nav-exit-button" type="button" @onclick="OpenExitConfirm"
+                title="Salir" disabled="@IsDispatchActive">
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <path d="M16 17l5-5-5-5" />
+                <path d="M21 12H9" />
+            </svg>
+            <span>Salir</span>
+        </button>
+    </div>
 </div>
 
 @if (showConfigurationGate)
@@ -119,6 +118,27 @@
     </div>
 }
 
+@if (showExitConfirm)
+{
+    <div class="app-modal-backdrop">
+        <section class="app-modal config-gate" role="dialog" aria-modal="true">
+            <header>
+                <h2>Salir de la aplicacion</h2>
+                <p>¿Seguro que queres cerrar ADM CARGAS?</p>
+            </header>
+
+            <div class="config-gate-actions">
+                <button class="btn btn-outline-danger action-button" type="button" @onclick="CloseExitConfirm">
+                    Cancelar
+                </button>
+                <button class="btn btn-primary action-button" type="button" @onclick="ConfirmExit">
+                    Salir
+                </button>
+            </div>
+        </section>
+    </div>
+}
+
 @code {
     private bool IsDispatchActive => DispatchTracker.ActiveDispenser is not null;
 
@@ -175,5 +195,27 @@
 
         CloseConfigurationGate();
         NavigationManager.NavigateTo("configuracion");
+    }
+
+    private bool showExitConfirm;
+
+    private void OpenExitConfirm()
+    {
+        if (IsDispatchActive)
+        {
+            return;
+        }
+
+        showExitConfirm = true;
+    }
+
+    private void CloseExitConfirm()
+    {
+        showExitConfirm = false;
+    }
+
+    private void ConfirmExit()
+    {
+        Microsoft.Maui.Controls.Application.Current?.Quit();
     }
 }

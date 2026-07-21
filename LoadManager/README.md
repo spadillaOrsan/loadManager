@@ -117,6 +117,9 @@ Detalles de la ruta térmica (`BluetoothEscPosPrinterService`):
 - **Enumeración automática**: en Windows solo lista COMs Bluetooth (intersección de
   `SerialPort.GetPortNames()` con el registro `BTHENUM`); en Android lista los dispositivos
   vinculados por nombre (`BondedDevices`). Botones "Actualizar" y "Probar conexión" en la UI.
+- **Agnóstico a la marca**: no hay whitelist ni matching por nombre/modelo — cualquier impresora
+  térmica que se empareje por Bluetooth SPP y entienda ESC/POS estándar funciona (p. ej. las
+  genéricas chinas tipo **Speed**, Xprinter, Goojprt, etc.), sin cambios de código.
 - El ticket ESC/POS (`TicketEscPosBuilder`) replica el contenido de `TicketHtmlBuilder`:
   solo texto + corte de papel; el builder también soporta QR y CODE128 (sin usar aún).
   Texto normalizado a ASCII para no depender del codepage de la impresora.

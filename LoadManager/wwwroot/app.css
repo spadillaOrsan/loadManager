@@ -2366,21 +2366,16 @@ a, .btn-link {
     align-items: center;
     background: rgba(15, 23, 42, 0.55);
     display: flex;
-    bottom: 0;
-    height: 100vh;
-    height: 100dvh;
+    /* inset:0 en position:fixed ya estira el elemento a los cuatro bordes exactos del
+       viewport. No usar 100vw/100vh aca: en WebView2 (Windows) esas unidades pueden
+       resolverse mas grandes que window.innerWidth/innerHeight (visto 1.25x de mas),
+       corriendo el centro del modal fuera de la pantalla visible. */
     inset: 0;
     justify-content: center;
-    left: 0;
-    min-height: 100vh;
-    min-height: 100dvh;
     overflow-y: auto;
     padding: calc(1rem + env(safe-area-inset-top)) 1rem calc(1rem + env(safe-area-inset-bottom));
     pointer-events: auto;
     position: fixed !important;
-    right: 0;
-    top: 0;
-    width: 100vw;
     z-index: 2147483000;
 }
 

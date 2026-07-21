@@ -10,33 +10,10 @@ namespace LoadManager
             InitializeComponent();
         }
 
-        protected override Window CreateWindow(IActivationState? activationState)
-        {
-            var window = new Window(new MainPage()) { Title = "ADM CARGAS" };
-
-#if WINDOWS
-            // En Windows (tablet GETAC) la ventana debe abarcar toda la pantalla:
-            // se maximiza al crearse el handler nativo.
-            window.HandlerChanged += (_, _) =>
-            {
-                if (window.Handler?.PlatformView is not Microsoft.UI.Xaml.Window nativeWindow)
-                {
-                    return;
-                }
-
-                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(nativeWindow);
-                var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
-                var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
-
-                if (appWindow.Presenter is Microsoft.UI.Windowing.OverlappedPresenter presenter)
-                {
-                    presenter.Maximize();
-                }
-            };
-#endif
-
-            return window;
-        }
+        // En Windows, la ventana se pone en pantalla completa sin barra de titulo (tablet GETAC)
+        // via el hook OnWindowCreated configurado en MauiProgram.cs.
+        protected override Window CreateWindow(IActivationState? activationState) =>
+            new(new MainPage()) { Title = "ADM CARGAS" };
 
         // Al pasar a segundo plano: si el Modo DEV tiene activado "Cancelar carga al
         // pasar a segundo plano", cancela la carga activa en la consola (best-effort).
