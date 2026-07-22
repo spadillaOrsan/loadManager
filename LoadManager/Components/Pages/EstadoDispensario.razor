@@ -5,25 +5,25 @@
 @inject IGasStationService ConsoleClient
 @inject IAppSettingsService SettingsProvider
 
-<PageTitle>Estado de dispensario</PageTitle>
+<PageTitle>Estado de @dispenserLabel</PageTitle>
 
 <section class="console-shell">
     <header class="console-header">
         <div>
-            <h1>Estado de dispensario</h1>
+            <h1>Estado de @dispenserLabel</h1>
         </div>
     </header>
 
     <section class="dispensers-panel">
         <div class="panel-heading status-panel-heading">
-            <h2>Dispensarios</h2>
+            <h2>@dispenserLabel</h2>
             <div class="status-query-controls">
                 <span>@GetSelectedSummary()</span>
                 <button class="btn btn-outline-secondary status-query-button" @onclick="OpenLogsAsync">
                     Logs del dia
                 </button>
                 <button class="btn btn-outline-secondary status-query-button" @onclick="LoadDispensersFromSummaryAsync" disabled="@isLoadingDispensers">
-                    @(isLoadingDispensers ? "Consultando..." : "1.-Consultar dispensarios")
+                    @(isLoadingDispensers ? "Consultando..." : $"1.-Consultar {dispenserLabel}")
                 </button>
                 <button class="btn btn-primary status-query-button" @onclick="ConsultSelectedAsync" disabled="@(!CanConsult)">
                     @(isConsulting ? "Consultando..." : "2.-Consultar")
@@ -34,7 +34,7 @@
         <div class="dispensers-grid">
             @if (dispensers.Count == 0)
             {
-                <p class="empty-message">Consulte dispensarios para seleccionar uno.</p>
+                <p class="empty-message">Consulte @dispenserLabel para seleccionar uno.</p>
             }
             else
             {
@@ -166,11 +166,13 @@
     private string? toastMessage;
     private string toastCss = "is-success";
     private int toastDurationMilliseconds;
+    private string dispenserLabel = "Dispensario";
 
     protected override async Task OnInitializedAsync()
     {
         var settings = await SettingsProvider.GetSettingsAsync(pageCancellation.Token);
         toastDurationMilliseconds = settings.AppConfiguration.ToastDurationMilliseconds;
+        dispenserLabel = settings.AppConfiguration.DispenserLabel;
     }
 
     private async Task LoadDispensersFromSummaryAsync()
@@ -458,7 +460,7 @@
     private string GetSelectedSummary()
     {
         return string.IsNullOrWhiteSpace(selectedDispenser)
-            ? "Seleccione dispensario"
+            ? $"Seleccione {dispenserLabel}"
             : $"Seleccionado {selectedDispenser}";
     }
 

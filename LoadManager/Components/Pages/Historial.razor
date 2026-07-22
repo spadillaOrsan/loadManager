@@ -17,7 +17,7 @@
             <div class="historial-panel-heading">
                 <div>
                     <h2 class="historial-panel-title">Historial de cargas</h2>
-                    <p class="historial-panel-sub">@availableDispensers.Count Dispensarios &nbsp;·&nbsp; ↓ Desliza hacia abajo</p>
+                    <p class="historial-panel-sub">@availableDispensers.Count @dispenserLabel &nbsp;·&nbsp; ↓ Desliza hacia abajo</p>
                 </div>
             </div>
             <div class="dispensers-grid">
@@ -28,7 +28,7 @@
                             disabled="@isLoading">
                         <img src="images/dispensers/inactivo.png" alt="" />
                         <div class="dispenser-text">
-                            <span class="dispenser-number">Dispensario @d.ToString("D2")</span>
+                            <span class="dispenser-number">@dispenserLabel @d.ToString("D2")</span>
                         </div>
                     </button>
                 }
@@ -40,7 +40,7 @@
             <div class="historial-panel-heading">
                 <div>
                     <h2 class="historial-panel-title">Producto</h2>
-                    <p class="historial-panel-sub">Dispensario @selectedDispenser.ToString("D2") &nbsp;·&nbsp; @availableProducts.Count productos  &nbsp;·&nbsp; ↓ Desliza hacia abajo</p>
+                    <p class="historial-panel-sub">@dispenserLabel @selectedDispenser.ToString("D2") &nbsp;·&nbsp; @availableProducts.Count productos  &nbsp;·&nbsp; ↓ Desliza hacia abajo</p>
                 </div>
                 <button class="btn btn-outline-secondary historial-back-btn" @onclick="() => GoToStage(1)">
                     ← Volver
@@ -49,10 +49,10 @@
             <div class="dispensers-grid">
                 @foreach (var p in availableProducts)
                 {
-                    <button class="dispenser-card is-available @FuelProductHelper.GetCssClass(p.Description) @(selectedProduct == p.Id ? "is-selected" : null)"
+                    <button class="dispenser-card is-available @p.CssClass @(selectedProduct == p.Id ? "is-selected" : null)"
                             @onclick="() => SelectProductAsync(p.Id)"
                             disabled="@isLoading">
-                        <img src="@FuelProductHelper.GetImagePath(p.Description)" alt="" />
+                        <img src="@p.ImagePath" alt="" />
                         <div class="dispenser-text">
                             <span class="dispenser-number">@p.Description</span>
                         </div>
@@ -165,12 +165,14 @@
     private bool printEnabled => !DevMode.IsPrintButtonHidden;
 
     private List<int> availableDispensers = [];
-    private List<DispatchTypeOption> availableProducts = [];
+    private List<HistorialProductViewModel> availableProducts = [];
 
     private int selectedDispenser;
     private int selectedProduct;
 
     private int historialTop = 3;
+    private string dispenserLabel = "Dispensario";
+    private AppConfigurationOptions productNameConfig = new();
 
     private string SelectedProductDescription =>
         availableProducts.FirstOrDefault(p => p.Id == selectedProduct)?.Description ?? selectedProduct.ToString();
@@ -194,6 +196,8 @@
             var settings = await SettingsProvider.GetSettingsAsync();
             historialTop = settings.AppConfiguration.HistorialTopRecords;
             availableDispensers = GetConfiguredDispenserNumbers(settings.AppConfiguration);
+            dispenserLabel = settings.AppConfiguration.DispenserLabel;
+            productNameConfig = settings.AppConfiguration;
         }
         finally
         {
@@ -213,13 +217,17 @@
         {
             var hoseData = await GasStationService.GetDispenserProductsAsync(selectedDispenser);
             availableProducts = hoseData
-                .Select(h => new DispatchTypeOption { Id = h.ProductId, Description = h.Description })
+                .Select(h => new HistorialProductViewModel(
+                    Id: h.ProductId,
+                    Description: ProductNameHelper.ResolveDisplayName(h.Description, productNameConfig),
+                    CssClass: FuelProductHelper.GetCssClass(h.Description),
+                    ImagePath: FuelProductHelper.GetImagePath(h.Description)))
                 .DistinctBy(p => p.Id)
                 .ToList();
 
             if (availableProducts.Count == 0)
             {
-                ShowToast("No se encontraron productos para este dispensario.", false);
+                ShowToast($"No se encontraron productos para este {dispenserLabel}.", false);
                 return;
             }
 

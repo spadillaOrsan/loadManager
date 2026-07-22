@@ -117,6 +117,7 @@ public sealed class AppSettingsService : IAppSettingsService
         current.AppConfiguration.HistorialTopRecords = current.AppConfiguration.HistorialTopRecords is >= 3 and <= 15
             ? current.AppConfiguration.HistorialTopRecords
             : defaults.AppConfiguration.HistorialTopRecords;
+        current.AppConfiguration.DispenserLabel = UseText(current.AppConfiguration.DispenserLabel, defaults.AppConfiguration.DispenserLabel);
 
         current.Api.BaseUrl = UseText(current.Api.BaseUrl, defaults.Api.BaseUrl);
         current.Api.RequestTimeoutSeconds = UsePositive(current.Api.RequestTimeoutSeconds, defaults.Api.RequestTimeoutSeconds);
@@ -185,6 +186,9 @@ public sealed class AppSettingsService : IAppSettingsService
         EncryptString(jsonNode, "AppConfiguration", "DispenserNumbers");
         EncryptString(jsonNode, "AppConfiguration", "ConfigurationPasswordHash");
         EncryptNumber(jsonNode, "AppConfiguration", "HistorialTopRecords");
+        EncryptString(jsonNode, "AppConfiguration", "DispenserLabel");
+        EncryptBoolean(jsonNode, "AppConfiguration", "UseCustomProductNames");
+        EncryptDictionaryValues(jsonNode, "AppConfiguration", "ProductNameOverrides");
 
         EncryptString(jsonNode, "Api", "BaseUrl");
         EncryptNumber(jsonNode, "Api", "RequestTimeoutSeconds");
@@ -230,6 +234,9 @@ public sealed class AppSettingsService : IAppSettingsService
         DecryptString(jsonNode, "AppConfiguration", "DispenserNumbers");
         DecryptString(jsonNode, "AppConfiguration", "ConfigurationPasswordHash");
         DecryptNumber(jsonNode, "AppConfiguration", "HistorialTopRecords");
+        DecryptString(jsonNode, "AppConfiguration", "DispenserLabel");
+        DecryptBoolean(jsonNode, "AppConfiguration", "UseCustomProductNames");
+        DecryptDictionaryValues(jsonNode, "AppConfiguration", "ProductNameOverrides");
 
         DecryptString(jsonNode, "Api", "BaseUrl");
         DecryptNumber(jsonNode, "Api", "RequestTimeoutSeconds");

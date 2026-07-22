@@ -1,14 +1,23 @@
+/* El shell queda fijo al tamano de la ventana (no es un documento que scrollea):
+   asi el sidebar nunca se mueve y solo "article.content" hace scroll interno,
+   sin importar cuanto contenido tenga una pantalla (ej. Configuracion). */
 .page {
-    position: relative;
+    position: fixed;
+    inset: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 main {
     flex: 1;
+    min-height: 0;
+    overflow: hidden;
 }
 
 article.content {
+    height: 100%;
+    overflow-y: auto;
     padding-bottom: calc(5vh + env(safe-area-inset-bottom));
 }
 
@@ -16,6 +25,12 @@ article.content {
     background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
     position: relative;
     z-index: 1100;
+    /* En pantallas angostas (celular) el unico contenido en flujo normal del sidebar
+       es el boton hamburguesa, que es position:absolute y no le da altura al
+       contenedor. Sin este alto minimo el sidebar colapsa a 0px y el boton termina
+       flotando encima del contenido de la pagina (se vio pisando el stepper en
+       Android) en vez de tener su propia franja arriba. */
+    min-height: 3.5rem;
 }
 
 .theme-red .sidebar {
@@ -213,9 +228,7 @@ article.content {
 
     .sidebar {
         width: 250px;
-        height: 100vh;
-        position: sticky;
-        top: 0;
+        height: 100%;
         display: flex;
         flex-direction: column;
     }

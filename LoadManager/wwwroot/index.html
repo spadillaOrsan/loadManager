@@ -117,6 +117,48 @@
                 active.blur();
             }, true);
         };
+
+        // El scroll real vive en "article.content" (el shell de la app es fijo, ver
+        // MainLayout.razor.css), asi que el boton "subir arriba" scrollea ese panel,
+        // no la ventana.
+        window.uaacScrollContentToTop = function () {
+            var content = document.querySelector("article.content");
+            if (content) {
+                content.scrollTo({ top: 0, behavior: "smooth" });
+            }
+        };
+
+        // Muestra el boton "subir arriba" solo cuando el scroll paso la mitad del
+        // contenido. Recalcula en "resize" ademas de "scroll" porque en distintos
+        // dispositivos/orientaciones cambia cuanto mide el scroll disponible.
+        function uaacUpdateScrollTopButtonVisibility() {
+            var content = document.querySelector("article.content");
+            var button = document.querySelector(".scroll-top-button");
+            if (!content || !button) {
+                return;
+            }
+
+            var maxScroll = content.scrollHeight - content.clientHeight;
+            var pastHalf = maxScroll > 0 && content.scrollTop >= maxScroll / 2;
+            button.classList.toggle("is-visible", pastHalf);
+        }
+
+        window.uaacSetupScrollTopButton = function () {
+            uaacUpdateScrollTopButtonVisibility();
+
+            if (window.__uaacScrollTopHandlerAttached) {
+                return;
+            }
+
+            var content = document.querySelector("article.content");
+            if (!content) {
+                return;
+            }
+
+            window.__uaacScrollTopHandlerAttached = true;
+            content.addEventListener("scroll", uaacUpdateScrollTopButtonVisibility);
+            window.addEventListener("resize", uaacUpdateScrollTopButtonVisibility);
+        };
     </script>
 
     <script src="_framework/blazor.webview.js" autostart="false"></script>

@@ -6,6 +6,7 @@
 @inject IDevModeService DevMode
 @inject IBluetoothEscPosPrinterService BluetoothPrinter
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
 
 <PageTitle>Configuracion</PageTitle>
 
@@ -153,9 +154,13 @@
                         <span>Registros en historial (3–15)</span>
                         <input type="number" @bind="historialTopRecords" min="3" max="15" />
                     </label>
+                    <label class="settings-field">
+                        <span>Nombre del dispensario</span>
+                        <input type="text" @bind="dispenserLabel" placeholder="Ej: Dispensario, Isla, Bomba" />
+                    </label>
                     <div class="settings-field">
                         <div class="settings-field-head">
-                            <span>#Dispensarios</span>
+                            <span>#@DispenserLabelOrDefault</span>
                             <span class="switch-inline">
                                 <span class="switch-inline-label">Rellenar</span>
                                 <button type="button"
@@ -176,6 +181,51 @@
                             <input type="text" @bind="dispenserNumbers" placeholder="Numeros especificos. Ej: 2,4,6,20,13" />
                         }
                     </div>
+
+                    <div class="settings-field">
+                        <div class="settings-field-head">
+                            <span>Usar nombres personalizados de producto</span>
+                            <span class="switch-inline">
+                                <button type="button"
+                                        class="switch @(useCustomProductNames ? "is-on" : string.Empty)"
+                                        @onclick="ToggleUseCustomProductNamesAsync"
+                                        aria-pressed="@useCustomProductNames"
+                                        aria-label="Usar nombres personalizados de producto">
+                                    <span class="switch-track"><span class="switch-thumb"></span></span>
+                                </button>
+                            </span>
+                        </div>
+                    </div>
+
+                    @if (useCustomProductNames)
+                    {
+                        @if (productCatalog.Count == 0)
+                        {
+                            <p class="empty-message">
+                                @(isLoadingProductCatalog ? "Consultando productos..." : "No se encontraron productos activos.")
+                            </p>
+                        }
+                        else
+                        {
+                            @foreach (var product in productCatalog)
+                            {
+                                <label class="settings-field">
+                                    <span>@product.Description</span>
+                                    <input type="text"
+                                           value="@GetProductOverride(product.Description)"
+                                           @oninput="e => SetProductOverride(product.Description, e.Value?.ToString() ?? string.Empty)"
+                                           placeholder="@product.Description" />
+                                </label>
+                            }
+                        }
+
+                        <div class="settings-actions">
+                            <button class="btn btn-outline-secondary action-button" type="button"
+                                    @onclick="LoadProductCatalogAsync" disabled="@isLoadingProductCatalog">
+                                @(isLoadingProductCatalog ? "Buscando..." : "Actualizar productos")
+                            </button>
+                        </div>
+                    }
                 </div>
             }
         </section>
@@ -304,6 +354,14 @@
     </div>
 </section>
 
+<button class="scroll-top-button" type="button" @onclick="ScrollToTopAsync"
+        title="Subir arriba" aria-label="Subir arriba">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 19V5" />
+        <path d="M5 12l7-7 7 7" />
+    </svg>
+</button>
+
 @if (!string.IsNullOrWhiteSpace(toastMessage))
 {
     <div class="app-toast @toastCss">@toastMessage</div>
@@ -350,6 +408,16 @@
     private int dispenserCount;
     private bool dispenserFillSequential = true;
     private string dispenserNumbers = string.Empty;
+    private string dispenserLabel = string.Empty;
+
+    private string DispenserLabelOrDefault =>
+        string.IsNullOrWhiteSpace(dispenserLabel) ? "Dispensario" : dispenserLabel;
+
+    private bool useCustomProductNames;
+    private Dictionary<string, string> productNameOverrides = new();
+    private List<DispatchTypeOption> productCatalog = [];
+    private bool isLoadingProductCatalog;
+
     private string apiBaseHost = string.Empty;
     private int apiPort;
     private int apiRequestTimeoutSeconds;
@@ -393,7 +461,7 @@
         ("Saltar conexion TCP/IP", () => DevMode.SkipTcpConnection, v => DevMode.SkipTcpConnection = v),
         ("Saltar base de datos (BD)", () => DevMode.SkipDatabase, v => DevMode.SkipDatabase = v),
         // ("Saltar autorizacion del equipo", () => DevMode.SkipDeviceAuthorization, v => DevMode.SkipDeviceAuthorization = v),
-        ("Saltar comunicacion de dispensarios", () => DevMode.SkipDispenserCommunication, v => DevMode.SkipDispenserCommunication = v),
+        ($"Saltar comunicacion de {DispenserLabelOrDefault}", () => DevMode.SkipDispenserCommunication, v => DevMode.SkipDispenserCommunication = v),
         ("Saltar tipos de despacho y productos", () => DevMode.SkipDispatchTypesAndProducts, v => DevMode.SkipDispatchTypesAndProducts = v),
         ("Saltar registro/envio de autorizacion", () => DevMode.SkipSendAuthorization, v => DevMode.SkipSendAuthorization = v),
         ("Tratar respuesta de consola como autorizada", () => DevMode.SkipAuthorizationResponse, v => DevMode.SkipAuthorizationResponse = v),
@@ -508,7 +576,11 @@
                 DispenserCount = current.AppConfiguration.DispenserCount,
                 DispenserFillSequential = current.AppConfiguration.DispenserFillSequential,
                 DispenserNumbers = current.AppConfiguration.DispenserNumbers,
-                ConfigurationPasswordHash = current.AppConfiguration.ConfigurationPasswordHash
+                ConfigurationPasswordHash = current.AppConfiguration.ConfigurationPasswordHash,
+                HistorialTopRecords = current.AppConfiguration.HistorialTopRecords,
+                DispenserLabel = current.AppConfiguration.DispenserLabel,
+                UseCustomProductNames = current.AppConfiguration.UseCustomProductNames,
+                ProductNameOverrides = new Dictionary<string, string>(current.AppConfiguration.ProductNameOverrides)
             },
             Api = new ApiOptions
             {
@@ -548,6 +620,9 @@
         dispenserCount = settings.AppConfiguration.DispenserCount;
         dispenserFillSequential = settings.AppConfiguration.DispenserFillSequential;
         dispenserNumbers = settings.AppConfiguration.DispenserNumbers;
+        dispenserLabel = settings.AppConfiguration.DispenserLabel;
+        useCustomProductNames = settings.AppConfiguration.UseCustomProductNames;
+        productNameOverrides = new Dictionary<string, string>(settings.AppConfiguration.ProductNameOverrides);
         apiRequestTimeoutSeconds = settings.Api.RequestTimeoutSeconds;
         toastDurationMilliseconds = settings.AppConfiguration.ToastDurationMilliseconds;
         databaseIsConnected = ConnectionState.DatabaseIsConnected;
@@ -576,6 +651,14 @@
         }
 
         ParseApiUrl(settings.Api.BaseUrl);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JsRuntime.InvokeVoidAsync("uaacSetupScrollTopButton");
+        }
     }
 
     private void ParseApiUrl(string url)
@@ -648,6 +731,54 @@
         if (printerMode == PrinterOptions.ModeBluetoothCom)
         {
             await RefreshPrinterEndpointsAsync();
+        }
+    }
+
+    private async Task ScrollToTopAsync()
+    {
+        await JsRuntime.InvokeVoidAsync("uaacScrollContentToTop");
+    }
+
+    private async Task ToggleUseCustomProductNamesAsync()
+    {
+        useCustomProductNames = !useCustomProductNames;
+
+        if (useCustomProductNames && productCatalog.Count == 0)
+        {
+            await LoadProductCatalogAsync();
+        }
+    }
+
+    private async Task LoadProductCatalogAsync()
+    {
+        isLoadingProductCatalog = true;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            productCatalog = (await ConsoleClient.GetActiveProductsAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            ShowToast(ex.Message, false);
+        }
+        finally
+        {
+            isLoadingProductCatalog = false;
+        }
+    }
+
+    private string GetProductOverride(string description) =>
+        productNameOverrides.TryGetValue(description, out var value) ? value : string.Empty;
+
+    private void SetProductOverride(string description, string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            productNameOverrides.Remove(description);
+        }
+        else
+        {
+            productNameOverrides[description] = value.Trim();
         }
     }
 
@@ -767,6 +898,7 @@
 
         if (tpv <= 0 || usuario <= 0 || tipoVenta <= 0
             || string.IsNullOrWhiteSpace(tipoInterfaz)
+            || string.IsNullOrWhiteSpace(dispenserLabel)
             || limiteImporte <= 0 || limiteLitros <= 0 || cantidadTanqueLleno <= 0
             || quantityDecimals is < 0 or > 6
             || (DevMode.ShouldShowCountdown && authorizationCountdownSeconds <= 0)
@@ -798,8 +930,8 @@
         if (dispenserFillSequential ? dispenserCount <= 0 : dispenserNumberList.Count == 0)
         {
             ShowToast(dispenserFillSequential
-                ? "Capture una cantidad de dispensarios mayor a 0."
-                : "Capture numeros de dispensario validos (ej. 2,4,6,20,13).", false);
+                ? $"Capture una cantidad de {dispenserLabel} mayor a 0."
+                : $"Capture numeros de {dispenserLabel} validos (ej. 2,4,6,20,13).", false);
             return false;
         }
 
@@ -809,6 +941,9 @@
         settings.AppConfiguration.Usuario = usuario;
         settings.AppConfiguration.TipoVenta = tipoVenta;
         settings.AppConfiguration.TipoInterfaz = tipoInterfaz.Trim();
+        settings.AppConfiguration.DispenserLabel = dispenserLabel.Trim();
+        settings.AppConfiguration.UseCustomProductNames = useCustomProductNames;
+        settings.AppConfiguration.ProductNameOverrides = new Dictionary<string, string>(productNameOverrides);
         settings.AppConfiguration.LimiteImporte = limiteImporte;
         settings.AppConfiguration.LimiteLitros = limiteLitros;
         settings.AppConfiguration.CantidadTanqueLleno = cantidadTanqueLleno;

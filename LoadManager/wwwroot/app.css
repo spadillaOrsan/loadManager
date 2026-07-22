@@ -1516,6 +1516,47 @@ a, .btn-link {
     gap: 0.35rem;
 }
 
+/* Montos rapidos debajo del input: reusa los colores/tema de .amount-mode, pero en
+   una sola fila horizontal (no grid con wrap). Si no entran todos en pantallas
+   angostas, la fila scrollea horizontal en vez de amontonarse en varias lineas. */
+/* Windows (tablet, pantalla ancha): una sola fila, centrada porque sobra espacio. */
+.quick-amount-group {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 0.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.15rem;
+}
+
+.amount-mode.quick-amount-button {
+    flex: 1 1 0;
+    font-weight: 700;
+    /* % del contenedor (no vw/vh: ver nota de UI/Responsive del README) para que
+       escale de verdad con el ancho disponible en vez de quedar fijo. */
+    max-width: 12%;
+    min-height: 2.6rem;
+    min-width: 3rem;
+    padding: 0.4rem 0.4rem;
+}
+
+/* Android (celular, pantalla angosta): 2 filas horizontales de 3 en vez de 1 fila
+   larga o con scroll. */
+@media (max-width: 640.98px) {
+    .quick-amount-group {
+        flex-wrap: wrap;
+        justify-content: stretch;
+        overflow-x: visible;
+    }
+
+    .amount-mode.quick-amount-button {
+        flex: 0 0 calc((100% - 2 * 0.5rem) / 3);
+        max-width: none;
+        min-width: 0;
+    }
+}
+
 .amount-input-wrap > span {
     color: #667684;
     font-size: 0.78rem;
@@ -2464,6 +2505,67 @@ a, .btn-link {
     color: #64748b;
     font-size: 0.85rem;
     font-weight: 700;
+}
+
+/* Boton flotante "subir arriba" de Configuracion: circular, esquina inferior derecha,
+   no tapa el sidebar (queda del lado izquierdo) ni los botones del pie de pantalla.
+   Oculto por defecto: JS (uaacSetupScrollTopButton) le agrega "is-visible" recien
+   cuando el scroll pasa la mitad del contenido disponible. El bottom/right suman
+   env(safe-area-inset-*) para no quedar tapado por gestos/notch en tablets Android. */
+.scroll-top-button {
+    align-items: center;
+    background: rgba(15, 23, 42, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 999px;
+    bottom: calc(1.5rem + env(safe-area-inset-bottom));
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    height: 3.25rem;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    position: fixed;
+    right: calc(1.5rem + env(safe-area-inset-right));
+    transition: opacity 0.2s ease;
+    width: 3.25rem;
+    z-index: 900;
+}
+
+.scroll-top-button.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.scroll-top-button:hover {
+    background: rgba(15, 23, 42, 0.95);
+}
+
+.scroll-top-button svg {
+    fill: none;
+    height: 1.5rem;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2.2;
+    width: 1.5rem;
+}
+
+/* Pantallas chicas (celulares en modo retrato): boton un poco mas chico y mas cerca
+   del borde para no restarle espacio util al contenido. */
+@media (max-width: 640.98px) {
+    .scroll-top-button {
+        bottom: calc(1rem + env(safe-area-inset-bottom));
+        height: 2.75rem;
+        right: calc(1rem + env(safe-area-inset-right));
+        width: 2.75rem;
+    }
+
+    .scroll-top-button svg {
+        height: 1.25rem;
+        width: 1.25rem;
+    }
 }
 
 .app-modal-actions {

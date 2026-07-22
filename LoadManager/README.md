@@ -134,6 +134,21 @@ Las páginas imprimen vía `IReceiptPrinterService.PrintReceiptAsync(record, tic
 si el resultado trae `Handled=false` (modo Windows en desktop), hacen fallback a
 `uaacPrintHtml` (JS `window.print()`). `System.IO.Ports` se referencia solo en el TFM de Windows.
 
+## UI / Responsive
+
+**A partir de ahora, todo elemento de UI nuevo (modales, overlays, paneles, etc.) tiene que
+funcionar bien (resize) en cualquier tamaño de pantalla/ventana.**
+
+- No usar `100vw` / `100vh` para estirar overlays de pantalla completa: en WebView2 (Windows) esas
+  unidades pueden resolverse mal (se vio un caso real donde daban 1.25x más grande que
+  `window.innerWidth/innerHeight`, descentrando todos los modales). Usar `position: fixed; inset: 0;`
+  en su lugar, que no depende de `vw`/`vh`.
+- Evitar tamaños/posiciones fijos en px cuando el contenido deba adaptarse a distintas
+  resoluciones (tablet Windows vs Android, distintos DPI); preferir `%`, `min()`/`max()`/`clamp()`,
+  flex/grid.
+- Antes de dar por buena una pantalla o popup nuevo, probarlo compilado (no solo a simple vista en
+  el editor) y verificar que se vea centrado/completo en la resolución real del dispositivo.
+
 ## Modo DEV (Flags de Testing)
 
 Permite probar la UI sin hardware real ni base de datos:

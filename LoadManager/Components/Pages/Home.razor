@@ -31,7 +31,7 @@
                 <section class="dispensers-panel dispatch-stage-card">
                     <div class="panel-heading">
                         <div>
-                            <h5>Dispensarios</h5>
+                            <h5>@dispenserLabel</h5>
                             <span>
                                 @(isLoadingDispensers
                                     ? "Consultando estatus..."
@@ -50,7 +50,7 @@
 
                     @if (dispensers.Count == 0)
                     {
-                        <p class="empty-message">No hay dispensarios disponibles para operar.</p>
+                        <p class="empty-message">No hay @dispenserLabel disponibles para operar.</p>
                     }
                     else
                     {
@@ -62,7 +62,7 @@
                                         disabled="@(IsSelectionWorkspaceLoading || isDispatching || !CanSelectDispenser(dispenser))">
                                     <img src="@dispenser.ImagePath" alt="" />
                                     <div class="dispenser-text">
-                                        <span class="dispenser-number">Dispensario @dispenser.Number</span>
+                                        <span class="dispenser-number">@dispenserLabel @dispenser.Number</span>
                                         <span class="dispenser-status">@dispenser.StatusText</span>
                                     </div>
                                 </button>
@@ -84,7 +84,7 @@
 
                     @if (SelectedDispenser is null)
                     {
-                        <p class="empty-message">Seleccione un dispensario para cargar productos.</p>
+                        <p class="empty-message">Seleccione un @dispenserLabel para cargar productos.</p>
                     }
                     else
                     {
@@ -94,7 +94,7 @@
                                 <button class="fuel-option @product.CssClass @(selectedProductKey == product.Key ? "is-selected" : string.Empty)"
                                         @onclick="() => SelectProduct(product)"
                                         disabled="@(IsSelectionWorkspaceLoading || isDispatching || !CanEditSelectedDispenser)">
-                                    <img src="@FuelProductHelper.GetImagePath(product.Name)" alt="" />
+                                    <img src="@product.ImagePath" alt="" />
                                     <span class="fuel-option-text">
                                         <strong>@product.Name</strong>
                                         <small>@GetProductPriceText(product)</small>
@@ -193,6 +193,17 @@
                                 }
                             </div>
                         </label>
+
+                        <div class="amount-mode-group quick-amount-group" role="group" aria-label="Montos rapidos">
+                            @foreach (var preset in QuickAmountPresets)
+                            {
+                                <button type="button" class="amount-mode quick-amount-button"
+                                        @onclick="() => SelectQuickAmount(preset)"
+                                        disabled="@(!CanEditSelectedDispenser || isDispatching)">
+                                    @GetQuickAmountLabel(preset)
+                                </button>
+                            }
+                        </div>
                     }
                     else
                     {
@@ -335,7 +346,7 @@
 
                     <div class="ticket-grid">
                         <div>
-                            <span>Dispensario</span> 
+                            <span>@dispenserLabel</span>
                             <strong>#@dispatchTicket.Dispenser</strong>
                         </div>
                         <div>
@@ -405,7 +416,7 @@
             <div class="hose-alert-icon">!</div>
             <h2>Favor de colgar la manguera</h2>
             <p>@hoseLiftedBlockMessage</p>
-            <span>La pantalla se habilitara automaticamente cuando el dispensario vuelva a disponible.</span>
+            <span>La pantalla se habilitara automaticamente cuando el @dispenserLabel vuelva a disponible.</span>
         </section>
     </div>
 }
@@ -522,6 +533,7 @@
     private int dispatchFormStage = 1;
     private string? amountValue;
     private int amountInputRenderKey;
+    private static readonly int[] QuickAmountPresets = [50, 100, 200, 500, 800, 1000];
     private string? productLoadMessage;
     private decimal amountLimit;
     private decimal litersLimit;
@@ -536,6 +548,8 @@
     private int configuredDispenserCount;
     private bool dispenserFillSequential = true;
     private string dispenserNumbers = string.Empty;
+    private string dispenserLabel = "Dispensario";
+    private AppConfigurationOptions productNameConfig = new();
     private int remainingAuthorizationSeconds;
     private int? authorizedDispenserForCountdown;
     private bool countdownWarningShown;
@@ -611,6 +625,8 @@
         configuredDispenserCount = settings.AppConfiguration.DispenserCount;
         dispenserFillSequential = settings.AppConfiguration.DispenserFillSequential;
         dispenserNumbers = settings.AppConfiguration.DispenserNumbers;
+        dispenserLabel = settings.AppConfiguration.DispenserLabel;
+        productNameConfig = settings.AppConfiguration;
 
         // El paso 1 (boton "Comenzar") se elimino: la validacion de comunicacion
         // se ejecuta automaticamente al entrar al modulo.
@@ -727,7 +743,7 @@
 
             isLoadingDispensers = true;
             isLoadingDispatchTypes = true;
-            startupStatusMessage = "Validando dispensarios...";
+            startupStatusMessage = $"Validando {dispenserLabel}...";
             await InvokeAsync(StateHasChanged);
 
             try
@@ -749,7 +765,7 @@
                     if (!HasAnyDispenserCommunication())
                     {
                         startupStatusMessage = "Sin comunicacion.";
-                        connectionBlockedMessage = "Revise la conexion de los dispensarios.";
+                        connectionBlockedMessage = $"Revise la conexion de los {dispenserLabel}.";
                         connectionBlocked = true;
                         return;
                     }
@@ -917,7 +933,7 @@
             productLoadMessage = null;
             amountValue = null;
             lastResult = null;
-            ShowToast("Estatus de dispensarios actualizado correctamente.", true);
+            ShowToast($"Estatus de {dispenserLabel} actualizado correctamente.", true);
         }
         catch (OperationCanceledException)
         {
@@ -1000,11 +1016,14 @@
     {
         products.Clear();
         productLoadMessage = null;
-        products.Add(new FuelProductViewModel("1-1", "SUPREME+", FuelProductHelper.GetCssClass("SUPREME"), 1,
+        products.Add(new FuelProductViewModel("1-1", ProductNameHelper.ResolveDisplayName("SUPREME+", productNameConfig),
+            FuelProductHelper.GetCssClass("SUPREME"), FuelProductHelper.GetImagePath("SUPREME"), 1,
             FuelProductHelper.GetAuthorizationProductCode("SUPREME", 1), 1, 24.50m));
-        products.Add(new FuelProductViewModel("1-2", "EXTRA", FuelProductHelper.GetCssClass("EXTRA"), 2,
+        products.Add(new FuelProductViewModel("1-2", ProductNameHelper.ResolveDisplayName("EXTRA", productNameConfig),
+            FuelProductHelper.GetCssClass("EXTRA"), FuelProductHelper.GetImagePath("EXTRA"), 2,
             FuelProductHelper.GetAuthorizationProductCode("EXTRA", 2), 1, 22.30m));
-        products.Add(new FuelProductViewModel("2-3", "DIESEL", FuelProductHelper.GetCssClass("DIESEL"), 3,
+        products.Add(new FuelProductViewModel("2-3", ProductNameHelper.ResolveDisplayName("DIESEL", productNameConfig),
+            FuelProductHelper.GetCssClass("DIESEL"), FuelProductHelper.GetImagePath("DIESEL"), 3,
             FuelProductHelper.GetAuthorizationProductCode("DIESEL", 3), 2, 23.10m));
     }
 
@@ -1100,8 +1119,9 @@
         {
             products.Add(new FuelProductViewModel(
                 Key: $"{product.Hose}-{product.ProductId}",
-                Name: product.Description,
+                Name: ProductNameHelper.ResolveDisplayName(product.Description, productNameConfig),
                 CssClass: FuelProductHelper.GetCssClass(product.Description),
+                ImagePath: FuelProductHelper.GetImagePath(product.Description),
                 ProductCode: product.ProductId,
                 AuthorizationCode: FuelProductHelper.GetAuthorizationProductCode(product.Description, product.ProductId),
                 Hose: product.Hose,
@@ -1110,7 +1130,7 @@
 
         if (products.Count == 0)
         {
-            productLoadMessage = "No se encontraron productos activos para el dispensario seleccionado.";
+            productLoadMessage = $"No se encontraron productos activos para el {dispenserLabel} seleccionado.";
             ShowToast(productLoadMessage, false);
         }
     }
@@ -1192,7 +1212,7 @@
         {
             if (!DevMode.BypassHoseLiftedBlock && SelectedDispenser?.StatusCode == "3")
             {
-                await ShowHoseLiftedBlockAsync("La manguera del dispensario seleccionado esta descolgada. Cuelguela para poder cargar.", selectedDispenser);
+                await ShowHoseLiftedBlockAsync($"La manguera del {dispenserLabel} seleccionado esta descolgada. Cuelguela para poder cargar.", selectedDispenser);
                 return;
             }
 
@@ -1253,7 +1273,7 @@
             }
             catch (DispenserBusyException)
             {
-                ShowToast($"El dispensario {dispenser:00} ya fue autorizado por otro equipo.", false);
+                ShowToast($"El {dispenserLabel} {dispenser:00} ya fue autorizado por otro equipo.", false);
                 ResetDispatchFormState();
                 return;
             }
@@ -1414,18 +1434,18 @@
         var dispenser = SelectedDispenser;
         if (dispenser is null)
         {
-            ShowToast("Seleccione un dispensario para continuar.", false);
+            ShowToast($"Seleccione un {dispenserLabel} para continuar.", false);
             return false;
         }
 
-        ShowInfoToast("Validando estatus del dispensario...");
+        ShowInfoToast($"Validando estatus del {dispenserLabel}...");
 
         var commandNumber = DispenserFrameHelper.ToCommandNumber(dispenser.Number);
         var result = await ConsoleClient.SendDispenserDetailAsync(commandNumber, cancellationToken);
 
         if (!result.IsSuccess)
         {
-            ShowToast("No fue posible validar el estatus del dispensario.", false);
+            ShowToast($"No fue posible validar el estatus del {dispenserLabel}.", false);
             return false;
         }
 
@@ -1433,13 +1453,13 @@
 
         if (dispenser.StatusCode == "3")
         {
-            await ShowHoseLiftedBlockAsync("La manguera del dispensario seleccionado esta descolgada. Cuelguela para poder cargar.", dispenser.Number);
+            await ShowHoseLiftedBlockAsync($"La manguera del {dispenserLabel} seleccionado esta descolgada. Cuelguela para poder cargar.", dispenser.Number);
             return false;
         }
 
         if (!dispenser.IsAvailable)
         {
-            ShowToast($"El dispensario {dispenser.Number} no esta disponible para autorizar.", false);
+            ShowToast($"El {dispenserLabel} {dispenser.Number} no esta disponible para autorizar.", false);
             ResetDispatchFormState();
             return false;
         }
@@ -2053,6 +2073,33 @@
         }
     }
 
+    private void SelectQuickAmount(int preset)
+    {
+        decimal amount = preset;
+
+        if (!DevMode.BypassAmountLimits)
+        {
+            if ((SelectedDispatchType?.IsVolume == true || SelectedDispatchType?.IsFull == true) &&
+                amount > litersLimit)
+            {
+                amount = litersLimit;
+            }
+
+            if (SelectedDispatchType?.IsMoney == true && amount > amountLimit)
+            {
+                amount = amountLimit;
+            }
+        }
+
+        amountValue = FormatQuantity(amount);
+        amountInputRenderKey++;
+    }
+
+    private string GetQuickAmountLabel(int preset) =>
+        SelectedDispatchType?.IsMoney == true
+            ? $"${preset.ToString(CultureInfo.InvariantCulture)}"
+            : $"{preset.ToString(CultureInfo.InvariantCulture)}Lt";
+
     private void OnAmountChanged(ChangeEventArgs args)
     {
         var rawValue = args.Value?.ToString();
@@ -2612,7 +2659,7 @@
     private string GetSelectionLoadingText()
     {
         return isLoadingDispensers
-            ? "Consultando dispensarios disponibles..."
+            ? $"Consultando {dispenserLabel} disponibles..."
             : "Consultando productos...";
     }
 
@@ -2620,12 +2667,12 @@
     {
         if (SelectedDispenser is null)
         {
-            return "Seleccione dispensario";
+            return $"Seleccione {dispenserLabel}";
         }
 
         if (!SelectedDispenser.IsAvailable)
         {
-            return "Dispensario no disponible";
+            return $"{dispenserLabel} no disponible";
         }
 
         if (products.Count == 0)
@@ -2640,7 +2687,7 @@
     {
         if (!CanEditSelectedDispenser)
         {
-            return "Dispensario no disponible";
+            return $"{dispenserLabel} no disponible";
         }
 
         return string.IsNullOrWhiteSpace(amountValue) ? "Capture importe" : amountValue;
