@@ -2137,6 +2137,52 @@ a, .btn-link {
     grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+/* Resumen dispensario/producto/cantidad (modal "Enviando peticion" y pantalla de
+   folio): mismo look que .ticket-grid pero a 3 columnas y mas angosto, para que
+   entre bien en el modal chico. */
+.dispatch-summary-grid {
+    width: 100%;
+}
+
+.dispatch-summary-grid div {
+    align-content: center;
+    justify-items: center;
+    text-align: center;
+}
+
+/* El modal "Enviando peticion" es angosto (max-width chico) sin importar el
+   ancho de pantalla real: ahi 4 columnas quedan apretadas, se ve mejor en 2x2.
+   La pantalla de folio (panel ancho) usa dispatch-summary-grid sola, hereda
+   las 4 columnas de .ticket-grid. */
+.dispatch-summary-grid-modal {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* La version de la pantalla de folio hereda 4 columnas de .ticket-grid porque ahi
+   el panel es ancho en Windows. En celular (Android) sigue en una sola fila (no
+   2x2): las tarjetas se achican todo lo necesario (padding/tipografia) para que
+   las 4 entren horizontal. El ":not(...)" evita tocar el modal "Enviando
+   peticion", que tiene su propio ancho fijo sin importar la pantalla. */
+@media (max-width: 640.98px) {
+    .dispatch-summary-grid:not(.dispatch-summary-grid-modal) {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .dispatch-summary-grid:not(.dispatch-summary-grid-modal) div {
+        gap: 0.1rem;
+        min-height: 2.75rem;
+        padding: 0.3rem 0.2rem;
+    }
+
+    .dispatch-summary-grid:not(.dispatch-summary-grid-modal) span {
+        font-size: 0.6rem;
+    }
+
+    .dispatch-summary-grid:not(.dispatch-summary-grid-modal) strong {
+        font-size: 0.75rem;
+    }
+}
+
 .ticket-grid div {
     background: var(--ua-field-bg, #fff);
     border: 1px solid var(--ua-panel-border, #d8e0e6);

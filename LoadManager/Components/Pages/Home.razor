@@ -195,7 +195,7 @@
                         </label>
 
                         <div class="amount-mode-group quick-amount-group" role="group" aria-label="Montos rapidos">
-                            @foreach (var preset in QuickAmountPresets)
+                            @foreach (var preset in VisibleQuickAmountPresets)
                             {
                                 <button type="button" class="amount-mode quick-amount-button"
                                         @onclick="() => SelectQuickAmount(preset)"
@@ -240,6 +240,25 @@
             {
                 <div class="dispatch-folio-banner"><strong>#@dispatchFolio</strong></div>
             }
+
+            <div class="ticket-grid dispatch-summary-grid">
+                <div>
+                    <span>@dispenserLabel</span>
+                    <strong>@selectedDispenser</strong>
+                </div>
+                <div>
+                    <span>Producto</span>
+                    <strong>@SelectedProduct?.Name</strong>
+                </div>
+                <div>
+                    <span>Precio</span>
+                    <strong>@GetDispatchSummaryPriceText()</strong>
+                </div>
+                <div>
+                    <span>Cantidad</span>
+                    <strong>@GetDispatchSummaryAmount()</strong>
+                </div>
+            </div>
 
             @if (isFueling)
             {
@@ -428,6 +447,24 @@
             <span class="loading-spinner" aria-hidden="true"></span>
             <h2>Enviando peticion</h2>
             <p>Espere un momento...</p>
+            <div class="ticket-grid dispatch-summary-grid dispatch-summary-grid-modal">
+                <div>
+                    <span>@dispenserLabel</span>
+                    <strong>@selectedDispenser</strong>
+                </div>
+                <div>
+                    <span>Producto</span>
+                    <strong>@SelectedProduct?.Name</strong>
+                </div>
+                <div>
+                    <span>Precio</span>
+                    <strong>@GetDispatchSummaryPriceText()</strong>
+                </div>
+                <div>
+                    <span>Cantidad</span>
+                    <strong>@GetDispatchSummaryAmount()</strong>
+                </div>
+            </div>
             <span>Los campos permaneceran bloqueados hasta recibir respuesta.</span>
         </section>
     </div>
@@ -593,9 +630,56 @@
     private DispatchTypeViewModel? SelectedDispatchType =>
         dispatchTypes.FirstOrDefault(dispatchType => dispatchType.Id == selectedDispatchTypeId);
 
+    // Solo se muestran los montos rapidos que no superen el limite configurado
+    // (importe o litros, segun el tipo de despacho): si el limite es, por ejemplo,
+    // 500 Lt, los botones de 800/1000 ni aparecen en vez de topar el valor al tocarlos.
+    private IEnumerable<int> VisibleQuickAmountPresets
+    {
+        get
+        {
+            if (DevMode.BypassAmountLimits)
+            {
+                return QuickAmountPresets;
+            }
+
+            var limit = SelectedDispatchType?.IsMoney == true
+                ? amountLimit
+                : SelectedDispatchType?.IsVolume == true
+                    ? litersLimit
+                    : (decimal?)null;
+
+            return limit is decimal max
+                ? QuickAmountPresets.Where(preset => preset <= max)
+                : QuickAmountPresets;
+        }
+    }
+
     private bool CanEditSelectedDispenser => SelectedDispenser?.IsAvailable == true;
 
     private bool IsSelectionWorkspaceLoading => isLoadingDispensers || isSelectingDispenser;
+
+    // Resumen dispensario/producto/cantidad mostrado en el modal "Enviando peticion"
+    // y en la pantalla de folio, para que el operador confirme que arranco lo que
+    // realmente selecciono.
+    private string GetDispatchSummaryAmount()
+    {
+        if (SelectedDispatchType?.IsFull == true)
+        {
+            return "Lleno";
+        }
+
+        if (string.IsNullOrWhiteSpace(amountValue))
+        {
+            return "-";
+        }
+
+        return SelectedDispatchType?.IsMoney == true ? $"${amountValue}" : $"{amountValue}Lt";
+    }
+
+    private string GetDispatchSummaryPriceText() =>
+        SelectedProduct?.Price is decimal price
+            ? price.ToString("C2", CultureInfo.GetCultureInfo("es-MX"))
+            : "-";
 
     private bool isPrintingTicket;
 
@@ -2075,23 +2159,7 @@
 
     private void SelectQuickAmount(int preset)
     {
-        decimal amount = preset;
-
-        if (!DevMode.BypassAmountLimits)
-        {
-            if ((SelectedDispatchType?.IsVolume == true || SelectedDispatchType?.IsFull == true) &&
-                amount > litersLimit)
-            {
-                amount = litersLimit;
-            }
-
-            if (SelectedDispatchType?.IsMoney == true && amount > amountLimit)
-            {
-                amount = amountLimit;
-            }
-        }
-
-        amountValue = FormatQuantity(amount);
+        amountValue = FormatQuantity(preset);
         amountInputRenderKey++;
     }
 
