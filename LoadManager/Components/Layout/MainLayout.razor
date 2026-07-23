@@ -1,5 +1,7 @@
 @inherits LayoutComponentBase
 @inject IJSRuntime JsRuntime
+@inject NavigationManager NavigationManager
+@implements IDisposable
 
 <div class="page @CurrentThemeClass">
     <div class="sidebar">
@@ -37,6 +39,12 @@
 
     <main>
         <article class="content px-4">
+            @if (!string.IsNullOrWhiteSpace(CurrentModuleTitle))
+            {
+                <header class="console-header module-header">
+                    <h1>@CurrentModuleTitle</h1>
+                </header>
+            }
             @Body
         </article>
     </main>
@@ -66,6 +74,39 @@
         if (firstRender)
         {
             await JsRuntime.InvokeVoidAsync("uaacHideKeyboardOnEnter");
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+
+    // Titulo de modulo mostrado arriba del contenido, calculado por ruta. Solo
+    // cubre pantallas que no tienen su propio <h1> (Despacho/Historial); las que
+    // ya tienen uno propio (Configuracion, Estado de dispensario, Tester) quedan
+    // afuera para no duplicarlo.
+    private string CurrentModuleTitle
+    {
+        get
+        {
+            var path = new Uri(NavigationManager.Uri).AbsolutePath.Trim('/').ToLowerInvariant();
+            return path switch
+            {
+                "" or "despacho" => "Despacho",
+                "historial" => "Historial",
+                _ => string.Empty
+            };
         }
     }
 }

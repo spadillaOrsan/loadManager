@@ -21,6 +21,15 @@ article.content {
     padding-bottom: calc(5vh + env(safe-area-inset-bottom));
 }
 
+/* Titulo de modulo (Despacho/Historial) agregado por MainLayout arriba del
+   contenido de la pagina: las pantallas que ya traen su propio <header
+   class="console-header"> (Configuracion, Tester, Estado de dispensario) lo
+   ponen dentro de su .console-shell, que ya tiene "gap" entre hijos; este vive
+   afuera de esa shell, asi que necesita su propio margen inferior. */
+.module-header {
+    margin-bottom: 1.25rem;
+}
+
 .sidebar {
     background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
     position: relative;
