@@ -185,6 +185,7 @@
                                        placeholder="0.00"
                                        value="@amountValue"
                                        @oninput="OnAmountChanged"
+                                       @onfocus="TouchKeyboardHelper.Show"
                                        @onblur="FormatAmount"
                                        disabled="@(!CanEditSelectedDispenser || isDispatching)" />
                                 @if (SelectedDispatchType?.IsVolume == true)
@@ -2216,6 +2217,8 @@
 
     private void FormatAmount()
     {
+        TouchKeyboardHelper.Hide();
+
         if (!TryGetAmount(out var amount))
         {
             amountValue = null;

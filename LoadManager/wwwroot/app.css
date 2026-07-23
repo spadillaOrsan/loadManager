@@ -1310,10 +1310,11 @@ a, .btn-link {
     color: #a8b3c3;
 }
 
+/* Una sola columna siempre, igual que .dispensers-grid en Historial. */
 .fuel-options {
     display: grid;
     gap: 0.75rem;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: 1fr;
 }
 
 .fuel-option {
@@ -3030,7 +3031,6 @@ a, .btn-link {
         margin-inline: -0.15rem;
     }
 
-    .fuel-options,
     .amount-layout,
     .ticket-grid,
     .tester-grid {
