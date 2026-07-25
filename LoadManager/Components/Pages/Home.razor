@@ -762,24 +762,6 @@
                 return;
             }
 
-            // COMENTADO: validacion de autorizacion de equipo
-            /*
-            if (!DevMode.BypassDeviceAuthorization)
-            {
-                startupStatusMessage = "Validando autorizacion del equipo...";
-                await InvokeAsync(StateHasChanged);
-
-                var deviceAuthorization = await ConsoleClient.CheckDeviceAuthorizationAsync(pageCancellation.Token);
-                if (!deviceAuthorization.IsAuthorized)
-                {
-                    startupStatusMessage = null;
-                    deviceNotAuthorized = true;
-                    _ = RunDeviceNotAuthorizedCountdownAsync();
-                    return;
-                }
-            }
-            */
-
             startupStatusMessage = "Validando TCP/IP y base de datos...";
             await InvokeAsync(StateHasChanged);
 
@@ -1018,7 +1000,7 @@
             productLoadMessage = null;
             amountValue = null;
             lastResult = null;
-            ShowToast($"Estatus de {dispenserLabel} actualizado correctamente.", true);
+            ShowToast("Se actualizo correctamente.", true);
         }
         catch (OperationCanceledException)
         {

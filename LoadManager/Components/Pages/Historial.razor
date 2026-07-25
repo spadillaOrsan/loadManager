@@ -97,7 +97,7 @@
                     {
                         <article class="historial-card @GetStatusClass(record)"
                                  role="button"
-                                 @onclick="() => OnRecordCardClickAsync(record)">
+                                 @onclick="() => OnRecordCardClick(record)">
                             <header class="historial-card-header">
                                 <span class="historial-card-folio">Folio #@record.Sequence</span>
                                 <span class="history-status @GetStatusClass(record)">@record.Status</span>
@@ -141,6 +141,20 @@
             <h2>Consultando registros</h2>
             <p>Espere un momento...</p>
             <span>La pantalla permanecera bloqueada hasta terminar la consulta.</span>
+        </section>
+    </div>
+}
+
+@if (showPrintConfirm)
+{
+    <div class="app-modal-backdrop">
+        <section class="app-modal print-confirm-modal" role="dialog" aria-modal="true" aria-label="Confirmar impresion">
+            <h2>Imprimir ticket</h2>
+            <p>¿Desea imprimir el ticket del folio @printConfirmRecord?.Sequence?</p>
+            <div class="dev-password-actions">
+                <button class="btn btn-outline-secondary action-button" type="button" @onclick="CancelPrintConfirm">Cancelar</button>
+                <button class="btn btn-primary action-button" type="button" @onclick="ConfirmPrintAsync">Imprimir</button>
+            </div>
         </section>
     </div>
 }
@@ -376,10 +390,42 @@
     // La tarjeta completa dispara la impresion (antes lo hacia el boton Imprimir).
     // isPrinting evita que un doble tap registre dos impresiones en tblImpresiones.
     private bool isPrinting;
+    private bool showPrintConfirm;
+    private DispatchHistoryRecord? printConfirmRecord;
 
-    private async Task OnRecordCardClickAsync(DispatchHistoryRecord record)
+    private void OnRecordCardClick(DispatchHistoryRecord record)
     {
         if (isLoading || isPrinting || !printEnabled)
+        {
+            return;
+        }
+
+        // El mensaje de confirmacion solo aplica a transacciones cerradas (las
+        // unicas que realmente se pueden imprimir); para las demas se avisa
+        // directo sin preguntar si quiere imprimir.
+        if (!record.IsClosed)
+        {
+            ShowToast("No se pueden imprimir tickets con transaccion abierta.", false);
+            return;
+        }
+
+        printConfirmRecord = record;
+        showPrintConfirm = true;
+    }
+
+    private void CancelPrintConfirm()
+    {
+        showPrintConfirm = false;
+        printConfirmRecord = null;
+    }
+
+    private async Task ConfirmPrintAsync()
+    {
+        var record = printConfirmRecord;
+        showPrintConfirm = false;
+        printConfirmRecord = null;
+
+        if (record is null)
         {
             return;
         }
@@ -400,7 +446,7 @@
     {
         if (!record.IsClosed)
         {
-            ShowToast("No se encontro transaccion o transaccion no cerrada.", false);
+            ShowToast("No se pueden imprimir tickets con transaccion abierta.", false);
             return;
         }
 

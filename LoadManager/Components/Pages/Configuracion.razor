@@ -15,6 +15,23 @@
         <div>
             <h1>Configuracion</h1>
         </div>
+
+        <!-- Modo DEV (desarrollo): tocar 10 veces para pedir la contrasena y
+             activarlo. Vive en el header (no en la lista) para no ocupar espacio
+             cuando esta colapsado; el contenido (toggles) se muestra abajo, en el
+             mismo lugar de siempre, solo mientras esta expandido. -->
+        <div class="dev-version-badge dev-tap-area" @onclick="OnDevTap" role="button" tabindex="0">
+            <span>Version: 1.0.0</span>
+            @if (DevMode.IsEnabled)
+            {
+                <button type="button" class="btn btn-outline-secondary dev-disable-button" @onclick="DisableDev" @onclick:stopPropagation="true">
+                    Desactivar
+                </button>
+                <svg class="accordion-chevron @(openSections[5] ? "is-open" : "")" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 9l6 6 6-6" />
+                </svg>
+            }
+        </div>
     </header>
 
     <div class="accordion-list">
@@ -294,54 +311,48 @@
             }
         </section>
 
-    </div>
-
-    <!-- Modo DEV (desarrollo): desactiva validaciones del modulo de dispensario.
-         Se activa tocando 10 veces el apartado DEV (luego pide contrasena). -->
-    <section class="dev-section">
-        <div class="dev-section-head">
-            <div class="dev-section-title dev-tap-area" @onclick="OnDevTap" role="button" tabindex="0">
-                <h5 style="text-align:center;">Version: 1.0.0</h5>
-            </div>
-            @if (DevMode.IsEnabled)
-            {
-                <button type="button" class="btn btn-outline-secondary dev-disable-button" @onclick="DisableDev">
-                    Desactivar
-                </button>
-            }
-        </div>
-
-        @if (DevMode.IsEnabled)
+        <!-- Modo DEV (desarrollo): el "tap area" (Version: 1.0.0), el boton
+             Desactivar y el chevron viven en el header de la pagina (arriba, al
+             lado de "Configuracion"). Esta tarjeta solo aparece -y ocupa espacio-
+             mientras Modo DEV esta activo Y expandido; el resto del tiempo
+             desaparece por completo de la lista. -->
+        @if (DevMode.IsEnabled && openSections[5])
         {
-            <div class="dev-toggle-list">
-                <p class="dev-warning">Validaciones desactivadas: las pantallas usaran datos de ejemplo. No usar en produccion.</p>
+            <section class="dev-section">
+                <div class="dev-toggle-list">
+                    <p class="dev-warning">Validaciones desactivadas: las pantallas usaran datos de ejemplo. No usar en produccion.</p>
 
-                <div class="switch-row dev-toggle-all">
-                    <span class="switch-row-label">@(AreAllDevTogglesOn ? "Desactivar todo" : "Activar todo")</span>
-                    <button type="button"
-                            class="switch @(AreAllDevTogglesOn ? "is-on" : string.Empty)"
-                            @onclick="ToggleAllDevToggles"
-                            aria-pressed="@AreAllDevTogglesOn"
-                            aria-label="Activar o desactivar todos los toggles">
-                        <span class="switch-track"><span class="switch-thumb"></span></span>
-                    </button>
-                </div>
-
-                @foreach (var toggle in DevToggles)
-                {
-                    <div class="switch-row">
-                        <span class="switch-row-label">@toggle.Label</span>
+                    <div class="switch-row dev-toggle-all">
+                        <span class="switch-row-label">@(AreAllDevTogglesOn ? "Desactivar todo" : "Activar todo")</span>
                         <button type="button"
-                                class="switch @(toggle.Get() ? "is-on" : string.Empty)"
-                                @onclick="() => toggle.Set(!toggle.Get())"
-                                aria-pressed="@toggle.Get()">
+                                class="switch @(AreAllDevTogglesOn ? "is-on" : string.Empty)"
+                                @onclick="ToggleAllDevToggles"
+                                aria-pressed="@AreAllDevTogglesOn"
+                                aria-label="Activar o desactivar todos los toggles">
                             <span class="switch-track"><span class="switch-thumb"></span></span>
                         </button>
                     </div>
-                }
-            </div>
+
+                    @foreach (var toggle in DevToggles)
+                    {
+                        <div class="switch-row">
+                            <span class="switch-row-text">
+                                <span class="switch-row-label">@toggle.Label</span>
+                                <span class="switch-row-description">@toggle.Description</span>
+                            </span>
+                            <button type="button"
+                                    class="switch @(toggle.Get() ? "is-on" : string.Empty)"
+                                    @onclick="() => toggle.Set(!toggle.Get())"
+                                    aria-pressed="@toggle.Get()">
+                                <span class="switch-track"><span class="switch-thumb"></span></span>
+                            </button>
+                        </div>
+                    }
+                </div>
+            </section>
         }
-    </section>
+
+    </div>
 
     <!-- Botones al fondo -->
     <div class="settings-actions config-actions-footer">
@@ -373,12 +384,35 @@
         <section class="app-modal dev-password-modal" role="dialog" aria-modal="true" aria-label="Contraseña DEV">
             <h2>Modo DEV</h2>
             <p>Ingrese la contraseña para desactivar validaciones.</p>
-            <input type="password"
-                   class="dev-password-input"
-                   placeholder="Contraseña"
-                   @bind="devPassword"
-                   @bind:event="oninput"
-                   @onkeydown="OnDevPasswordKeyDown" />
+            <div class="password-input-wrap">
+                <input type="@(showDevPassword ? "text" : "password")"
+                       class="dev-password-input"
+                       placeholder="Contraseña"
+                       @bind="devPassword"
+                       @bind:event="oninput"
+                       @onkeydown="OnDevPasswordKeyDown" />
+                <button type="button"
+                        class="password-toggle-button"
+                        title="@(showDevPassword ? "Ocultar contraseña" : "Mostrar contraseña")"
+                        @onclick="ToggleDevPasswordVisibility">
+                    @if (showDevPassword)
+                    {
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                            <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                            <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+                            <path d="m1 1 22 22" />
+                        </svg>
+                    }
+                    else
+                    {
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                    }
+                </button>
+            </div>
             @if (!string.IsNullOrEmpty(devPasswordError))
             {
                 <span class="dev-password-error">@devPasswordError</span>
@@ -429,7 +463,7 @@
     private string? toastMessage;
     private string toastCss = "is-success";
 
-    private readonly bool[] openSections = [false, false, false, false, false];
+    private readonly bool[] openSections = [false, false, false, false, false, false];
 
     // --- Impresora ---
     // printerEndpointId: puerto COM en Windows, direccion MAC en Android.
@@ -455,23 +489,51 @@
     private bool showDevPasswordModal;
     private string devPassword = string.Empty;
     private string? devPasswordError;
+    private bool showDevPassword;
 
-    private List<(string Label, Func<bool> Get, Action<bool> Set)> DevToggles => new()
+    private void ToggleDevPasswordVisibility() => showDevPassword = !showDevPassword;
+
+    private List<(string Label, string Description, Func<bool> Get, Action<bool> Set)> DevToggles => new()
     {
-        ("Saltar conexion TCP/IP", () => DevMode.SkipTcpConnection, v => DevMode.SkipTcpConnection = v),
-        ("Saltar base de datos (BD)", () => DevMode.SkipDatabase, v => DevMode.SkipDatabase = v),
-        // ("Saltar autorizacion del equipo", () => DevMode.SkipDeviceAuthorization, v => DevMode.SkipDeviceAuthorization = v),
-        ($"Saltar comunicacion de {DispenserLabelOrDefault}", () => DevMode.SkipDispenserCommunication, v => DevMode.SkipDispenserCommunication = v),
-        ("Saltar tipos de despacho y productos", () => DevMode.SkipDispatchTypesAndProducts, v => DevMode.SkipDispatchTypesAndProducts = v),
-        ("Saltar registro/envio de autorizacion", () => DevMode.SkipSendAuthorization, v => DevMode.SkipSendAuthorization = v),
-        ("Tratar respuesta de consola como autorizada", () => DevMode.SkipAuthorizationResponse, v => DevMode.SkipAuthorizationResponse = v),
-        ("Ignorar bloqueo por manguera descolgada", () => DevMode.SkipHoseLiftedBlock, v => DevMode.SkipHoseLiftedBlock = v),
-        ("Ignorar limites de importe/litros", () => DevMode.SkipAmountLimits, v => DevMode.SkipAmountLimits = v),
-        ("Simular surtido (ver contador y tanque)", () => DevMode.SimulateFueling, v => DevMode.SimulateFueling = v),
-        ("Mostrar contador de litros/moneda al surtir", () => DevMode.ShowLiveCounter, v => DevMode.ShowLiveCounter = v),
-        ("Ocultar boton de impresion (historial y ticket)", () => DevMode.HidePrintButton, v => DevMode.HidePrintButton = v),
-        ("Cancelar carga al pasar a segundo plano", () => DevMode.CancelOnBackground, v => DevMode.CancelOnBackground = v),
-        ("Contador en autorizacion", () => DevMode.UseCountdown, v => DevMode.UseCountdown = v),
+        ("Saltar conexion TCP/IP",
+            "Omite validar la conexion TCP/IP al iniciar el modulo.",
+            () => DevMode.SkipTcpConnection, v => DevMode.SkipTcpConnection = v),
+        ("Saltar base de datos (BD)",
+            "Omite validar la conexion a la base de datos al iniciar.",
+            () => DevMode.SkipDatabase, v => DevMode.SkipDatabase = v),
+        ($"Saltar comunicacion de {DispenserLabelOrDefault}",
+            $"Usa {DispenserLabelOrDefault} de ejemplo, sin consultar su estado real.",
+            () => DevMode.SkipDispenserCommunication, v => DevMode.SkipDispenserCommunication = v),
+        ("Saltar tipos de despacho y productos",
+            "Usa tipos de despacho y productos de ejemplo, sin consultar la consola.",
+            () => DevMode.SkipDispatchTypesAndProducts, v => DevMode.SkipDispatchTypesAndProducts = v),
+        ("Saltar registro/envio de autorizacion",
+            "Simula todo el despacho (folio, cuenta regresiva, surtido y ticket) sin enviar nada a la consola.",
+            () => DevMode.SkipSendAuthorization, v => DevMode.SkipSendAuthorization = v),
+        ("Tratar respuesta de consola como autorizada",
+            "Ignora la respuesta real de la consola y avanza como si hubiera autorizado.",
+            () => DevMode.SkipAuthorizationResponse, v => DevMode.SkipAuthorizationResponse = v),
+        ("Ignorar bloqueo por manguera descolgada",
+            "Permite iniciar aunque el dispensario tenga la manguera descolgada.",
+            () => DevMode.SkipHoseLiftedBlock, v => DevMode.SkipHoseLiftedBlock = v),
+        ("Ignorar limites de importe/litros",
+            "Permite capturar montos por encima del limite configurado.",
+            () => DevMode.SkipAmountLimits, v => DevMode.SkipAmountLimits = v),
+        ("Simular surtido (ver contador y tanque)",
+            "Muestra el contador de litros y el tanque avanzando, sin dispensario real.",
+            () => DevMode.SimulateFueling, v => DevMode.SimulateFueling = v),
+        ("Mostrar contador de litros/moneda al surtir",
+            "Muestra el contador en vivo de litros o importe mientras se surte.",
+            () => DevMode.ShowLiveCounter, v => DevMode.ShowLiveCounter = v),
+        ("Ocultar boton de impresion (historial y ticket)",
+            "Oculta el boton de imprimir en el Historial y en el ticket.",
+            () => DevMode.HidePrintButton, v => DevMode.HidePrintButton = v),
+        ("Cancelar carga al pasar a segundo plano",
+            "Cancela el despacho activo si la app pasa a segundo plano.",
+            () => DevMode.CancelOnBackground, v => DevMode.CancelOnBackground = v),
+        ("Contador en autorizacion",
+            "Muestra el cronometro y cancela si se agota el tiempo. Oculta el contador si esta desactivado.",
+            () => DevMode.UseCountdown, v => DevMode.UseCountdown = v),
     };
 
     private bool AreAllDevTogglesOn => DevToggles.All(toggle => toggle.Get());
@@ -487,11 +549,13 @@
 
     private int devTapCount;
 
-    // Se activa el Modo DEV tocando 10 veces el apartado (estilo "opciones de desarrollador").
+    // Antes de activar Modo DEV: tocar 10 veces el apartado (estilo "opciones de
+    // desarrollador"). Ya activo: el mismo tap expande/colapsa el acordeon de toggles.
     private void OnDevTap()
     {
         if (DevMode.IsEnabled)
         {
+            openSections[5] = !openSections[5];
             return;
         }
 
@@ -502,6 +566,7 @@
             devTapCount = 0;
             devPassword = string.Empty;
             devPasswordError = null;
+            showDevPassword = false;
             showDevPasswordModal = true;
         }
     }
@@ -510,6 +575,7 @@
     {
         DevMode.Disable();
         devTapCount = 0;
+        openSections[5] = false;
     }
 
     private void ConfirmDevPassword()
@@ -521,9 +587,11 @@
         }
 
         DevMode.IsEnabled = true;
+        openSections[5] = true;
         showDevPasswordModal = false;
         devPassword = string.Empty;
         devPasswordError = null;
+        showDevPassword = false;
     }
 
     private void CancelDevPassword()
@@ -531,6 +599,7 @@
         showDevPasswordModal = false;
         devPassword = string.Empty;
         devPasswordError = null;
+        showDevPassword = false;
     }
 
     private void OnDevPasswordKeyDown(KeyboardEventArgs e)

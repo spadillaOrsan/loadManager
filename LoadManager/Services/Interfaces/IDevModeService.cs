@@ -14,7 +14,6 @@ public interface IDevModeService
     // Interruptores individuales (solo surten efecto si IsEnabled == true).
     bool SkipTcpConnection { get; set; }
     bool SkipDatabase { get; set; }
-    bool SkipDeviceAuthorization { get; set; }
     bool SkipDispenserCommunication { get; set; }
     bool SkipDispatchTypesAndProducts { get; set; }
     bool SkipSendAuthorization { get; set; }
@@ -30,7 +29,6 @@ public interface IDevModeService
     // Efectivos: combinan el interruptor maestro con cada interruptor individual.
     bool BypassTcpConnection { get; }
     bool BypassDatabase { get; }
-    bool BypassDeviceAuthorization { get; }
     bool BypassDispenserCommunication { get; }
     bool BypassDispatchTypesAndProducts { get; }
     bool BypassSendAuthorization { get; }

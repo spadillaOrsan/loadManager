@@ -9,7 +9,6 @@ public sealed class DevModeService : IDevModeService
 
     public bool SkipTcpConnection { get; set; }
     public bool SkipDatabase { get; set; }
-    public bool SkipDeviceAuthorization { get; set; }
     public bool SkipDispenserCommunication { get; set; }
     public bool SkipDispatchTypesAndProducts { get; set; }
     public bool SkipSendAuthorization { get; set; }
@@ -24,7 +23,6 @@ public sealed class DevModeService : IDevModeService
 
     public bool BypassTcpConnection => IsEnabled && SkipTcpConnection;
     public bool BypassDatabase => IsEnabled && SkipDatabase;
-    public bool BypassDeviceAuthorization => IsEnabled && SkipDeviceAuthorization;
     public bool BypassDispenserCommunication => IsEnabled && SkipDispenserCommunication;
     public bool BypassDispatchTypesAndProducts => IsEnabled && SkipDispatchTypesAndProducts;
     public bool BypassSendAuthorization => IsEnabled && SkipSendAuthorization;
@@ -42,7 +40,6 @@ public sealed class DevModeService : IDevModeService
         IsEnabled = false;
         SkipTcpConnection = false;
         SkipDatabase = false;
-        SkipDeviceAuthorization = false;
         SkipDispenserCommunication = false;
         SkipDispatchTypesAndProducts = false;
         SkipSendAuthorization = false;
