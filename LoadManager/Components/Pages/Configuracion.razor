@@ -50,6 +50,7 @@
             @if (openSections[0])
             {
                 <div class="accordion-body">
+                    <p class="accordion-description">Direccion IP y puerto de la consola de dispensarios (el hardware) a la que la app se conecta por TCP/IP para enviar y recibir las tramas de despacho.</p>
                     <label class="settings-field">
                         <span>IP destino</span>
                         <input type="text" @bind="ipAddress" placeholder="Ej: 172.20.11.40" />
@@ -62,11 +63,13 @@
             }
         </section>
 
-        <!-- URL Service -->
+        <!-- Servicio API (antes separado en "URLService" + "URL de APIs": eran el
+             mismo Host/Puerto mostrados dos veces, uno como campos y otro como URL
+             combinada de solo lectura derivada. Se unifico para no confundir. -->
         <section class="accordion-section">
             <button class="accordion-header" type="button" @onclick="() => ToggleSection(1)">
                 <div class="accordion-title">
-                    <h2>URLService</h2>
+                    <h2>Servicio API</h2>
                     <span class="@GetDatabaseIndicatorClass()">@GetDatabaseIndicatorText()</span>
                 </div>
                 <svg class="accordion-chevron @(openSections[1] ? "is-open" : "")" viewBox="0 0 24 24" aria-hidden="true">
@@ -76,6 +79,7 @@
             @if (openSections[1])
             {
                 <div class="accordion-body">
+                    <p class="accordion-description">Direccion, puerto y tiempo de espera de la API (el servicio backend) que la app usa para comunicarse con despachos, historial y configuracion.</p>
                     <label class="settings-field">
                         <span>Host / URL base</span>
                         <input type="text" @bind="apiBaseHost" placeholder="Ej: http://172.20.11.198" />
@@ -88,26 +92,8 @@
                         <span>Tiempo de espera (seg)</span>
                         <input type="number" @bind="apiRequestTimeoutSeconds" min="1" />
                     </label>
-                </div>
-            }
-        </section>
-
-        <!-- URL de APIs -->
-        <section class="accordion-section">
-            <button class="accordion-header" type="button" @onclick="() => ToggleSection(2)">
-                <div class="accordion-title">
-                    <h2>URL de APIs</h2>
-                    <span class="status-indicator">@BuildApiUrl()</span>
-                </div>
-                <svg class="accordion-chevron @(openSections[2] ? "is-open" : "")" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M6 9l6 6 6-6" />
-                </svg>
-            </button>
-            @if (openSections[2])
-            {
-                <div class="accordion-body">
                     <label class="settings-field">
-                        <span>URL completa</span>
+                        <span>URL completa (editable, se sincroniza con Host/Puerto de arriba)</span>
                         <input type="text" @bind="ApiFullUrl" placeholder="Ej: http://172.20.11.40:8084/" />
                     </label>
                 </div>
@@ -128,6 +114,7 @@
             @if (openSections[3])
             {
                 <div class="accordion-body">
+                    <p class="accordion-description">Datos generales de la terminal: identificadores de venta (TPV, usuario, tipo de venta), limites de importe/litros por carga, y personalizacion de nombres de dispensarios y productos.</p>
                     <label class="settings-field">
                         <span>TPV</span>
                         <input type="number" @bind="tpv" min="1" />
@@ -261,6 +248,7 @@
             @if (openSections[4])
             {
                 <div class="accordion-body">
+                    <p class="accordion-description">Define como se imprime el ticket: por el dialogo del sistema (cualquier impresora instalada) o por una impresora termica vinculada por Bluetooth.</p>
                     <label class="settings-field">
                         <span>Tipo de impresora</span>
                         <select @bind="printerMode" @bind:after="OnPrinterModeChangedAsync">

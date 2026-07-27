@@ -2844,6 +2844,13 @@ a, .btn-link {
     padding: 1.1rem;
 }
 
+.accordion-description {
+    color: var(--ua-muted, #667684);
+    font-size: 0.82rem;
+    font-weight: 500;
+    margin: 0;
+}
+
 .config-actions-footer {
     margin-top: auto;
     max-width: 720px;
