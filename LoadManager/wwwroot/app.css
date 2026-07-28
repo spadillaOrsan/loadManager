@@ -1718,6 +1718,27 @@ a, .btn-link {
     padding: 1.1rem;
 }
 
+/* Agrupa el boton Tester y el badge de version del lado derecho del header de
+   Configuracion (el titulo queda a la izquierda por el space-between de
+   .console-header). */
+.config-header-actions {
+    align-items: center;
+    display: flex;
+    gap: 0.75rem;
+}
+
+/* Boton compacto (no el .action-button ancho de pie de pagina) para que quepa
+   bien en la fila del header junto al badge de version. La segunda regla anula
+   puntualmente el "width:100%" que la media query movil aplica a .action-button
+   en otros lugares (footer, paneles) — aca no aplica porque no usa esa clase,
+   pero se deja explicito por si el header colapsa a columna en pantallas
+   angostas (@media max-width: 800px). */
+.config-tester-button {
+    flex: none;
+    padding: 0.4rem 1.1rem;
+    width: auto;
+}
+
 .dev-version-badge {
     align-items: center;
     color: var(--ua-muted, #667684);

@@ -16,21 +16,27 @@
             <h1>Configuracion</h1>
         </div>
 
-        <!-- Modo DEV (desarrollo): tocar 10 veces para pedir la contrasena y
-             activarlo. Vive en el header (no en la lista) para no ocupar espacio
-             cuando esta colapsado; el contenido (toggles) se muestra abajo, en el
-             mismo lugar de siempre, solo mientras esta expandido. -->
-        <div class="dev-version-badge dev-tap-area" @onclick="OnDevTap" role="button" tabindex="0">
-            <span>Version: 1.0.0</span>
-            @if (DevMode.IsEnabled)
-            {
-                <button type="button" class="btn btn-outline-secondary dev-disable-button" @onclick="DisableDev" @onclick:stopPropagation="true">
-                    Desactivar
-                </button>
-                <svg class="accordion-chevron @(openSections[5] ? "is-open" : "")" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M6 9l6 6 6-6" />
-                </svg>
-            }
+        <div class="config-header-actions">
+            <button class="btn btn-outline-secondary config-tester-button" type="button" @onclick="OpenTester" disabled="@isSaving">
+                Tester
+            </button>
+
+            <!-- Modo DEV (desarrollo): tocar 10 veces para pedir la contrasena y
+                 activarlo. Vive en el header (no en la lista) para no ocupar espacio
+                 cuando esta colapsado; el contenido (toggles) se muestra abajo, en el
+                 mismo lugar de siempre, solo mientras esta expandido. -->
+            <div class="dev-version-badge dev-tap-area" @onclick="OnDevTap" role="button" tabindex="0">
+                <span>Version: 1.0.0</span>
+                @if (DevMode.IsEnabled)
+                {
+                    <button type="button" class="btn btn-outline-secondary dev-disable-button" @onclick="DisableDev" @onclick:stopPropagation="true">
+                        Desactivar
+                    </button>
+                    <svg class="accordion-chevron @(openSections[5] ? "is-open" : "")" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6 9l6 6 6-6" />
+                    </svg>
+                }
+            </div>
         </div>
     </header>
 
@@ -342,11 +348,8 @@
 
     </div>
 
-    <!-- Botones al fondo -->
+    <!-- Boton al fondo (Tester se movio al header, junto al titulo) -->
     <div class="settings-actions config-actions-footer">
-        <button class="btn btn-outline-secondary action-button" type="button" @onclick="OpenTester" disabled="@isSaving">
-            Tester
-        </button>
         <button class="@GetConnectionButtonClass()" @onclick="SaveConnectOrDisconnectAsync" disabled="@isSaving">
             @GetConnectionButtonText()
         </button>
