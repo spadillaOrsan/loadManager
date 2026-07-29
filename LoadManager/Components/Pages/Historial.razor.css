@@ -79,6 +79,75 @@
     border-color: #ffffff;
 }
 
+/* Tema alterno (theme-dispensers-white): mismo template que Despacho —
+   paneles en blanco/gris claro y contorno negro al seleccionar (el blanco
+   se pierde contra los fondos ahora claros). Se define aqui (no en app.css)
+   porque el aislamiento de CSS de Blazor le da mayor especificidad a las
+   reglas de arriba en este mismo archivo. */
+.theme-dispensers-white .historial-dispensers-panel,
+.theme-dispensers-white .historial-products-panel,
+.theme-dispensers-white .historial-results-panel {
+    background: #ffffff !important;
+    border-color: #d8e0e6 !important;
+    color: #17212b !important;
+}
+
+.theme-dispensers-white .historial-dispensers-panel .dispenser-card.is-selected,
+.theme-dispensers-white .historial-products-panel .dispenser-card.is-selected {
+    border-color: #000000 !important;
+    box-shadow:
+        0 0 0 1px #000000,
+        0 0 8px rgba(0, 0, 0, 0.45),
+        0 0 18px rgba(0, 0, 0, 0.25) !important;
+}
+
+.theme-dispensers-white .historial-card {
+    background: #ffffff;
+    border-color: #d8e0e6;
+    box-shadow: 0 1px 4px rgba(23, 33, 43, 0.08);
+}
+
+.theme-dispensers-white .historial-card:hover,
+.theme-dispensers-white .historial-card:active {
+    box-shadow:
+        0 0 0 1px #000000,
+        0 0 8px rgba(0, 0, 0, 0.45),
+        0 0 18px rgba(0, 0, 0, 0.25);
+}
+
+.theme-dispensers-white .historial-card-header {
+    background: #f4f7f9;
+    border-bottom-color: #d8e0e6;
+}
+
+.theme-dispensers-white .historial-card-folio {
+    color: #17212b;
+}
+
+.theme-dispensers-white .historial-card-row {
+    border-bottom-color: #edf1f5;
+}
+
+.theme-dispensers-white .historial-card-row span {
+    color: #667684;
+}
+
+.theme-dispensers-white .historial-card-row strong {
+    color: #17212b;
+}
+
+.theme-dispensers-white .historial-card-obs {
+    border-top-color: #edf1f5;
+}
+
+.theme-dispensers-white .historial-card-obs strong {
+    color: #455463;
+}
+
+.theme-dispensers-white .historial-empty {
+    color: #667684;
+}
+
 /* ---------- Panel heading ---------- */
 
 .historial-panel-heading {

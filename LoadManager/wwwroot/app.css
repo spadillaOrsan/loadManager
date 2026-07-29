@@ -55,6 +55,21 @@ body {
     --ua-muted: #667684;
 }
 
+/* Redefine las variables de tema (igual que theme-light) para que cualquier
+   elemento que las use directamente (var(--ua-panel-bg), etc. — ej.
+   .accordion-section y .dev-section de Configuracion) se ponga claro sin
+   necesitar un override propio. Los paneles con fondo fijo por .theme-dark
+   (no basados en variable) siguen necesitando su override explicito. */
+.theme-dispensers-white {
+    --ua-panel-bg: #ffffff;
+    --ua-panel-border: #d8e0e6;
+    --ua-panel-shadow: 0 10px 28px rgba(23, 33, 43, 0.06);
+    --ua-field-bg: #ffffff;
+    --ua-text: #17212b;
+    --ua-muted: #667684;
+    color: #17212b;
+}
+
 .theme-black {
     --ua-panel-bg: #101010;
     --ua-panel-border: #353535;
@@ -1367,21 +1382,140 @@ a, .btn-link {
     color: #a8b3c3;
 }
 
-/* Tema oscuro alterno: solo las tarjetas de bombas/dispensario quedan en
-   blanco con texto negro; el panel que las contiene (titulo "Bombas" y
-   "X disponibles") mantiene el color oscuro normal del tema nocturno. */
+/* Tema oscuro alterno: las tarjetas de bombas/dispensario quedan en blanco
+   con texto negro, y los contenedores de Bombas y Producto pasan al mismo
+   fondo gris/blanco que usa el tema claro (icono del sol: --ua-panel-bg). */
 /* :not(.fuel-*) para que las tarjetas de producto de Historial (que reusan
    .dispenser-card) no se vuelvan blancas: deben conservar su color de
    combustible en todos los temas, igual que .fuel-option en Despacho. */
 .theme-dispensers-white .dispenser-card:not(.fuel-premium):not(.fuel-extra):not(.fuel-diesel):not(.fuel-magna) {
+    /* Borde mas marcado que el del panel (#d8e0e6): la tarjeta y el panel son
+       ambos blancos, un gris demasiado claro se pierde entre los dos. */
     background: #ffffff !important;
-    border-color: #ffffff !important;
+    border-color: #b6c0ca !important;
     color: #17212b !important;
 }
 
 .theme-dispensers-white .dispenser-card:not(.fuel-premium):not(.fuel-extra):not(.fuel-diesel):not(.fuel-magna) .dispenser-number,
 .theme-dispensers-white .dispenser-card:not(.fuel-premium):not(.fuel-extra):not(.fuel-diesel):not(.fuel-magna) .dispenser-status {
     color: #17212b !important;
+}
+
+/* Bombas, Producto y Tipo de despacho: contorno negro (en vez del blanco
+   neon) al seleccionar, porque con fondos ahora blancos el contorno blanco
+   se pierde. .dispatch-type-button siempre es blanco/negro en cualquier
+   tema, asi que su seleccion tambien se fuerza sin importar el tema. */
+.theme-dispensers-white .dispenser-card.is-selected,
+.theme-dispensers-white .fuel-option.is-selected,
+.dispatch-type-button.is-selected {
+    border-color: #000000 !important;
+    box-shadow:
+        0 0 0 1px #000000,
+        0 0 8px rgba(0, 0, 0, 0.45),
+        0 0 18px rgba(0, 0, 0, 0.25) !important;
+}
+
+.theme-dispensers-white .dispensers-panel,
+.theme-dispensers-white .fuel-panel,
+.theme-dispensers-white .quantity-panel,
+.theme-dispensers-white .amount-panel {
+    background: #ffffff !important;
+    border-color: #d8e0e6 !important;
+    color: #17212b !important;
+}
+
+/* El panel de autorizacion (area de instrucciones) se funde con el fondo
+   general del contenido (#f4f7f9) en vez de un blanco propio. */
+.theme-dispensers-white .authorization-panel {
+    background: #f4f7f9 !important;
+    border-color: #d8e0e6 !important;
+    color: #17212b !important;
+}
+
+/* Textos mudos (mensajes vacios, nota de tanque lleno) heredan un gris claro
+   pensado para fondo oscuro: se oscurecen para seguir siendo legibles sobre
+   los paneles ahora blancos. */
+.theme-dispensers-white .empty-message,
+.theme-dispensers-white .full-charge-note {
+    color: #667684 !important;
+}
+
+/* Titulo/estatus del panel de autorizacion (area de instrucciones) y la
+   caja de cuenta regresiva heredaban colores pensados para fondo oscuro
+   (texto casi blanco, caja navy): se fuerzan a claro/oscuro para que no se
+   vean como un recuadro negro/azul oscuro sobre el panel ahora blanco. */
+.theme-dispensers-white .panel-heading h2 {
+    color: #17212b !important;
+}
+
+.theme-dispensers-white .panel-heading span {
+    color: #6c7a86 !important;
+}
+
+/* Configuracion: inputs/select/textarea con fondo fijo por .theme-dark (no
+   usan variable), y los modales de acceso a Configuracion / Modo DEV. */
+.theme-dispensers-white .settings-field input,
+.theme-dispensers-white .settings-field select,
+.theme-dispensers-white .settings-field textarea {
+    background: #ffffff !important;
+    border-color: #d8e0e6 !important;
+    color: #17212b !important;
+}
+
+.theme-dispensers-white .dev-password-modal,
+.theme-dispensers-white .config-gate {
+    background: #ffffff !important;
+    color: #17212b !important;
+}
+
+.theme-dispensers-white .dev-password-input {
+    background: #ffffff !important;
+    border-color: #d8e0e6 !important;
+    color: #17212b !important;
+}
+
+.theme-dispensers-white .countdown-display {
+    background: #f4f7f9 !important;
+    border-color: #d8e0e6 !important;
+}
+
+/* Modales de estado bloqueante ("Enviando peticion", "Iniciando modulo"):
+   mismo color que el fondo general en vez del blanco/oscuro por tema.
+   h2/p/span heredaban texto claro pensado para fondo oscuro, se oscurecen
+   para seguir siendo legibles. */
+.theme-dispensers-white .light-status-modal {
+    background: #f4f7f9 !important;
+    color: #17212b !important;
+}
+
+.theme-dispensers-white .light-status-modal h2 {
+    color: #17212b !important;
+}
+
+.theme-dispensers-white .light-status-modal p,
+.theme-dispensers-white .light-status-modal > span {
+    color: #667684 !important;
+}
+
+.theme-dispensers-white .countdown-display span {
+    color: #526273 !important;
+}
+
+/* Fondo general del contenido (detras de los paneles), igual que en el tema
+   claro (icono del sol) en vez del navy del tema oscuro base. El titulo y
+   subtitulo del header heredan el color claro de .theme-dark (pensado para
+   fondo oscuro): se oscurecen para que sigan siendo legibles sobre el nuevo
+   fondo claro. */
+.theme-dispensers-white main {
+    background: #f4f7f9 !important;
+}
+
+.theme-dispensers-white .console-header h1 {
+    color: #000000 !important;
+}
+
+.theme-dispensers-white .module-header-subtitle {
+    color: #5a6977 !important;
 }
 
 /* Una sola columna siempre, igual que .dispensers-grid en Historial. */
@@ -2077,7 +2211,7 @@ a, .btn-link {
 
 /* Folio de la autorizacion, arriba del contador del paso de surtido. */
 .dispatch-folio-banner {
-    background: #1b6ec2;
+    background: #e30613;
     border-radius: 8px;
     color: #ffffff;
     font-size: 1rem;
@@ -2522,6 +2656,38 @@ a, .btn-link {
 
 .theme-red .instruction-item strong {
     color: #2a1718;
+}
+
+/* Tarjeta de instrucciones (1/2/3) siempre en blanco con texto negro, sin
+   importar el tema; el circulo rojo con el numero (.instruction-item span)
+   no se toca. La linea divisoria entre items tambien se fuerza clara: con el
+   tema oscuro se quedaba en gris azulado oscuro, se veia como una franja
+   rara sobre la tarjeta blanca. */
+.instruction-card {
+    background: #ffffff !important;
+    border-color: #d8e0e6 !important;
+}
+
+.instruction-item strong {
+    color: #17212b !important;
+}
+
+.instruction-item + .instruction-item {
+    border-top-color: #edf1f5 !important;
+}
+
+/* Tarjetas de resumen (dispensario/producto/precio/cantidad) siempre en
+   blanco con texto negro, sin importar el tema: tanto la version del modal
+   "Enviando peticion" como la que aparece bajo el folio generado, arriba de
+   las instrucciones. */
+.dispatch-summary-grid div {
+    background: #ffffff !important;
+    border-color: #d8e0e6 !important;
+}
+
+.dispatch-summary-grid span,
+.dispatch-summary-grid strong {
+    color: #17212b !important;
 }
 
 .theme-dark .ticket-grid strong,

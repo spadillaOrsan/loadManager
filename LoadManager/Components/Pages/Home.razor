@@ -109,10 +109,8 @@
                                         else if (dispatchType.IsFull)
                                         {
                                             <svg class="amount-mode-icon" viewBox="0 0 24 24" aria-hidden="true">
-                                                <path d="M4 20V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v14" />
-                                                <path d="M3 20h12" />
-                                                <path d="M6 8h6" />
-                                                <path d="M14 9h2.5l2.5 2.5V17a1.5 1.5 0 0 1-3 0v-2" />
+                                                <rect x="2" y="8" width="20" height="8" rx="2" />
+                                                <text x="12" y="14.2" text-anchor="middle" font-size="6.5" font-weight="800" style="fill:currentColor;stroke:none;">9999</text>
                                             </svg>
                                         }
                                         @dispatchType.Description
@@ -182,22 +180,7 @@
                     }
                     else
                     {
-                        <div class="amount-input-row">
-                            <p class="full-charge-note">Se surtira hasta llenar el tanque.</p>
-                            <button class="btn btn-outline-secondary icon-only-button"
-                                    type="button"
-                                    title="Limpiar filtros"
-                                    aria-label="Limpiar filtros"
-                                    @onclick="ClearDispatchFilters"
-                                    disabled="@isDispatching">
-                                <svg viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M3 6h18" />
-                                    <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
-                                    <path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6" />
-                                    <path d="M10 11v6M14 11v6" />
-                                </svg>
-                            </button>
-                        </div>
+                        <p class="full-charge-note">Se surtira hasta llenar el tanque.</p>
                     }
 
                     <div class="charge-circle-wrap">
@@ -221,10 +204,13 @@
     else if (currentStep == 3)
     {
         <section class="authorization-panel">
-            <div class="panel-heading">
-                <h2>@GetAuthorizationStepTitle()</h2>
-                <span>@GetAuthorizationStepStatus()</span>
-            </div>
+            @if (!string.IsNullOrEmpty(GetAuthorizationStepTitle()))
+            {
+                <div class="panel-heading">
+                    <h2>@GetAuthorizationStepTitle()</h2>
+                    <span>@GetAuthorizationStepStatus()</span>
+                </div>
+            }
 
             @if (currentDispatchFolio is int dispatchFolio)
             {
@@ -433,7 +419,7 @@
 @if (isDispatching)
 {
     <div class="app-modal-backdrop blocking-alert-backdrop">
-        <section class="app-modal hose-alert" role="alertdialog" aria-modal="true" aria-live="assertive">
+        <section class="app-modal hose-alert light-status-modal" role="alertdialog" aria-modal="true" aria-live="assertive">
             <span class="loading-spinner" aria-hidden="true"></span>
             <h2>Enviando peticion</h2>
             <p>Espere un momento...</p>
@@ -487,7 +473,7 @@
 @if (isStartingFlow)
 {
     <div class="app-modal-backdrop blocking-alert-backdrop">
-        <section class="app-modal hose-alert" role="alertdialog" aria-modal="true" aria-live="assertive">
+        <section class="app-modal hose-alert light-status-modal" role="alertdialog" aria-modal="true" aria-live="assertive">
             <span class="loading-spinner" aria-hidden="true"></span>
             <h2>Iniciando modulo</h2>
             <p>@(string.IsNullOrWhiteSpace(startupStatusMessage) ? "Espere un momento..." : startupStatusMessage)</p>
@@ -549,7 +535,21 @@
     private bool isStartingFlow;
     private bool isLoadingDispatchTypes;
     private bool databaseIsReady;
-    private int currentStep = 2;
+    private int currentStepValue = 2;
+
+    // Propiedad en vez de campo simple: al cambiar de currentStep == 3
+    // (instrucciones/autorizacion) hacia otro paso (o viceversa), avisa a
+    // MainLayout (via HeaderState) para que Refrescar/Volver aparezcan o
+    // desaparezcan del header.
+    private int currentStep
+    {
+        get => currentStepValue;
+        set
+        {
+            currentStepValue = value;
+            HeaderState.Refresh();
+        }
+    }
     private bool connectionBlocked;
     private string connectionBlockedMessage = "No hay comunicacion con la base de datos o la interfaz TCP/IP.";
     private bool deviceNotAuthorized;
@@ -725,31 +725,36 @@
     // Iconos de Refrescar dispensarios y Volver, dibujados por MainLayout a la
     // misma altura que el titulo "Despacho", del lado derecho (Volver al
     // costado derecho de Refrescar).
+    // Refrescar/Volver no tienen sentido durante la seccion de instrucciones
+    // (autorizacion/surtido en curso, currentStep == 3): se ocultan solo ahi.
     private RenderFragment DispatchHeaderActions => @<text>
-        <button class="btn btn-outline-secondary icon-only-button"
-                type="button"
-                title="Refrescar"
-                aria-label="Refrescar"
-                @onclick="RefreshConfiguredDispensersAsync"
-                disabled="@(isLoadingDispensers || isDispatching)">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M21 12a9 9 0 1 1-3-6.7" />
-                <path d="M21 3v6h-6" />
-            </svg>
-        </button>
-        @if (dispatchFormStage >= 2)
+        @if (currentStep != 3)
         {
             <button class="btn btn-outline-secondary icon-only-button"
                     type="button"
-                    title="Volver"
-                    aria-label="Volver"
-                    @onclick="GoBack"
-                    disabled="@isDispatching">
+                    title="Refrescar"
+                    aria-label="Refrescar"
+                    @onclick="RefreshConfiguredDispensersAsync"
+                    disabled="@(isLoadingDispensers || isDispatching)">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M19 12H5" />
-                    <path d="M11 18l-6-6 6-6" />
+                    <path d="M21 12a9 9 0 1 1-3-6.7" />
+                    <path d="M21 3v6h-6" />
                 </svg>
             </button>
+            @if (dispatchFormStage >= 2)
+            {
+                <button class="btn btn-outline-secondary icon-only-button"
+                        type="button"
+                        title="Volver"
+                        aria-label="Volver"
+                        @onclick="GoBack"
+                        disabled="@isDispatching">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M19 12H5" />
+                        <path d="M11 18l-6-6 6-6" />
+                    </svg>
+                </button>
+            }
         }
     </text>;
 
@@ -2557,7 +2562,7 @@
             return "Ticket de despacho";
         }
 
-        return isFueling ? "Despacho en curso" : "Instrucciones";
+        return isFueling ? "Despacho en curso" : string.Empty;
     }
 
     private string GetAuthorizationStepStatus()
@@ -2572,7 +2577,7 @@
             return "Surtiendo";
         }
 
-        return "Esperando manguera";
+        return string.Empty;
     }
 
     private bool ShouldPromptForDispatchHoseHang()
