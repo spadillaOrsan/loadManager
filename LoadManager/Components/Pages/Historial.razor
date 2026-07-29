@@ -1,12 +1,14 @@
 @page "/historial"
 @using System.Globalization
 @using LoadManager.Helpers
+@implements IDisposable
 @inject IGasStationService GasStationService
 @inject IAppSettingsService SettingsProvider
 @inject IJSRuntime JsRuntime
 @inject IReceiptPrinterService ReceiptPrinter
 @inject IConsoleLogService Logger
 @inject IDevModeService DevMode
+@inject LoadManager.Services.ModuleHeaderState HeaderState
 
 <section class="console-shell history-shell @(isLoading ? "is-busy" : string.Empty)" aria-busy="@isLoading">
 
@@ -14,12 +16,6 @@
 
         <!-- Etapa 1: Dispensarios -->
         <section class="historial-dispensers-panel dispatch-stage-card">
-            <div class="historial-panel-heading">
-                <div>
-                    @* <h2 class="historial-panel-title">Historial de cargas</h2> *@
-                    <p class="historial-panel-sub">@availableDispensers.Count @dispenserLabel &nbsp;·&nbsp; ↓ Desliza hacia abajo</p>
-                </div>
-            </div>
             <div class="dispensers-grid">
                 @foreach (var d in availableDispensers)
                 {
@@ -37,15 +33,6 @@
 
         <!-- Etapa 2: Productos -->
         <section class="historial-products-panel dispatch-stage-card">
-            <div class="historial-panel-heading">
-                <div>
-                    <h2 class="historial-panel-title">Producto</h2>
-                    <p class="historial-panel-sub">@dispenserLabel @selectedDispenser.ToString("D2") &nbsp;·&nbsp; @availableProducts.Count productos  &nbsp;·&nbsp; ↓ Desliza hacia abajo</p>
-                </div>
-                <button class="btn btn-outline-secondary historial-back-btn" @onclick="() => GoToStage(1)">
-                    ← Volver
-                </button>
-            </div>
             <div class="dispensers-grid">
                 @foreach (var p in availableProducts)
                 {
@@ -63,24 +50,6 @@
 
         <!-- Etapa 3: Resultados -->
         <section class="historial-results-panel dispatch-stage-card">
-            <div class="historial-results-header">
-                <button class="btn btn-outline-secondary historial-back-btn" @onclick="() => GoToStage(1)" disabled="@isLoading">
-                    ← Nuevo filtro
-                </button>
-                <span class="historial-filter-summary">
-                    Disp. @selectedDispenser &middot; @SelectedProductDescription
-                </span>
-                <button class="btn btn-outline-secondary historial-back-btn" @onclick="RefreshAsync" disabled="@isLoading">
-                    Refrescar
-                </button>
-                <button class="btn btn-outline-secondary historial-back-btn" @onclick="() => GoToStage(2)" disabled="@isLoading">
-                    ← Volver
-                </button>
-                <button class="btn btn-outline-secondary historial-back-btn" @onclick="ResetFilters" disabled="@isLoading">
-                    ⟳ Reiniciar
-                </button>
-            </div>
-
             @if (records.Count == 0)
             {
                 <div class="historial-empty">
@@ -174,7 +143,21 @@
 @code {
     private readonly CultureInfo culture = CultureInfo.GetCultureInfo("es-MX");
 
-    private int historialStage = 1;
+    private int historialStageValue = 1;
+
+    // Propiedad en vez de campo simple: cada cambio de etapa avisa a
+    // MainLayout (via HeaderState) para que los iconos y el subtitulo del
+    // header (visibles solo en la Etapa 3) aparezcan/desaparezcan.
+    private int historialStage
+    {
+        get => historialStageValue;
+        set
+        {
+            historialStageValue = value;
+            HeaderState.Refresh();
+        }
+    }
+
     private bool isLoading;
     private bool printEnabled => !DevMode.IsPrintButtonHidden;
 
@@ -198,8 +181,67 @@
 
     protected override async Task OnInitializedAsync()
     {
+        HeaderState.SetActions(HistorialHeaderActions);
+        HeaderState.SetSubtitle(HistorialHeaderSubtitle);
         await LoadInitialDataAsync();
     }
+
+    public void Dispose()
+    {
+        HeaderState.SetActions(null);
+        HeaderState.SetSubtitle(null);
+    }
+
+    // Iconos de Refrescar, Atras y Reiniciar, dibujados por MainLayout a la
+    // misma altura que el titulo "Historial", del lado derecho. Solo tienen
+    // sentido una vez que hay resultados (Etapa 3).
+    private RenderFragment HistorialHeaderActions => @<text>
+        @if (historialStage >= 3)
+        {
+            <button class="btn btn-outline-secondary icon-only-button"
+                    type="button"
+                    title="Refrescar"
+                    aria-label="Refrescar"
+                    @onclick="RefreshAsync"
+                    disabled="@isLoading">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M21 12a9 9 0 1 1-3-6.7" />
+                    <path d="M21 3v6h-6" />
+                </svg>
+            </button>
+            <button class="btn btn-outline-secondary icon-only-button"
+                    type="button"
+                    title="Atras"
+                    aria-label="Atras"
+                    @onclick="() => GoToStage(2)"
+                    disabled="@isLoading">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M19 12H5" />
+                    <path d="M11 18l-6-6 6-6" />
+                </svg>
+            </button>
+            <button class="btn btn-outline-secondary icon-only-button"
+                    type="button"
+                    title="Reiniciar"
+                    aria-label="Reiniciar"
+                    @onclick="ResetFilters"
+                    disabled="@isLoading">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 2v6" />
+                    <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+                </svg>
+            </button>
+        }
+    </text>;
+
+    // Resumen del filtro activo (dispensario + producto), mostrado por
+    // MainLayout debajo del titulo "Historial". Solo aplica en Etapa 3.
+    private RenderFragment HistorialHeaderSubtitle => @<text>
+        @if (historialStage >= 3)
+        {
+            <text>Disp. @selectedDispenser &middot; @SelectedProductDescription</text>
+        }
+    </text>;
 
     private async Task LoadInitialDataAsync()
     {

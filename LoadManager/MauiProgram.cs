@@ -37,6 +37,7 @@ namespace LoadManager
             builder.Services.AddSingleton<IConnectionValidationService, ConnectionValidationService>();
             builder.Services.AddSingleton<IDevModeService, DevModeService>();
             builder.Services.AddSingleton<IActiveDispatchTracker, ActiveDispatchTracker>();
+            builder.Services.AddSingleton<ModuleHeaderState>();
 
 #if WINDOWS
             // Se usa el hook de ciclo de vida OnWindowCreated (en vez de Window.HandlerChanged en

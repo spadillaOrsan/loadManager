@@ -101,19 +101,6 @@
     margin: 0.15rem 0 0;
 }
 
-.historial-back-btn {
-    flex-shrink: 0;
-    font-size: 0.82rem;
-    padding: 0.35rem 0.8rem;
-    min-height: 2.25rem;
-}
-
-/* Volver del paso de Producto: anclado arriba a la derecha, en la misma
-   posicion que el Volver de la cabecera de resultados. */
-.historial-panel-heading .historial-back-btn {
-    margin-left: auto;
-}
-
 .historial-panel-heading > div {
     min-width: 0;
 }
@@ -125,33 +112,16 @@
     padding: 0.5rem 1rem 1.25rem;
 }
 
-/* ---------- Cabecera de resultados ---------- */
-
-.historial-results-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
-    flex-wrap: wrap;
-}
-
-.historial-filter-summary {
-    flex: 1;
-    font-size: 0.85rem;
-    color: #a8b3c3;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/* ---------- Grid de cards de resultado ---------- */
+/* ---------- Grid de cards de resultado ----------
+   El resumen del filtro y los iconos de Refrescar/Atras/Reiniciar viven
+   ahora en el header de modulo (MainLayout, via ModuleHeaderState), no aqui;
+   por eso el grid lleva su propio padding superior. */
 
 .historial-cards {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1rem;
-    padding: 0 1rem 1.5rem;
+    padding: 1rem 1rem 1.5rem;
 }
 
 /* ---------- Card individual ---------- */
@@ -290,13 +260,8 @@
 @media (min-width: 900px) {
     .historial-cards {
         grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        padding: 0 1.25rem 2rem;
+        padding: 1.25rem 1.25rem 2rem;
         gap: 1.25rem;
-    }
-
-    .historial-results-header {
-        padding: 0.85rem 1.25rem;
-        gap: 0.75rem;
     }
 
     .historial-panel-heading {
@@ -321,7 +286,7 @@
     /* Cards: 2 columnas en Android */
     .historial-cards {
         grid-template-columns: repeat(2, 1fr);
-        padding: 0 0.5rem 1.5rem;
+        padding: 0.75rem 0.5rem 1.5rem;
         gap: 0.5rem;
     }
 
@@ -339,32 +304,6 @@
     .historial-dispensers-panel .dispensers-grid,
     .historial-products-panel .dispensers-grid {
         padding: 0.5rem 0.75rem 1rem;
-    }
-
-    /* Header de resultados: botones en primera fila, summary en segunda */
-    .historial-results-header {
-        padding: 0.6rem 0.75rem;
-        gap: 0.4rem;
-    }
-
-    /* Refrescar es el 3er hijo (DOM); en Android lo empuja a la derecha
-       arrastrando consigo a Volver (4to hijo) */
-    .historial-results-header > button:nth-child(3) {
-        margin-left: auto;
-    }
-
-    .historial-filter-summary {
-        order: 10;
-        flex-basis: 100%;
-        font-size: 0.8rem;
-        white-space: normal;
-        text-align: center;
-    }
-
-    .historial-back-btn {
-        font-size: 0.78rem;
-        padding: 0.3rem 0.6rem;
-        min-height: 2rem;
     }
 
     /* Card body compacto para 2 columnas */

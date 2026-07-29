@@ -1,6 +1,7 @@
 @inherits LayoutComponentBase
 @inject IJSRuntime JsRuntime
 @inject NavigationManager NavigationManager
+@inject LoadManager.Services.ModuleHeaderState HeaderState
 @implements IDisposable
 
 <div class="page @CurrentThemeClass">
@@ -26,6 +27,13 @@
                         <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
                     </svg>
                 }
+                else if (themeIndex == 4)
+                {
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="12" r="9" />
+                        <path d="M12 3a9 9 0 0 1 0 18Z" fill="currentColor" stroke="none" />
+                    </svg>
+                }
                 else
                 {
                     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -42,7 +50,19 @@
             @if (!string.IsNullOrWhiteSpace(CurrentModuleTitle))
             {
                 <header class="console-header module-header">
-                    <h1>@CurrentModuleTitle</h1>
+                    <div class="module-header-title-group">
+                        <h1>@CurrentModuleTitle</h1>
+                        @if (HeaderState.Subtitle is not null)
+                        {
+                            <p class="module-header-subtitle">@HeaderState.Subtitle</p>
+                        }
+                    </div>
+                    @if (HeaderState.Actions is not null)
+                    {
+                        <div class="module-header-actions">
+                            @HeaderState.Actions
+                        </div>
+                    }
                 </header>
             }
             @Body
@@ -52,7 +72,7 @@
 
 
 @code {
-    private const bool IsThemeToggleEnabled = false;
+    private const bool IsThemeToggleEnabled = true;
 
     private int themeIndex = 2;
 
@@ -61,12 +81,13 @@
         1 => "theme-light",
         2 => "theme-dark",
         3 => "theme-black",
+        4 => "theme-dark theme-dispensers-white",
         _ => "theme-red"
     };
 
     private void ToggleTheme()
     {
-        themeIndex = (themeIndex + 1) % 4;
+        themeIndex = (themeIndex + 1) % 5;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -80,6 +101,7 @@
     protected override void OnInitialized()
     {
         NavigationManager.LocationChanged += OnLocationChanged;
+        HeaderState.Changed += OnHeaderStateChanged;
     }
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
@@ -87,9 +109,15 @@
         InvokeAsync(StateHasChanged);
     }
 
+    private void OnHeaderStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
     public void Dispose()
     {
         NavigationManager.LocationChanged -= OnLocationChanged;
+        HeaderState.Changed -= OnHeaderStateChanged;
     }
 
     // Titulo de modulo mostrado arriba del contenido, calculado por ruta. Solo

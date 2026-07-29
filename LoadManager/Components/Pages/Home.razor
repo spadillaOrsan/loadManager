@@ -10,6 +10,7 @@
 @inject IReceiptPrinterService ReceiptPrinter
 @inject IConsoleLogService Logger
 @inject IJSRuntime JsRuntime
+@inject LoadManager.Services.ModuleHeaderState HeaderState
 
 <section class="console-shell">
 
@@ -29,25 +30,6 @@
         <div class="selection-workspace @(IsSelectionWorkspaceLoading || isDispatching ? "is-loading" : string.Empty)" aria-busy="@(IsSelectionWorkspaceLoading || isDispatching)">
             <div class="dispatch-stage-track stage-@dispatchFormStage">
                 <section class="dispensers-panel dispatch-stage-card">
-                    <div class="panel-heading">
-                        <div>
-                            <h5>@dispenserLabel</h5>
-                            <span>
-                                @(isLoadingDispensers
-                                    ? "Consultando estatus..."
-                                    : $"{AvailableDispensersCount} disponibles")
-                            </span>
-                        </div>
-
-                        <div class="panel-heading-actions">
-                            <button class="btn btn-outline-secondary refresh-dispensers-button"
-                                    @onclick="RefreshConfiguredDispensersAsync"
-                                    disabled="@(isLoadingDispensers || isDispatching)">
-                                Refrescar
-                            </button>
-                        </div>
-                    </div>
-
                     @if (dispensers.Count == 0)
                     {
                         <p class="empty-message">No hay @dispenserLabel disponibles para operar.</p>
@@ -72,37 +54,20 @@
                 </section>
 
                 <section class="fuel-panel dispatch-stage-card">
-                    <div class="panel-heading">
-                        <div>
-                            <h2>Producto</h2>
-                            <span>@GetProductSummary()</span>
-                        </div>
-                        <button class="btn btn-outline-secondary panel-back-btn" @onclick="GoBack" disabled="@isDispatching">
-                            ← Volver
-                        </button>
+                    <div class="fuel-options">
+                        @foreach (var product in products)
+                        {
+                            <button class="fuel-option @product.CssClass @(selectedProductKey == product.Key ? "is-selected" : string.Empty)"
+                                    @onclick="() => SelectProduct(product)"
+                                    disabled="@(IsSelectionWorkspaceLoading || isDispatching || !CanEditSelectedDispenser)">
+                                <img src="@product.ImagePath" alt="" />
+                                <span class="fuel-option-text">
+                                    <strong>@product.Name</strong>
+                                    <small>@GetProductPriceText(product)</small>
+                                </span>
+                            </button>
+                        }
                     </div>
-
-                    @if (SelectedDispenser is null)
-                    {
-                        <p class="empty-message">Seleccione un @dispenserLabel para cargar productos.</p>
-                    }
-                    else
-                    {
-                        <div class="fuel-options">
-                            @foreach (var product in products)
-                            {
-                                <button class="fuel-option @product.CssClass @(selectedProductKey == product.Key ? "is-selected" : string.Empty)"
-                                        @onclick="() => SelectProduct(product)"
-                                        disabled="@(IsSelectionWorkspaceLoading || isDispatching || !CanEditSelectedDispenser)">
-                                    <img src="@product.ImagePath" alt="" />
-                                    <span class="fuel-option-text">
-                                        <strong>@product.Name</strong>
-                                        <small>@GetProductPriceText(product)</small>
-                                    </span>
-                                </button>
-                            }
-                        </div>
-                    }
 
                     @if (!string.IsNullOrWhiteSpace(productLoadMessage))
                     {
@@ -111,21 +76,7 @@
                 </section>
 
                 <section class="quantity-panel dispatch-stage-card">
-                    <div class="panel-heading">
-                        <div>
-                            <h2>Tipo de despacho</h2>
-                            <span>@(SelectedDispatchType?.Description ?? "Seleccione")</span>
-                        </div>
-                        <button class="btn btn-outline-secondary panel-back-btn" @onclick="GoBack" disabled="@isDispatching">
-                            ← Volver
-                        </button>
-                    </div>
-
-                    @if (SelectedProduct is null)
-                    {
-                        <p class="empty-message">Seleccione un producto para capturar el tipo de despacho.</p>
-                    }
-                    else
+                    @if (SelectedProduct is not null)
                     {
                         <div class="amount-mode-group" role="group" aria-label="Tipo de carga">
                             @if (isLoadingDispatchTypes)
@@ -138,9 +89,32 @@
                             {
                                 @foreach (var dispatchType in dispatchTypes)
                                 {
-                                    <button class="amount-mode @(selectedDispatchTypeId == dispatchType.Id ? "is-selected" : string.Empty)"
+                                    <button class="amount-mode dispatch-type-button @(selectedDispatchTypeId == dispatchType.Id ? "is-selected" : string.Empty)"
                                             @onclick="() => SelectDispatchTypeAndAdvance(dispatchType)"
                                             disabled="@(!CanEditSelectedDispenser || isDispatching)">
+                                        @if (dispatchType.IsMoney)
+                                        {
+                                            <svg class="amount-mode-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                                <circle cx="12" cy="12" r="9" />
+                                                <path d="M12 6v12" />
+                                                <path d="M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1-3 2.3c0 3 6 1.3 6 4.2 0 1.3-1.3 2.5-3 2.5s-3-1.1-3-2.5" />
+                                            </svg>
+                                        }
+                                        else if (dispatchType.IsVolume)
+                                        {
+                                            <svg class="amount-mode-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                                <path d="M12 3s-6 7.4-6 11.5A6 6 0 0 0 18 14.5C18 10.4 12 3 12 3Z" />
+                                            </svg>
+                                        }
+                                        else if (dispatchType.IsFull)
+                                        {
+                                            <svg class="amount-mode-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                                <path d="M4 20V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v14" />
+                                                <path d="M3 20h12" />
+                                                <path d="M6 8h6" />
+                                                <path d="M14 9h2.5l2.5 2.5V17a1.5 1.5 0 0 1-3 0v-2" />
+                                            </svg>
+                                        }
                                         @dispatchType.Description
                                     </button>
                                 }
@@ -155,45 +129,45 @@
                 </section>
 
                 <section class="amount-panel dispatch-stage-card">
-                    <div class="panel-heading">
-                        <div>
-                            <h2>@(SelectedDispatchType?.IsFull == true ? "Confirmar carga" : "Monto a surtir")</h2>
-                            <span>@(SelectedDispatchType?.Description ?? "Seleccione")</span>
-                        </div>
-                        <div class="panel-heading-actions">
-                            <button class="btn btn-outline-secondary panel-back-btn" @onclick="GoBack" disabled="@isDispatching">
-                                ← Volver
-                            </button>
-                            <button class="btn btn-outline-secondary panel-back-btn" @onclick="ClearDispatchFilters" disabled="@isDispatching">
-                                Limpiar filtros
-                            </button>
-                        </div>
-                    </div>
-
                     @if (SelectedDispatchType?.IsFull != true)
                     {
-                        <label class="amount-input-wrap">
-                            <div class="amount-input">
-                                @if (SelectedDispatchType?.IsMoney == true)
-                                {
-                                    <strong>$</strong>
-                                }
-                                <input type="text"
-                                       @key="amountInputRenderKey"
-                                       inputmode="decimal"
-                                       maxlength="12"
-                                       placeholder="0.00"
-                                       value="@amountValue"
-                                       @oninput="OnAmountChanged"
-                                       @onfocus="TouchKeyboardHelper.Show"
-                                       @onblur="FormatAmount"
-                                       disabled="@(!CanEditSelectedDispenser || isDispatching)" />
-                                @if (SelectedDispatchType?.IsVolume == true)
-                                {
-                                    <strong>Lt</strong>
-                                }
-                            </div>
-                        </label>
+                        <div class="amount-input-row">
+                            <label class="amount-input-wrap">
+                                <div class="amount-input">
+                                    @if (SelectedDispatchType?.IsMoney == true)
+                                    {
+                                        <strong>$</strong>
+                                    }
+                                    <input type="text"
+                                           @key="amountInputRenderKey"
+                                           inputmode="decimal"
+                                           maxlength="12"
+                                           placeholder="0.00"
+                                           value="@amountValue"
+                                           @oninput="OnAmountChanged"
+                                           @onfocus="TouchKeyboardHelper.Show"
+                                           @onblur="FormatAmount"
+                                           disabled="@(!CanEditSelectedDispenser || isDispatching)" />
+                                    @if (SelectedDispatchType?.IsVolume == true)
+                                    {
+                                        <strong>Lt</strong>
+                                    }
+                                </div>
+                            </label>
+                            <button class="btn btn-outline-secondary icon-only-button"
+                                    type="button"
+                                    title="Limpiar filtros"
+                                    aria-label="Limpiar filtros"
+                                    @onclick="ClearDispatchFilters"
+                                    disabled="@isDispatching">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M3 6h18" />
+                                    <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+                                    <path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6" />
+                                    <path d="M10 11v6M14 11v6" />
+                                </svg>
+                            </button>
+                        </div>
 
                         <div class="amount-mode-group quick-amount-group" role="group" aria-label="Montos rapidos">
                             @foreach (var preset in VisibleQuickAmountPresets)
@@ -208,7 +182,22 @@
                     }
                     else
                     {
-                        <p class="full-charge-note">Se surtira hasta llenar el tanque.</p>
+                        <div class="amount-input-row">
+                            <p class="full-charge-note">Se surtira hasta llenar el tanque.</p>
+                            <button class="btn btn-outline-secondary icon-only-button"
+                                    type="button"
+                                    title="Limpiar filtros"
+                                    aria-label="Limpiar filtros"
+                                    @onclick="ClearDispatchFilters"
+                                    disabled="@isDispatching">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M3 6h18" />
+                                    <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+                                    <path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6" />
+                                    <path d="M10 11v6M14 11v6" />
+                                </svg>
+                            </button>
+                        </div>
                     }
 
                     <div class="charge-circle-wrap">
@@ -568,7 +557,20 @@
     private string? selectedDispenser;
     private string? selectedProductKey;
     private int? selectedDispatchTypeId;
-    private int dispatchFormStage = 1;
+    private int dispatchFormStageValue = 1;
+
+    // Propiedad en vez de campo simple: cada cambio de etapa avisa a
+    // MainLayout (via HeaderState) para que el icono Volver del header
+    // aparezca/desaparezca segun corresponda (solo a partir del paso 2).
+    private int dispatchFormStage
+    {
+        get => dispatchFormStageValue;
+        set
+        {
+            dispatchFormStageValue = value;
+            HeaderState.Refresh();
+        }
+    }
     private string? amountValue;
     private int amountInputRenderKey;
     private static readonly int[] QuickAmountPresets = [50, 100, 200, 500, 800, 1000];
@@ -716,7 +718,40 @@
         // El paso 1 (boton "Comenzar") se elimino: la validacion de comunicacion
         // se ejecuta automaticamente al entrar al modulo.
         await BeginDispatchFlowAsync();
+
+        HeaderState.SetActions(DispatchHeaderActions);
     }
+
+    // Iconos de Refrescar dispensarios y Volver, dibujados por MainLayout a la
+    // misma altura que el titulo "Despacho", del lado derecho (Volver al
+    // costado derecho de Refrescar).
+    private RenderFragment DispatchHeaderActions => @<text>
+        <button class="btn btn-outline-secondary icon-only-button"
+                type="button"
+                title="Refrescar"
+                aria-label="Refrescar"
+                @onclick="RefreshConfiguredDispensersAsync"
+                disabled="@(isLoadingDispensers || isDispatching)">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M21 12a9 9 0 1 1-3-6.7" />
+                <path d="M21 3v6h-6" />
+            </svg>
+        </button>
+        @if (dispatchFormStage >= 2)
+        {
+            <button class="btn btn-outline-secondary icon-only-button"
+                    type="button"
+                    title="Volver"
+                    aria-label="Volver"
+                    @onclick="GoBack"
+                    disabled="@isDispatching">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M19 12H5" />
+                    <path d="M11 18l-6-6 6-6" />
+                </svg>
+            </button>
+        }
+    </text>;
 
     private async Task LoadDispatchTypesAsync()
     {
@@ -2828,6 +2863,7 @@
 
     public async ValueTask DisposeAsync()
     {
+        HeaderState.SetActions(null);
         await pageCancellation.CancelAsync();
         pageCancellation.Dispose();
         dispatchCancellation?.Dispose();
