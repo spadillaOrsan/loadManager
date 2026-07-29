@@ -1712,6 +1712,17 @@ a, .btn-link {
     padding: 0.4rem 0.4rem;
 }
 
+/* Montos rapidos y el input de monto siempre en blanco con texto en negro,
+   sin importar el tema activo (!important vence los fondos por tema). */
+.amount-mode.quick-amount-button,
+.amount-input,
+.amount-input strong,
+.amount-input input {
+    background: #ffffff !important;
+    border-color: #d8e0e6 !important;
+    color: #17212b !important;
+}
+
 /* Android (celular, pantalla angosta): 2 filas horizontales de 3 en vez de 1 fila
    larga o con scroll. */
 @media (max-width: 640.98px) {
