@@ -1157,6 +1157,7 @@ a, .btn-link {
     box-shadow: 0 8px 22px rgba(227, 6, 19, 0.16);
 }
 
+
 .dispenser-card.is-selected {
     /* Contorno blanco neon: anillo encendido + halo brillante en capas. */
     border-color: #ffffff;
@@ -1627,6 +1628,16 @@ a, .btn-link {
     color: #ffffff;
 }
 
+/* Mismo hover rojo de Bombas/Dispensarios. Va DESPUES de .fuel-option.fuel-*
+   (misma especificidad que esas reglas: sin esto, el orden en el archivo
+   haria que fuel-premium/extra/diesel/magna ganaran el empate y el hover
+   nunca se veria). El WebView de la app no reporta (hover:hover) de forma
+   fiable con mouse real, por eso es :hover simple (no @media). */
+.fuel-option:hover {
+    border-color: #e30613 !important;
+    box-shadow: 0 8px 22px rgba(227, 6, 19, 0.16) !important;
+}
+
 /* Historial: las tarjetas de producto (paso 2) reusan .dispenser-card mas la
    clase fuel-* del combustible. Se les da el mismo fondo solido que
    .fuel-option.fuel-* de Despacho (con .is-available para pesar mas que las
@@ -1765,6 +1776,16 @@ a, .btn-link {
     background: #ffffff !important;
     border-color: #d8e0e6 !important;
     color: #17212b !important;
+}
+
+/* Mismo hover rojo de Bombas/Dispensarios. Va DESPUES del bloque de arriba
+   (misma especificidad que ese !important: sin esto, el orden en el archivo
+   lo haria ganar a el y el hover nunca se veria). El WebView de la app no
+   reporta (hover:hover) de forma fiable con mouse real, por eso es :hover
+   simple (no @media). */
+.dispatch-type-button:hover {
+    border-color: #e30613 !important;
+    box-shadow: 0 8px 22px rgba(227, 6, 19, 0.16) !important;
 }
 
 .amount-mode-icon {
