@@ -73,9 +73,13 @@
                 <label class="settings-field">
                     <span>Contraseña</span>
                     <div class="password-input-wrap">
-                        <input type="@(showConfigurationPassword ? "text" : "password")"
+                        <input type="text"
+                               class="@(showConfigurationPassword ? string.Empty : "is-masked")"
                                @bind="configurationPassword"
-                               autocomplete="current-password" />
+                               autocomplete="off"
+                               autocorrect="off"
+                               autocapitalize="off"
+                               spellcheck="false" />
                         <button type="button"
                                 class="password-toggle-button"
                                 title="@(showConfigurationPassword ? "Ocultar contraseña" : "Mostrar contraseña")"

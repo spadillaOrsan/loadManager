@@ -376,9 +376,13 @@
             <h2>Modo DEV</h2>
             <p>Ingrese la contraseña para desactivar validaciones.</p>
             <div class="password-input-wrap">
-                <input type="@(showDevPassword ? "text" : "password")"
-                       class="dev-password-input"
+                <input type="text"
+                       class="dev-password-input @(showDevPassword ? string.Empty : "is-masked")"
                        placeholder="Contraseña"
+                       autocomplete="off"
+                       autocorrect="off"
+                       autocapitalize="off"
+                       spellcheck="false"
                        @bind="devPassword"
                        @bind:event="oninput"
                        @onkeydown="OnDevPasswordKeyDown" />

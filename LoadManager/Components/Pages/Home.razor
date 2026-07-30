@@ -204,14 +204,6 @@
     else if (currentStep == 3)
     {
         <section class="authorization-panel">
-            @if (!string.IsNullOrEmpty(GetAuthorizationStepTitle()))
-            {
-                <div class="panel-heading">
-                    <h2>@GetAuthorizationStepTitle()</h2>
-                    <span>@GetAuthorizationStepStatus()</span>
-                </div>
-            }
-
             @if (currentDispatchFolio is int dispatchFolio)
             {
                 <div class="dispatch-folio-banner"><strong>#@dispatchFolio</strong></div>
@@ -238,6 +230,14 @@
 
             @if (isFueling)
             {
+                @if (!string.IsNullOrEmpty(GetAuthorizationStepTitle()))
+                {
+                    <div class="dispatch-progress-status">
+                        <h2>@GetAuthorizationStepTitle()</h2>
+                        <span>@GetAuthorizationStepStatus()</span>
+                    </div>
+                }
+
                 @if (DevMode.ShouldShowLiveCounter)
                 {
                     <div class="liters-display" aria-live="polite">
@@ -316,11 +316,6 @@
     else if (currentStep == 4)
     {
         <section class="authorization-panel @(isPrintingTicket ? "is-printing" : string.Empty)">
-            <div class="panel-heading">
-                <h2>Ticket de despacho</h2>
-                <span>Despacho finalizado</span>
-            </div>
-
             @if (dispatchTicket is not null)
             {
                 <div class="ticket-panel">
@@ -407,7 +402,7 @@
 @if (isHoseLiftedBlockVisible)
 {
     <div class="app-modal-backdrop blocking-alert-backdrop">
-        <section class="app-modal hose-alert" role="alertdialog" aria-modal="true" aria-live="assertive">
+        <section class="app-modal hose-alert light-status-modal" role="alertdialog" aria-modal="true" aria-live="assertive">
             <div class="hose-alert-icon">!</div>
             <h2>Favor de colgar la manguera</h2>
             <p>@hoseLiftedBlockMessage</p>
@@ -461,7 +456,7 @@
 @if (isWaitingForDispatchHoseHang)
 {
     <div class="app-modal-backdrop blocking-alert-backdrop">
-        <section class="app-modal hose-alert" role="alertdialog" aria-modal="true" aria-live="assertive">
+        <section class="app-modal hose-alert light-status-modal" role="alertdialog" aria-modal="true" aria-live="assertive">
             <div class="hose-alert-icon">!</div>
             <h2>Favor de colgar la manguera</h2>
             <p>Carga finalizada.</p>

@@ -1419,7 +1419,8 @@ a, .btn-link {
 .theme-dispensers-white .dispensers-panel,
 .theme-dispensers-white .fuel-panel,
 .theme-dispensers-white .quantity-panel,
-.theme-dispensers-white .amount-panel {
+.theme-dispensers-white .amount-panel,
+.theme-dispensers-white .tester-panel {
     background: #ffffff !important;
     border-color: #d8e0e6 !important;
     color: #17212b !important;
@@ -1431,6 +1432,36 @@ a, .btn-link {
     background: #f4f7f9 !important;
     border-color: #d8e0e6 !important;
     color: #17212b !important;
+}
+
+/* .ticket-panel (pantalla "Ticket de despacho") tiene su propio fondo oscuro
+   por .theme-dark que se asoma entre sus tarjetas (folio/grilla), ya que
+   vive dentro de .authorization-panel pero no hereda el fondo de este. Se
+   iguala al mismo tono para que no se vea un hueco negro entre tarjetas. */
+.theme-dispensers-white .ticket-panel {
+    background: #f4f7f9 !important;
+    border-color: #d8e0e6 !important;
+    color: #17212b !important;
+}
+
+/* Pantalla "Ticket de despacho" (folio + grilla de datos finales): heredaban
+   fondo/texto pensados para tema oscuro (.theme-dark .ticket-folio / .ticket-grid
+   div en navy con texto blanco), sin contraparte clara, por lo que se veian
+   negras sobre el panel ahora blanco. */
+.theme-dispensers-white .ticket-folio,
+.theme-dispensers-white .ticket-grid div {
+    background: #ffffff !important;
+    border-color: #d8e0e6 !important;
+}
+
+.theme-dispensers-white .ticket-folio strong,
+.theme-dispensers-white .ticket-grid strong {
+    color: #17212b !important;
+}
+
+.theme-dispensers-white .ticket-folio span,
+.theme-dispensers-white .ticket-grid span {
+    color: #667684 !important;
 }
 
 /* Textos mudos (mensajes vacios, nota de tanque lleno) heredan un gris claro
@@ -2200,6 +2231,10 @@ a, .btn-link {
     text-align: center;
 }
 
+.dev-password-input.is-masked {
+    -webkit-text-security: disc;
+}
+
 .dev-password-input {
     border: 1px solid var(--ua-panel-border, #d8e0e6);
     border-radius: 8px;
@@ -2247,6 +2282,36 @@ a, .btn-link {
 .dispatch-folio-banner strong {
     font-size: 1.35rem;
     margin-left: 0.25rem;
+}
+
+/* Estado "Despacho en curso / Surtiendo": recuadro centrado entre las
+   tarjetas de resumen (dispensario/producto/precio/cantidad) y el simulador
+   de surtido (tanque), en vez de ir como encabezado del panel. */
+.dispatch-progress-status {
+    background: #ffffff;
+    border: 1px solid #d8e0e6;
+    border-radius: 8px;
+    display: grid;
+    gap: 0.2rem;
+    justify-items: center;
+    margin-inline: auto;
+    padding: 0.75rem 1.5rem;
+    text-align: center;
+    width: fit-content;
+}
+
+.dispatch-progress-status h2 {
+    color: #e30613;
+    font-size: 1.05rem;
+    font-weight: 800;
+    margin: 0;
+}
+
+.dispatch-progress-status span {
+    color: #6c7a86;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
 }
 
 .countdown-display {
@@ -2471,7 +2536,7 @@ a, .btn-link {
 
 .fuel-tank-preset strong {
     align-items: baseline;
-    color: #1b6ec2;
+    color: #e30613;
     display: inline-flex;
     font-size: 2rem;
     font-weight: 900;
@@ -2826,11 +2891,46 @@ a, .btn-link {
 }
 
 .raw-response-list code {
+    border-left: 3px solid transparent;
     color: #e5edf5;
     font-family: Consolas, monospace;
     font-size: 0.9rem;
+    padding-left: 0.6rem;
     white-space: pre-wrap;
     word-break: break-word;
+}
+
+/* Codigo de colores por tipo de comando (borde y texto), igual que la
+   captura de referencia. */
+.raw-response-list code.cmd-auth {
+    border-left-color: #adff2f;
+    color: #adff2f;
+}
+
+.raw-response-list code.cmd-cauth {
+    border-left-color: #ff0000;
+    color: #ff0000;
+}
+
+.raw-response-list code.cmd-tde,
+.raw-response-list code.cmd-td {
+    border-left-color: #00bfff;
+    color: #00bfff;
+}
+
+.raw-response-list code.cmd-sdi {
+    border-left-color: #00ff7f;
+    color: #00ff7f;
+}
+
+.raw-response-list code.cmd-cpre {
+    border-left-color: #9370db;
+    color: #9370db;
+}
+
+.raw-response-list code.cmd-tot {
+    border-left-color: #ff69b4;
+    color: #ff69b4;
 }
 
 .raw-request-list {
@@ -3065,11 +3165,13 @@ a, .btn-link {
     background: #fff;
     border: 1px solid #d8e0e6;
     border-radius: 8px;
+    box-sizing: border-box;
     color: #17212b;
     font-size: 1rem;
     min-height: 3rem;
     outline: none;
     padding: 0.65rem 0.85rem;
+    width: 100%;
 }
 
 .settings-field input:disabled,
@@ -3253,10 +3355,10 @@ a, .btn-link {
 }
 
 .tester-actions-panel {
-    background: transparent;
-    border: 0;
-    box-shadow: none;
-    padding: 0;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
 }
 
 .tester-raw-button {
@@ -3487,6 +3589,23 @@ a, .btn-link {
         grid-template-columns: 1fr;
     }
 
+    /* En pantallas angostas (celulares) el titulo del Tester ("Tester de
+       comunicacion (Conectado/Desconectado)") no cabe en una linea al
+       tamano de fuente normal de console-header y se corta de forma
+       desprolija al quedar centrado en columna. Se reduce solo aqui. */
+    .tester-shell .console-header h1 {
+        font-size: 1.3rem;
+    }
+
+    .tester-shell .console-header {
+        gap: 0.6rem;
+    }
+
+    .tester-back-button {
+        min-width: 0;
+        width: 100%;
+    }
+
     .actions-panel {
         flex-direction: column-reverse;
     }
@@ -3621,6 +3740,10 @@ h1:focus {
 .password-input-wrap input {
     padding-right: 3rem;
     width: 100%;
+}
+
+.password-input-wrap input.is-masked {
+    -webkit-text-security: disc;
 }
 
 .password-toggle-button {

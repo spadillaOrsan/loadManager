@@ -128,7 +128,7 @@
             <div class="raw-response-list">
                 @foreach (var line in responseLines)
                 {
-                    <code>@line</code>
+                    <code class="@GetCommandColorClass(line)">@line</code>
                 }
             </div>
         }
@@ -334,6 +334,42 @@
         return string.IsNullOrWhiteSpace(firstLine)
             ? result.UserMessage
             : $"{result.UserMessage} Detalle: {firstLine}";
+    }
+
+    private static string GetCommandColorClass(string line)
+    {
+        if (line.Contains("CAUTH", StringComparison.OrdinalIgnoreCase))
+        {
+            return "cmd-cauth";
+        }
+
+        if (line.Contains("AUTH", StringComparison.OrdinalIgnoreCase))
+        {
+            return "cmd-auth";
+        }
+
+        if (line.Contains("TDE", StringComparison.OrdinalIgnoreCase) ||
+            line.Contains("TD|", StringComparison.OrdinalIgnoreCase))
+        {
+            return "cmd-tde";
+        }
+
+        if (line.Contains("SDI", StringComparison.OrdinalIgnoreCase))
+        {
+            return "cmd-sdi";
+        }
+
+        if (line.Contains("CPRE", StringComparison.OrdinalIgnoreCase))
+        {
+            return "cmd-cpre";
+        }
+
+        if (line.Contains("TOT", StringComparison.OrdinalIgnoreCase))
+        {
+            return "cmd-tot";
+        }
+
+        return string.Empty;
     }
 
     private void ClearResponses()
