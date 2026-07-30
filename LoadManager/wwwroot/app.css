@@ -1755,11 +1755,12 @@ a, .btn-link {
 }
 
 /* Tipos de despacho como tarjetas separadas (antes barra segmentada fusionada),
-   con el mismo formato de seleccion que dispensarios y producto. */
+   con el mismo formato de seleccion que dispensarios y producto: una sola
+   columna vertical, igual que .dispensers-grid/.fuel-options. */
 .amount-mode-group {
     display: grid;
     gap: 0.75rem;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: 1fr;
 }
 
 .amount-mode {
