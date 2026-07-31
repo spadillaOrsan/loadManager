@@ -207,4 +207,12 @@
     .nav-bottom-actions {
         margin-top: auto;
     }
+
+    /* El boton de tema (.sidebar-theme-toggle) flota position:absolute arriba
+       a la derecha del sidebar; en pantallas anchas el primer link de nav
+       (Despacho) solo tenia 1rem de aire y quedaba tapado/amontonado debajo
+       del boton. Se reserva espacio para que no se superpongan. */
+    .nav-item:first-of-type {
+        padding-top: 3.5rem;
+    }
 }

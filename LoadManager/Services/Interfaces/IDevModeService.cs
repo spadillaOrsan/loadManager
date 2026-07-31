@@ -25,6 +25,7 @@ public interface IDevModeService
     bool CancelOnBackground { get; set; }
     bool UseCountdown { get; set; }
     bool ShowLiveCounter { get; set; }
+    bool ShowThemeButton { get; set; }
 
     // Efectivos: combinan el interruptor maestro con cada interruptor individual.
     bool BypassTcpConnection { get; }
@@ -37,6 +38,8 @@ public interface IDevModeService
     bool BypassAmountLimits { get; }
     bool BypassFueling { get; }
     bool IsPrintButtonHidden { get; }
+    /// <summary>true cuando debe mostrarse el boton de tema del sidebar. Oculto por defecto: solo visible con Modo DEV activo y este interruptor encendido.</summary>
+    bool IsThemeButtonVisible { get; }
     bool ShouldCancelOnBackground { get; }
     /// <summary>true cuando debe mostrarse el contador de 35 s en autorizacion. Depende solo de UseCountdown, no del switch maestro.</summary>
     bool ShouldShowCountdown { get; }

@@ -2,11 +2,12 @@
 @inject IJSRuntime JsRuntime
 @inject NavigationManager NavigationManager
 @inject LoadManager.Services.ModuleHeaderState HeaderState
+@inject LoadManager.Services.Interfaces.IDevModeService DevMode
 @implements IDisposable
 
 <div class="page @CurrentThemeClass">
     <div class="sidebar">
-        @if (IsThemeToggleEnabled)
+        @if (DevMode.IsThemeButtonVisible)
         {
             <button class="theme-toggle-button sidebar-theme-toggle"
                     type="button"
@@ -72,8 +73,6 @@
 
 
 @code {
-    private const bool IsThemeToggleEnabled = true;
-
     private int themeIndex = 4;
 
     private string CurrentThemeClass => themeIndex switch

@@ -20,6 +20,7 @@ public sealed class DevModeService : IDevModeService
     public bool CancelOnBackground { get; set; }
     public bool UseCountdown { get; set; }
     public bool ShowLiveCounter { get; set; }
+    public bool ShowThemeButton { get; set; }
 
     public bool BypassTcpConnection => IsEnabled && SkipTcpConnection;
     public bool BypassDatabase => IsEnabled && SkipDatabase;
@@ -31,6 +32,7 @@ public sealed class DevModeService : IDevModeService
     public bool BypassAmountLimits => IsEnabled && SkipAmountLimits;
     public bool BypassFueling => IsEnabled && SimulateFueling;
     public bool IsPrintButtonHidden => IsEnabled && HidePrintButton;
+    public bool IsThemeButtonVisible => IsEnabled && ShowThemeButton;
     public bool ShouldCancelOnBackground => IsEnabled && CancelOnBackground;
     public bool ShouldShowCountdown => UseCountdown;
     public bool ShouldShowLiveCounter => ShowLiveCounter;
@@ -51,5 +53,6 @@ public sealed class DevModeService : IDevModeService
         CancelOnBackground = false;
         UseCountdown = false;
         ShowLiveCounter = false;
+        ShowThemeButton = false;
     }
 }

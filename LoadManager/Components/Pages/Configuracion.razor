@@ -529,6 +529,9 @@
         ("Contador en autorizacion",
             "Muestra el cronometro y cancela si se agota el tiempo. Oculta el contador si esta desactivado.",
             () => DevMode.UseCountdown, v => DevMode.UseCountdown = v),
+        ("Mostrar boton de tema",
+            "El boton para cambiar de tema del sidebar esta oculto por defecto; este interruptor lo muestra.",
+            () => DevMode.ShowThemeButton, v => DevMode.ShowThemeButton = v),
     };
 
     private bool AreAllDevTogglesOn => DevToggles.All(toggle => toggle.Get());
