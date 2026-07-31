@@ -154,9 +154,9 @@
                             </label>
                             <button class="btn btn-outline-secondary icon-only-button"
                                     type="button"
-                                    title="Limpiar filtros"
-                                    aria-label="Limpiar filtros"
-                                    @onclick="ClearDispatchFilters"
+                                    title="Borrar monto"
+                                    aria-label="Borrar monto"
+                                    @onclick="ClearAmountInput"
                                     disabled="@isDispatching">
                                 <svg viewBox="0 0 24 24" aria-hidden="true">
                                     <path d="M3 6h18" />
@@ -1267,17 +1267,10 @@
 
     // Limpia la seleccion (dispensario/producto/tipo/monto) y regresa a la
     // etapa de dispensarios, igual que "Limpiar filtros" en el historial.
-    private void ClearDispatchFilters()
+    private void ClearAmountInput()
     {
-        selectedDispenser = null;
-        selectedProductKey = null;
-        selectedDispatchTypeId = null;
         amountValue = null;
         amountInputRenderKey++;
-        productLoadMessage = null;
-        hoseNumber = 1;
-        products.Clear();
-        dispatchFormStage = 1;
     }
 
     private void GoBack()
