@@ -17,8 +17,32 @@ main {
 
 article.content {
     height: 100%;
+    /* Sin overflow-x explicito, el navegador promueve overflow-x a "auto" por
+       spec (al fijar solo overflow-y). Cualquier desborde horizontal minimo
+       (ej. el bug conocido de WebView2/Windows con vw, ver mas abajo en
+       app.css) dispara una barra horizontal indeseada; se fija oculto. */
+    overflow-x: hidden;
     overflow-y: auto;
     padding-bottom: calc(5vh + env(safe-area-inset-bottom));
+}
+
+/* En pantallas anchas (>=1600px), app.css aplica "zoom" al body para agrandar
+   la UI (ver comentario en app.css). El zoom tambien infla las unidades vh, asi
+   que este padding-bottom (5vh) termina siendo mucho mas alto de lo pensado y
+   el contenido de pantallas mas largas (ej. simulador de despacho) desborda
+   por unos pixeles, apareciendo una barra de desplazamiento innecesaria aunque
+   visualmente sobre espacio abajo. Se compensa dividiendo por el mismo factor
+   de zoom, igual que .page .sidebar en app.css. */
+@media (min-width: 1600px) {
+    article.content {
+        padding-bottom: calc((5vh + env(safe-area-inset-bottom)) / 1.25);
+    }
+}
+
+@media (min-width: 2000px) {
+    article.content {
+        padding-bottom: calc((5vh + env(safe-area-inset-bottom)) / 1.5);
+    }
 }
 
 /* Titulo de modulo (Despacho/Historial) agregado por MainLayout arriba del
