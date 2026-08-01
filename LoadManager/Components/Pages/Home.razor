@@ -712,6 +712,10 @@
         await BeginDispatchFlowAsync();
 
         HeaderState.SetActions(DispatchHeaderActions);
+        // Despacho no usa subtitulo, pero HeaderState es compartido con
+        // Historial: si no se reafirma null aqui, el subtitulo que dejo
+        // Historial (ej. "Disp. 1 - EXTRA") se queda pegado bajo "Despacho".
+        HeaderState.SetSubtitle(null);
     }
 
     // Iconos de Refrescar dispensarios y Volver, dibujados por MainLayout a la

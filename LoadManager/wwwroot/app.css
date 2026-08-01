@@ -1511,21 +1511,27 @@ a, .btn-link {
     border-color: #d8e0e6 !important;
 }
 
-/* Modales de estado bloqueante ("Enviando peticion", "Iniciando modulo"):
-   mismo color que el fondo general en vez del blanco/oscuro por tema.
+/* Modales de estado bloqueante (Enviando peticion, Iniciando modulo,
+   Consultando registros, Cancelando autorizacion, Sin comunicacion,
+   Imprimir ticket, etc.): todos comparten la clase .app-modal, que
+   .theme-dark pinta con fondo oscuro sin excepcion para
+   theme-dispensers-white, por eso se veian "negros" encima del resto de la
+   app blanca. Mismo color que el fondo general en vez del oscuro por tema.
    h2/p/span heredaban texto claro pensado para fondo oscuro, se oscurecen
    para seguir siendo legibles. */
-.theme-dispensers-white .light-status-modal {
+.theme-dispensers-white .app-modal {
     background: #f4f7f9 !important;
     color: #17212b !important;
 }
 
-.theme-dispensers-white .light-status-modal h2 {
+.theme-dispensers-white .app-modal h2,
+.theme-dispensers-white .app-modal-header h2 {
     color: #17212b !important;
 }
 
-.theme-dispensers-white .light-status-modal p,
-.theme-dispensers-white .light-status-modal > span {
+.theme-dispensers-white .app-modal p,
+.theme-dispensers-white .app-modal > span,
+.theme-dispensers-white .app-modal-header span {
     color: #667684 !important;
 }
 
@@ -3233,6 +3239,27 @@ a, .btn-link {
     display: grid;
     gap: 0.75rem;
     justify-items: center;
+}
+
+/* Botones icon-only de Impresora (Actualizar puertos / Probar conexion): en
+   fila compacta en vez de apilados uno debajo del otro a lo alto de
+   .settings-actions (pensado para botones de texto ancho completo). */
+.printer-actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 0.75rem;
+}
+
+/* Descripcion de Impresora + sus botones de icono arriba a la derecha, a la
+   misma altura que el texto (align-items: flex-start para que no se centren
+   contra la descripcion, que puede ocupar varias lineas). */
+.printer-description-row {
+    align-items: flex-start;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
 }
 
 .settings-save-button {
