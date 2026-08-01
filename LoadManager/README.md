@@ -149,6 +149,36 @@ funcionar bien (resize) en cualquier tamaño de pantalla/ventana.**
 - Antes de dar por buena una pantalla o popup nuevo, probarlo compilado (no solo a simple vista en
   el editor) y verificar que se vea centrado/completo en la resolución real del dispositivo.
 
+## Convenciones de UI (NavMenu, botones, texto)
+
+Reglas ya aplicadas en todo el proyecto — seguirlas al agregar pantallas o
+componentes nuevos para no romper la consistencia visual:
+
+- **Tipografía**: OpenSans (`ConfigureFonts` en `MauiProgram.cs`) en toda la app, sin excepciones.
+- **Color de acento**: rojo institucional `#e30613` (folios, selección activa, marca). No usar otros
+  rojos/azules para lo mismo.
+- **Botones de accion en un header de seccion** (Historial, Tester, Configuración → Impresora):
+  solo ícono (sin texto), clase `btn btn-outline-secondary icon-only-button` + SVG stroke-based
+  (`viewBox="0 0 24 24"`, `fill:none; stroke:currentColor`) + `title`/`aria-label` con el texto real
+  (accesibilidad/tooltip, no se muestra en pantalla). El título de la sección va a la izquierda, el
+  o los íconos a la derecha, **a la altura del título** — no centrados contra bloques de dos líneas
+  (título + subtítulo). Patrón robusto: contenedor con `position: relative`, botón con
+  `position: absolute; top: 0; right: 0;` (ver `.response-clear-button`/`.tester-back-button` en
+  `app.css`) — no depender solo de `align-items` en flex cuando el bloque vecino tiene más de una
+  línea de texto.
+- **Acciones destructivas** (desactivar, eliminar, cancelar): `btn btn-outline-danger` (rojo). El
+  resto de acciones: `btn btn-outline-secondary` (gris).
+- **Un control que minimiza/expande contenido nunca debe ocultarse a sí mismo ni a botones de acción
+  vecinos** (ej. Modo DEV: el chevron que colapsa la lista de toggles vive fuera del bloque que
+  colapsa, junto al botón "Desactivar", para que ambos sigan visibles aunque la lista esté minimizada).
+- **NavMenu**: no reservar espacio (`padding`) para un botón condicional que casi nunca se muestra
+  (ej. el toggle de tema, solo visible con Modo DEV + flag `ShowThemeButton`). Agregar una clase
+  modificadora en el contenedor padre (`has-theme-toggle` en `.sidebar`) y que el CSS del padding
+  dependa de esa clase, no aplicarlo siempre "por si acaso".
+- **Modales de estado bloqueante** (loading, confirmaciones): todos comparten la clase `.app-modal`;
+  los overrides de tema deben apuntar a esa clase genérica, no a clases puntuales por pantalla, para
+  que un tema nuevo cubra todos los modales automáticamente.
+
 ## Modo DEV (Flags de Testing)
 
 Permite probar la UI sin hardware real ni base de datos:

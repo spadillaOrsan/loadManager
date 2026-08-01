@@ -23,19 +23,11 @@
 
             <!-- Modo DEV (desarrollo): tocar 10 veces para pedir la contrasena y
                  activarlo. Vive en el header (no en la lista) para no ocupar espacio
-                 cuando esta colapsado; el contenido (toggles) se muestra abajo, en el
-                 mismo lugar de siempre, solo mientras esta expandido. -->
+                 cuando esta colapsado; el contenido (toggles, boton Desactivar, el
+                 chevron de expandir/colapsar) se muestra abajo, junto a la
+                 advertencia, solo mientras esta expandido. -->
             <div class="dev-version-badge dev-tap-area" @onclick="OnDevTap" role="button" tabindex="0">
                 <span>Version: 1.0.0</span>
-                @if (DevMode.IsEnabled)
-                {
-                    <button type="button" class="btn btn-outline-secondary dev-disable-button" @onclick="DisableDev" @onclick:stopPropagation="true">
-                        Desactivar
-                    </button>
-                    <svg class="accordion-chevron @(openSections[5] ? "is-open" : "")" viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M6 9l6 6 6-6" />
-                    </svg>
-                }
             </div>
         </div>
     </header>
@@ -319,42 +311,55 @@
             }
         </section>
 
-        <!-- Modo DEV (desarrollo): el "tap area" (Version: 1.0.0), el boton
-             Desactivar y el chevron viven en el header de la pagina (arriba, al
-             lado de "Configuracion"). Esta tarjeta solo aparece -y ocupa espacio-
-             mientras Modo DEV esta activo Y expandido; el resto del tiempo
-             desaparece por completo de la lista. -->
-        @if (DevMode.IsEnabled && openSections[5])
+        <!-- Modo DEV (desarrollo): el "tap area" (Version: 1.0.0) vive en el
+             header de la pagina (arriba, al lado de "Configuracion"). Esta
+             tarjeta solo aparece -y ocupa espacio- mientras Modo DEV esta
+             activo; la advertencia + boton Desactivar + chevron siempre se ven
+             mientras esta activo, y el chevron solo minimiza/expande la lista
+             de toggles individuales (no afecta a Desactivar). -->
+        @if (DevMode.IsEnabled)
         {
             <section class="dev-section">
                 <div class="dev-toggle-list">
-                    <p class="dev-warning">Validaciones desactivadas: las pantallas usaran datos de ejemplo. No usar en produccion.</p>
-
-                    <div class="switch-row dev-toggle-all">
-                        <span class="switch-row-label">@(AreAllDevTogglesOn ? "Desactivar todo" : "Activar todo")</span>
-                        <button type="button"
-                                class="switch @(AreAllDevTogglesOn ? "is-on" : string.Empty)"
-                                @onclick="ToggleAllDevToggles"
-                                aria-pressed="@AreAllDevTogglesOn"
-                                aria-label="Activar o desactivar todos los toggles">
-                            <span class="switch-track"><span class="switch-thumb"></span></span>
+                    <div class="dev-warning-row">
+                        <p class="dev-warning">Validaciones desactivadas: las pantallas usaran datos de ejemplo. No usar en produccion.</p>
+                        <button type="button" class="btn btn-outline-danger dev-disable-button" @onclick="DisableDev">
+                            Desactivar
                         </button>
+                        <svg class="accordion-chevron @(openSections[5] ? "is-open" : "")" viewBox="0 0 24 24" aria-hidden="true" role="button"
+                             @onclick="() => ToggleSection(5)">
+                            <path d="M6 9l6 6 6-6" />
+                        </svg>
                     </div>
 
-                    @foreach (var toggle in DevToggles)
+                    @if (openSections[5])
                     {
-                        <div class="switch-row">
-                            <span class="switch-row-text">
-                                <span class="switch-row-label">@toggle.Label</span>
-                                <span class="switch-row-description">@toggle.Description</span>
-                            </span>
+                        <div class="switch-row dev-toggle-all">
+                            <span class="switch-row-label">@(AreAllDevTogglesOn ? "Desactivar todo" : "Activar todo")</span>
                             <button type="button"
-                                    class="switch @(toggle.Get() ? "is-on" : string.Empty)"
-                                    @onclick="() => toggle.Set(!toggle.Get())"
-                                    aria-pressed="@toggle.Get()">
+                                    class="switch @(AreAllDevTogglesOn ? "is-on" : string.Empty)"
+                                    @onclick="ToggleAllDevToggles"
+                                    aria-pressed="@AreAllDevTogglesOn"
+                                    aria-label="Activar o desactivar todos los toggles">
                                 <span class="switch-track"><span class="switch-thumb"></span></span>
                             </button>
                         </div>
+
+                        @foreach (var toggle in DevToggles)
+                        {
+                            <div class="switch-row">
+                                <span class="switch-row-text">
+                                    <span class="switch-row-label">@toggle.Label</span>
+                                    <span class="switch-row-description">@toggle.Description</span>
+                                </span>
+                                <button type="button"
+                                        class="switch @(toggle.Get() ? "is-on" : string.Empty)"
+                                        @onclick="() => toggle.Set(!toggle.Get())"
+                                        aria-pressed="@toggle.Get()">
+                                    <span class="switch-track"><span class="switch-thumb"></span></span>
+                                </button>
+                            </div>
+                        }
                     }
                 </div>
             </section>

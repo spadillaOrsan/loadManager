@@ -6,7 +6,7 @@
 @implements IDisposable
 
 <div class="page @CurrentThemeClass">
-    <div class="sidebar">
+    <div class="sidebar @(DevMode.IsThemeButtonVisible ? "has-theme-toggle" : null)">
         @if (DevMode.IsThemeButtonVisible)
         {
             <button class="theme-toggle-button sidebar-theme-toggle"

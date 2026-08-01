@@ -209,10 +209,11 @@
     }
 
     /* El boton de tema (.sidebar-theme-toggle) flota position:absolute arriba
-       a la derecha del sidebar; en pantallas anchas el primer link de nav
-       (Despacho) solo tenia 1rem de aire y quedaba tapado/amontonado debajo
-       del boton. Se reserva espacio para que no se superpongan. */
-    .nav-item:first-of-type {
+       a la derecha del sidebar SOLO cuando Modo DEV lo activa
+       (.has-theme-toggle en <div class="sidebar">); en ese caso el primer
+       link de nav (Despacho) necesita aire extra para no toparse con el
+       boton. Sin el boton (caso comun), no se reserva espacio de mas. */
+    .has-theme-toggle .nav-item:first-of-type {
         padding-top: 3.5rem;
     }
 }
