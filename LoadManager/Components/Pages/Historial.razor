@@ -79,11 +79,29 @@
                                 </div>
                                 <div class="historial-card-row">
                                     <span>Cantidad</span>
-                                    <strong>$@record.Amount.ToString("N2", culture)</strong>
+                                    <strong>
+                                        @if (IsStillOpen(record))
+                                        {
+                                            <text>En curso</text>
+                                        }
+                                        else
+                                        {
+                                            <text>$@record.Amount.ToString("N2", culture)</text>
+                                        }
+                                    </strong>
                                 </div>
                                 <div class="historial-card-row">
                                     <span>Litros</span>
-                                    <strong>@record.Liters.ToString("N3", culture)</strong>
+                                    <strong>
+                                        @if (IsStillOpen(record))
+                                        {
+                                            <text>En curso</text>
+                                        }
+                                        else
+                                        {
+                                            <text>@record.Liters.ToString("N3", culture)</text>
+                                        }
+                                    </strong>
                                 </div>
                             </div>
 
@@ -186,18 +204,46 @@
         await LoadInitialDataAsync();
     }
 
+    // No se limpia HeaderState.Actions/Subtitle aqui: el Dispose de esta
+    // pagina puede ejecutarse DESPUES de que la pagina destino (Despacho) ya
+    // fijo los suyos en su propio OnInitializedAsync, borrandolos por error
+    // (mismo bug que se corrigio en Home.razor). Cada pagina que usa el
+    // header siempre reasigna Actions/Subtitle al iniciar.
     public void Dispose()
     {
-        HeaderState.SetActions(null);
-        HeaderState.SetSubtitle(null);
     }
 
-    // Iconos de Refrescar, Atras y Reiniciar, dibujados por MainLayout a la
-    // misma altura que el titulo "Historial", del lado derecho. Solo tienen
-    // sentido una vez que hay resultados (Etapa 3).
+    // Iconos de navegacion del header, dibujados por MainLayout a la misma
+    // altura que el titulo "Historial", del lado derecho. Etapa 2 solo
+    // necesita "Volver"; Etapa 3 agrega Nuevo filtro/Refrescar/Atras/Reiniciar.
     private RenderFragment HistorialHeaderActions => @<text>
-        @if (historialStage >= 3)
+        @if (historialStage == 2)
         {
+            <button class="btn btn-outline-secondary icon-only-button"
+                    type="button"
+                    title="Volver"
+                    aria-label="Volver"
+                    @onclick="() => GoToStage(1)"
+                    disabled="@isLoading">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M19 12H5" />
+                    <path d="M11 18l-6-6 6-6" />
+                </svg>
+            </button>
+        }
+        else if (historialStage >= 3)
+        {
+            <button class="btn btn-outline-secondary icon-only-button"
+                    type="button"
+                    title="Nuevo filtro"
+                    aria-label="Nuevo filtro"
+                    @onclick="() => GoToStage(1)"
+                    disabled="@isLoading">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M11 17l-5-5 5-5" />
+                    <path d="M18 17l-5-5 5-5" />
+                </svg>
+            </button>
             <button class="btn btn-outline-secondary icon-only-button"
                     type="button"
                     title="Refrescar"
@@ -218,17 +264,6 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M19 12H5" />
                     <path d="M11 18l-6-6 6-6" />
-                </svg>
-            </button>
-            <button class="btn btn-outline-secondary icon-only-button"
-                    type="button"
-                    title="Reiniciar"
-                    aria-label="Reiniciar"
-                    @onclick="ResetFilters"
-                    disabled="@isLoading">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 2v6" />
-                    <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
                 </svg>
             </button>
         }
@@ -414,6 +449,12 @@
         if (record.IsCanceled) return "is-canceled";
         return record.IsClosed ? "is-closed" : "is-authorized";
     }
+
+    // Folio "Abierta": aun no cierra en BD, dblVendido/dblVolumenVendido
+    // vienen en 0 desde el API porque el despacho sigue en curso o quedo sin
+    // cerrar. Se usa para mostrar "En curso" en vez de $0.00/0.000.
+    private static bool IsStillOpen(DispatchHistoryRecord record) =>
+        !record.IsClosed && !record.IsCanceled;
 
     private void ShowToast(string message, bool success)
     {

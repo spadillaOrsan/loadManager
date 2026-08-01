@@ -279,10 +279,7 @@
                     </div>
                     <div class="fuel-tank-preset">
                         <span class="fuel-tank-preset-label">Preset</span>
-                        <strong>
-                            @amountValue
-                            <span class="live-counter-unit">Lt</span>
-                        </strong>
+                        <strong>@((MarkupString)FormatPresetValue())</strong>
                     </div>
                 }
             }
@@ -2614,6 +2611,16 @@
     // Clase de color del producto seleccionado para pintar el liquido del tanque.
     private string FuelTankColorClass => SelectedProduct?.CssClass ?? "fuel-magna";
 
+    // Objetivo/preset fijo (no cambia durante el polling), mostrado debajo
+    // del tanque animado. A diferencia de FormatPrimaryLiveCounter, no usa
+    // liveLiters/liveAmount: es el monto/cantidad que se pidio antes de
+    // iniciar el despacho.
+    private string FormatPresetValue()
+    {
+        var requested = TryGetAmount(out var amount) ? amount : 0;
+        return FormatLiveCounterValue(requested, SelectedDispatchType?.IsMoney == true);
+    }
+
     private string FormatPrimaryLiveCounter()
     {
         var value = SelectedDispatchType?.IsMoney == true ? liveAmount : liveLiters;
@@ -2856,7 +2863,17 @@
 
     public async ValueTask DisposeAsync()
     {
-        HeaderState.SetActions(null);
+        // No se limpia HeaderState.Actions/Subtitle aqui: al navegar, la
+        // pagina destino (Historial) ya fijo los suyos en su propio
+        // OnInitializedAsync antes de que el Router complete el cambio de
+        // ruta, pero el Dispose de esta pagina puede ejecutarse DESPUES de
+        // eso (es async, sin await antes de esta linea, pero el Renderer no
+        // garantiza el orden entre el init de la pagina nueva y el dispose
+        // de la vieja). Limpiar aqui borraba los botones recien puestos por
+        // Historial. El header solo se muestra en rutas con CurrentModuleTitle
+        // (Despacho/Historial), asi que dejar el valor "viejo" un instante no
+        // es visible en otras rutas, y cada pagina siempre reasigna el suyo
+        // al iniciar.
         await pageCancellation.CancelAsync();
         pageCancellation.Dispose();
         dispatchCancellation?.Dispose();
