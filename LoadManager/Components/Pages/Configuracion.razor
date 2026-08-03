@@ -21,11 +21,6 @@
                 Tester
             </button>
 
-            <!-- Modo DEV (desarrollo): tocar 10 veces para pedir la contrasena y
-                 activarlo. Vive en el header (no en la lista) para no ocupar espacio
-                 cuando esta colapsado; el contenido (toggles, boton Desactivar, el
-                 chevron de expandir/colapsar) se muestra abajo, junto a la
-                 advertencia, solo mientras esta expandido. -->
             <div class="dev-version-badge dev-tap-area" @onclick="OnDevTap" role="button" tabindex="0">
                 <span>Version: 1.0.0</span>
             </div>
@@ -34,7 +29,6 @@
 
     <div class="accordion-list">
 
-        <!-- Interfaz TCP/IP -->
         <section class="accordion-section">
             <button class="accordion-header" type="button" @onclick="() => ToggleSection(0)">
                 <div class="accordion-title">
@@ -61,9 +55,6 @@
             }
         </section>
 
-        <!-- Servicio API (antes separado en "URLService" + "URL de APIs": eran el
-             mismo Host/Puerto mostrados dos veces, uno como campos y otro como URL
-             combinada de solo lectura derivada. Se unifico para no confundir. -->
         <section class="accordion-section">
             <button class="accordion-header" type="button" @onclick="() => ToggleSection(1)">
                 <div class="accordion-title">
@@ -98,7 +89,6 @@
             }
         </section>
 
-        <!-- App Configuracion -->
         <section class="accordion-section">
             <button class="accordion-header" type="button" @onclick="() => ToggleSection(3)">
                 <div class="accordion-title">
@@ -232,7 +222,6 @@
             }
         </section>
 
-        <!-- Impresora -->
         <section class="accordion-section">
             <button class="accordion-header" type="button" @onclick="() => ToggleSection(4)">
                 <div class="accordion-title">
@@ -311,12 +300,6 @@
             }
         </section>
 
-        <!-- Modo DEV (desarrollo): el "tap area" (Version: 1.0.0) vive en el
-             header de la pagina (arriba, al lado de "Configuracion"). Esta
-             tarjeta solo aparece -y ocupa espacio- mientras Modo DEV esta
-             activo; la advertencia + boton Desactivar + chevron siempre se ven
-             mientras esta activo, y el chevron solo minimiza/expande la lista
-             de toggles individuales (no afecta a Desactivar). -->
         @if (DevMode.IsEnabled)
         {
             <section class="dev-section">
@@ -367,7 +350,6 @@
 
     </div>
 
-    <!-- Boton al fondo (Tester se movio al header, junto al titulo) -->
     <div class="settings-actions config-actions-footer">
         <button class="@GetConnectionButtonClass()" @onclick="SaveConnectOrDisconnectAsync" disabled="@isSaving">
             @GetConnectionButtonText()
@@ -479,8 +461,6 @@
 
     private readonly bool[] openSections = [false, false, false, false, false, false];
 
-    // --- Impresora ---
-    // printerEndpointId: puerto COM en Windows, direccion MAC en Android.
     private string printerMode = PrinterOptions.ModeWindows;
     private string printerEndpointId = string.Empty;
     private int printerBaudRate = 115200;
@@ -499,7 +479,6 @@
 
     private void ToggleSection(int index) => openSections[index] = !openSections[index];
 
-    // --- Modo DEV ---
     private bool showDevPasswordModal;
     private string devPassword = string.Empty;
     private string? devPasswordError;
@@ -566,8 +545,6 @@
 
     private int devTapCount;
 
-    // Antes de activar Modo DEV: tocar 10 veces el apartado (estilo "opciones de
-    // desarrollador"). Ya activo: el mismo tap expande/colapsa el acordeon de toggles.
     private void OnDevTap()
     {
         if (DevMode.IsEnabled)
@@ -722,8 +699,6 @@
             : settings.Printer.BluetoothAddress;
         if (!string.IsNullOrWhiteSpace(printerEndpointId))
         {
-            // Semilla con lo guardado para que el select muestre la seleccion
-            // persistida sin necesidad de re-enumerar.
             printerEndpoints =
             [
                 new BluetoothPrinterEndpoint
@@ -810,8 +785,6 @@
         NavigationManager.NavigateTo("tester");
     }
 
-    // Al cambiar a Bluetooth se enumeran los destinos disponibles
-    // (puertos COM en Windows, dispositivos vinculados en Android).
     private async Task OnPrinterModeChangedAsync()
     {
         if (printerMode == PrinterOptions.ModeBluetoothCom)
@@ -876,8 +849,6 @@
         {
             var detected = (await BluetoothPrinter.GetPrintersAsync()).ToList();
 
-            // Conserva el destino guardado aunque el dispositivo no este visible ahora,
-            // para que el select no pierda la seleccion persistida.
             if (!string.IsNullOrWhiteSpace(printerEndpointId)
                 && !detected.Any(endpoint => string.Equals(endpoint.Id, printerEndpointId, StringComparison.OrdinalIgnoreCase)))
             {
@@ -904,7 +875,6 @@
         }
         catch (Exception ex)
         {
-            // Bluetooth apagado o permiso denegado (Android): mensaje claro del servicio.
             ShowToast(ex.Message, false);
         }
         finally
@@ -932,10 +902,6 @@
         }
         catch (Exception)
         {
-            // Red de seguridad: SerialPort (Windows) puede lanzar excepciones de bajo
-            // nivel (ej. semaforo/timeout de un puerto COM Bluetooth desconectado)
-            // fuera del try/catch propio de BluetoothEscPosPrinterService. Sin este
-            // catch, el mensaje crudo se filtraba a la UI en vez del toast amigable.
             ShowToast($"No se pudo conectar con {GetPrinterEndpointName()}. Verifique que la impresora este encendida y dentro del alcance Bluetooth.", false);
         }
         finally

@@ -261,18 +261,13 @@
                                     <rect x="12" y="18" width="136" height="68" rx="34" />
                                 </clipPath>
                             </defs>
-                            <!-- patas -->
                             <rect x="36" y="82" width="13" height="20" rx="2" fill="#cdd9e5" />
                             <rect x="111" y="82" width="13" height="20" rx="2" fill="#cdd9e5" />
-                            <!-- boca de registro arriba -->
                             <rect x="68" y="7" width="24" height="13" rx="2" fill="#cdd9e5" stroke="#a9bccd" stroke-width="2" />
-                            <!-- tanque vacio (cilindro horizontal) -->
                             <rect x="12" y="18" width="136" height="68" rx="34" fill="#eaf0f6" />
-                            <!-- combustible: sube de abajo hacia arriba segun el porcentaje -->
                             <rect class="fuel-tank-liquid" x="12" width="136"
                                   y="@(86 - 68 * tankPct / 100)" height="@(68 * tankPct / 100)"
                                   clip-path="url(#fuelCanClip)" />
-                            <!-- contorno -->
                             <rect x="12" y="18" width="136" height="68" rx="34" fill="none" stroke="#a9bccd" stroke-width="3" />
                         </svg>
                         <span class="fuel-tank-pct">@tankPct<small>%</small></span>
@@ -529,10 +524,6 @@
     private bool databaseIsReady;
     private int currentStepValue = 2;
 
-    // Propiedad en vez de campo simple: al cambiar de currentStep == 3
-    // (instrucciones/autorizacion) hacia otro paso (o viceversa), avisa a
-    // MainLayout (via HeaderState) para que Refrescar/Volver aparezcan o
-    // desaparezcan del header.
     private int currentStep
     {
         get => currentStepValue;
@@ -551,9 +542,6 @@
     private int? selectedDispatchTypeId;
     private int dispatchFormStageValue = 1;
 
-    // Propiedad en vez de campo simple: cada cambio de etapa avisa a
-    // MainLayout (via HeaderState) para que el icono Volver del header
-    // aparezca/desaparezca segun corresponda (solo a partir del paso 2).
     private int dispatchFormStage
     {
         get => dispatchFormStageValue;
@@ -625,9 +613,6 @@
     private DispatchTypeViewModel? SelectedDispatchType =>
         dispatchTypes.FirstOrDefault(dispatchType => dispatchType.Id == selectedDispatchTypeId);
 
-    // Solo se muestran los montos rapidos que no superen el limite configurado
-    // (importe o litros, segun el tipo de despacho): si el limite es, por ejemplo,
-    // 500 Lt, los botones de 800/1000 ni aparecen en vez de topar el valor al tocarlos.
     private IEnumerable<int> VisibleQuickAmountPresets
     {
         get
@@ -653,9 +638,6 @@
 
     private bool IsSelectionWorkspaceLoading => isLoadingDispensers || isSelectingDispenser;
 
-    // Resumen dispensario/producto/cantidad mostrado en el modal "Enviando peticion"
-    // y en la pantalla de folio, para que el operador confirme que arranco lo que
-    // realmente selecciono.
     private string GetDispatchSummaryAmount()
     {
         if (SelectedDispatchType?.IsFull == true)
@@ -707,22 +689,12 @@
         dispenserLabel = settings.AppConfiguration.DispenserLabel;
         productNameConfig = settings.AppConfiguration;
 
-        // El paso 1 (boton "Comenzar") se elimino: la validacion de comunicacion
-        // se ejecuta automaticamente al entrar al modulo.
         await BeginDispatchFlowAsync();
 
         HeaderState.SetActions(DispatchHeaderActions);
-        // Despacho no usa subtitulo, pero HeaderState es compartido con
-        // Historial: si no se reafirma null aqui, el subtitulo que dejo
-        // Historial (ej. "Disp. 1 - EXTRA") se queda pegado bajo "Despacho".
         HeaderState.SetSubtitle(null);
     }
 
-    // Iconos de Refrescar dispensarios y Volver, dibujados por MainLayout a la
-    // misma altura que el titulo "Despacho", del lado derecho (Volver al
-    // costado derecho de Refrescar).
-    // Refrescar/Volver no tienen sentido durante la seccion de instrucciones
-    // (autorizacion/surtido en curso, currentStep == 3): se ocultan solo ahi.
     private RenderFragment DispatchHeaderActions => @<text>
         @if (currentStep != 3)
         {
@@ -788,8 +760,6 @@
         {
             var currentSettings = await SettingsProvider.GetSettingsAsync(pageCancellation.Token);
 
-            // 1) Validar que existan los datos de configuracion
-            // (en modo DEV se omite si se saltan TCP/IP o BD, que son los datos que usa).
             if (!DevMode.BypassTcpConnection && !DevMode.BypassDatabase && !HasRequiredConfiguration(currentSettings))
             {
                 startupStatusMessage = "Configuracion incompleta.";
@@ -801,7 +771,6 @@
             startupStatusMessage = "Validando TCP/IP y base de datos...";
             await InvokeAsync(StateHasChanged);
 
-            // 2) Validar base de datos (DEV: se puede saltar)
             if (DevMode.BypassDatabase)
             {
                 databaseIsReady = true;
@@ -827,7 +796,6 @@
                 databaseIsReady = true;
             }
 
-            // 3) Validar interfaz TCP/IP (DEV: se puede saltar)
             if (!DevMode.BypassTcpConnection)
             {
                 var tcpResult = ConsoleClient.IsConnected
@@ -855,7 +823,6 @@
                 dispenserFillSequential = currentSettings.AppConfiguration.DispenserFillSequential;
                 dispenserNumbers = currentSettings.AppConfiguration.DispenserNumbers;
 
-                // 4) Dispensarios (DEV: datos de ejemplo y sin validar comunicacion)
                 if (DevMode.BypassDispenserCommunication)
                 {
                     LoadMockDispensers();
@@ -874,8 +841,6 @@
                     }
                 }
 
-                // Si hay una manguera descolgada NO se bloquea el inicio: el dispensario
-                // simplemente se muestra con su estatus (manguera levantada) y su color.
                 blockedHoseDispenser = DevMode.BypassHoseLiftedBlock ? null : GetFirstLiftedHoseDispenser();
 
                 startupStatusMessage = "Consultando tipos de despacho...";
@@ -956,7 +921,6 @@
             }
             catch
             {
-                // Si Quit no esta disponible, se fuerza el cierre del proceso.
             }
 
 #if ANDROID
@@ -1066,8 +1030,6 @@
         }
     }
 
-    // Numeros de dispensario a mostrar: secuenciales 1..N ("Rellenar" activo) o la
-    // lista especifica capturada en Configuracion ("Rellenar" desactivado).
     private List<int> GetConfiguredDispenserNumbers()
     {
         if (!dispenserFillSequential && !string.IsNullOrWhiteSpace(dispenserNumbers))
@@ -1089,7 +1051,6 @@
         return Enumerable.Range(1, count).ToList();
     }
 
-    // --- Datos de ejemplo para Modo DEV (ver el diseno sin hardware/BD) ---
     private void LoadMockDispensers()
     {
         dispensers.Clear();
@@ -1100,7 +1061,7 @@
             {
                 Number = DispenserFrameHelper.NormalizeDispenserNumber(number.ToString(CultureInfo.InvariantCulture))
             };
-            ApplyDispenserStatusCode(dispenser, "1"); // Libre / disponible
+            ApplyDispenserStatusCode(dispenser, "1");
             dispensers.Add(dispenser);
         }
 
@@ -1204,7 +1165,6 @@
         products.Clear();
         productLoadMessage = null;
 
-        // Modo DEV: productos de ejemplo, sin consultar la consola.
         if (DevMode.BypassDispatchTypesAndProducts)
         {
             LoadMockProducts();
@@ -1257,8 +1217,6 @@
         amountValue = null;
     }
 
-    // Al elegir el tipo en la etapa 3, fija el tipo y desliza a la etapa 4
-    // (captura de monto para Moneda/Litros, o boton circular de carga para Lleno).
     private void SelectDispatchTypeAndAdvance(DispatchTypeViewModel dispatchType)
     {
         SelectDispatchType(dispatchType);
@@ -1266,8 +1224,6 @@
         dispatchFormStage = 4;
     }
 
-    // Limpia la seleccion (dispensario/producto/tipo/monto) y regresa a la
-    // etapa de dispensarios, igual que "Limpiar filtros" en el historial.
     private void ClearAmountInput()
     {
         amountValue = null;
@@ -1283,8 +1239,6 @@
             return;
         }
 
-        // En el paso 2: retrocede de etapa. En la primera etapa ya no hay a donde ir
-        // (el antiguo paso 1 se elimino), asi que se queda en la seleccion.
         if (currentStep == 2 && dispatchFormStage > 1)
         {
             dispatchFormStage--;
@@ -1312,8 +1266,6 @@
                 return;
             }
 
-            // Modo DEV: saltar el registro/envio de autorizacion y simular el despacho
-            // (cuenta regresiva, surtido y ticket) para ver el diseno sin consola.
             if (DevMode.BypassSendAuthorization)
             {
                 isDispatching = false;
@@ -1421,8 +1373,6 @@
         }
         catch (Exception ex)
         {
-            // El detalle tecnico (incluida la peticion HTTP) se guarda en el log
-            // por el servicio; al usuario solo se le muestra un mensaje claro.
             lastResult = new ConsoleCommandResult
             {
                 IsSuccess = false,
@@ -1445,8 +1395,6 @@
         return Task.CompletedTask;
     }
 
-    // Modo DEV: simula autorizacion y (si 'Simular surtido' esta activo) el surtido y el
-    // ticket, para poder ver y acomodar el diseno sin consola ni hardware.
     private async Task RunSimulatedDispatchAsync()
     {
         var isMoney = SelectedDispatchType?.IsMoney == true;
@@ -1473,7 +1421,6 @@
 
         try
         {
-            // Sin 'Simular surtido': solo la pantalla de instrucciones/cuenta regresiva.
             if (!DevMode.BypassFueling)
             {
                 isFueling = false;
@@ -1483,7 +1430,6 @@
                 return;
             }
 
-            // Surtido animado de 0 a la meta.
             isFueling = true;
             liveDispenserStatus = "Surtiendo";
             ShowInfoToast("Modo DEV: surtido simulado.");
@@ -1579,9 +1525,6 @@
     {
         foreach (var dispenser in dispensers)
         {
-            // Solo consultar dispensarios que realmente comunican. Los que estan
-            // "Sin comunicacion" (estatus 100 o sin respuesta) no se consultan para
-            // evitar una llamada TCP por cada dispensario configurado.
             if (!dispenser.IsAvailable)
             {
                 continue;
@@ -1704,8 +1647,6 @@
 
     private async Task RunAuthorizationCountdownAsync(CancellationToken cancellationToken)
     {
-        // El sondeo TCP del estatus corre en segundo plano para NO bloquear el contador;
-        // asi el contador baja suave 1 a 1 (5,4,3,2,1) por reloj real.
         using var pollCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var pollTask = PollAuthorizedDispenserAsync(pollCancellation.Token);
 
@@ -1736,7 +1677,6 @@
                     await InvokeAsync(() => ShowInfoToast($"La carga se cancelara en {remainingAuthorizationSeconds} segundos si no inicia."));
                 }
 
-                // Esperar hasta el siguiente segundo entero para un conteo suave.
                 var msToNextSecond = (int)((deadline - DateTime.UtcNow).TotalMilliseconds % 1000);
                 await Task.Delay(msToNextSecond <= 0 ? 1000 : msToNextSecond, cancellationToken);
             }
@@ -1751,9 +1691,6 @@
 
             var dispenserToCancel = authorizedDispenserForCountdown;
 
-            // Regresa de inmediato al paso 2 con el formulario limpio y BLOQUEA toda la
-            // pantalla con el modal "Consultando registros..." mientras cancela y re-consulta,
-            // para que la UI no se quede congelada mostrando "0".
             await InvokeAsync(() =>
             {
                 ResetDispatchFormState();
@@ -1763,7 +1700,6 @@
 
             try
             {
-                // Detener el sondeo del detalle antes de reutilizar la conexion TCP.
                 pollCancellation.Cancel();
                 try
                 {
@@ -1771,10 +1707,8 @@
                 }
                 catch
                 {
-                    // El sondeo se detuvo al cancelar.
                 }
 
-                // Cancelar la autorizacion en la consola.
                 if (dispenserToCancel is int dispenser)
                 {
                     try
@@ -1783,17 +1717,13 @@
                     }
                     catch
                     {
-                        // Si no se pudo cancelar en la consola, continuamos refrescando el estatus.
                     }
                 }
 
-                // Re-consultamos el estatus de los dispensarios para que no queden mostrando
-                // "sin conexion" con datos viejos.
                 await RefreshDispenserSummaryAsync(pageCancellation.Token);
             }
             finally
             {
-                // Libera la pantalla solo cuando termino la cancelacion y la re-consulta.
                 await InvokeAsync(() =>
                 {
                     isCancelingAuthorization = false;
@@ -1813,7 +1743,6 @@
             }
             catch
             {
-                // El sondeo se detuvo al cancelar.
             }
         }
     }
@@ -2019,7 +1948,7 @@
             isFueling = false;
             isWaitingForDispatchHoseHang = false;
             liveDispenserStatus = "2";
-            DispatchTracker.ActiveDispenser = null; // carga finalizada: ya no hay que cancelar
+            DispatchTracker.ActiveDispenser = null;
             StopAuthorizationCountdown(clearAuthorization: false);
             StopFuelingMonitor();
             currentStep = 4;
@@ -2038,7 +1967,6 @@
         ResetDispatchFormState();
     }
 
-    // Deja el formulario del paso 2 limpio y listo para un nuevo despacho.
     private void ResetDispatchFormState()
     {
         currentStep = 2;
@@ -2081,8 +2009,6 @@
 
         try
         {
-            // Trae el registro del folio (incluye datos de la estacion: tblParametros).
-            // Si la API falla o no hay registro, se imprime el panel actual como respaldo.
             DispatchHistoryRecord? record = null;
             try
             {
@@ -2093,17 +2019,14 @@
             }
             catch
             {
-                // No se pudo consultar; abajo se usa el respaldo (uaacPrintTicket).
             }
 
-            // Solo se imprime si la transaccion existe en BD y esta cerrada.
             if (record is null || !record.IsClosed)
             {
                 ShowToast("No se encontro transaccion o transaccion no cerrada.", false);
                 return;
             }
 
-            // Intenta registrar la impresion y obtener el numero de ticket (no bloquea si falla).
             var ticketNumber = 0;
             try
             {
@@ -2121,7 +2044,6 @@
                 });
             }
 
-            // El router decide la ruta: dialogo del sistema o termica Bluetooth ESC/POS.
             var outcome = await ReceiptPrinter.PrintReceiptAsync(record, ticketNumber, $"Ticket_{folio}");
             if (!outcome.Handled && outcome.Html is not null)
             {
@@ -2390,7 +2312,6 @@
 
         if (statusCode == "5")
         {
-            // La consola reporta "5" cuando el dispensario esta Surtiendo.
             dispenser.StatusCode = statusCode;
             dispenser.IsAvailable = false;
             dispenser.StatusText = "Surtiendo";
@@ -2595,8 +2516,6 @@
             : "Importe equivalente";
     }
 
-    // Porcentaje de avance del surtido (0-100) para la simulacion del tanque.
-    // Para "Lleno" la meta es CantidadTanqueLleno (asignada a amountValue al seleccionarlo).
     private int? FuelProgressPercent
     {
         get
@@ -2612,13 +2531,8 @@
         }
     }
 
-    // Clase de color del producto seleccionado para pintar el liquido del tanque.
     private string FuelTankColorClass => SelectedProduct?.CssClass ?? "fuel-magna";
 
-    // Objetivo/preset fijo (no cambia durante el polling), mostrado debajo
-    // del tanque animado. A diferencia de FormatPrimaryLiveCounter, no usa
-    // liveLiters/liveAmount: es el monto/cantidad que se pidio antes de
-    // iniciar el despacho.
     private string FormatPresetValue()
     {
         var requested = TryGetAmount(out var amount) ? amount : 0;
@@ -2805,8 +2719,6 @@
 
     private static (string Message, bool IsSuccess) GetAuthorizationToastMessage(ConsoleCommandResult result)
     {
-        // Mensajes amigables para el usuario. La trama cruda de respuesta queda
-        // registrada en el log por el servicio, no se muestra en el toast.
         var responseFrame = result.ResponseFrame ?? string.Empty;
         if (responseFrame.Contains("NoAutorizado", StringComparison.OrdinalIgnoreCase) ||
             responseFrame.Contains("No autorizado", StringComparison.OrdinalIgnoreCase))
@@ -2867,17 +2779,6 @@
 
     public async ValueTask DisposeAsync()
     {
-        // No se limpia HeaderState.Actions/Subtitle aqui: al navegar, la
-        // pagina destino (Historial) ya fijo los suyos en su propio
-        // OnInitializedAsync antes de que el Router complete el cambio de
-        // ruta, pero el Dispose de esta pagina puede ejecutarse DESPUES de
-        // eso (es async, sin await antes de esta linea, pero el Renderer no
-        // garantiza el orden entre el init de la pagina nueva y el dispose
-        // de la vieja). Limpiar aqui borraba los botones recien puestos por
-        // Historial. El header solo se muestra en rutas con CurrentModuleTitle
-        // (Despacho/Historial), asi que dejar el valor "viejo" un instante no
-        // es visible en otras rutas, y cada pagina siempre reasigna el suyo
-        // al iniciar.
         await pageCancellation.CancelAsync();
         pageCancellation.Dispose();
         dispatchCancellation?.Dispose();

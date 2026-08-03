@@ -14,7 +14,6 @@
 
     <div class="historial-stage-track stage-@historialStage">
 
-        <!-- Etapa 1: Dispensarios -->
         <section class="historial-dispensers-panel dispatch-stage-card">
             <div class="dispensers-grid">
                 @foreach (var d in availableDispensers)
@@ -31,7 +30,6 @@
             </div>
         </section>
 
-        <!-- Etapa 2: Productos -->
         <section class="historial-products-panel dispatch-stage-card">
             <div class="dispensers-grid">
                 @foreach (var p in availableProducts)
@@ -48,7 +46,6 @@
             </div>
         </section>
 
-        <!-- Etapa 3: Resultados -->
         <section class="historial-results-panel dispatch-stage-card">
             @if (records.Count == 0)
             {
@@ -163,9 +160,6 @@
 
     private int historialStageValue = 1;
 
-    // Propiedad en vez de campo simple: cada cambio de etapa avisa a
-    // MainLayout (via HeaderState) para que los iconos y el subtitulo del
-    // header (visibles solo en la Etapa 3) aparezcan/desaparezcan.
     private int historialStage
     {
         get => historialStageValue;
@@ -204,18 +198,10 @@
         await LoadInitialDataAsync();
     }
 
-    // No se limpia HeaderState.Actions/Subtitle aqui: el Dispose de esta
-    // pagina puede ejecutarse DESPUES de que la pagina destino (Despacho) ya
-    // fijo los suyos en su propio OnInitializedAsync, borrandolos por error
-    // (mismo bug que se corrigio en Home.razor). Cada pagina que usa el
-    // header siempre reasigna Actions/Subtitle al iniciar.
     public void Dispose()
     {
     }
 
-    // Iconos de navegacion del header, dibujados por MainLayout a la misma
-    // altura que el titulo "Historial", del lado derecho. Etapa 2 solo
-    // necesita "Volver"; Etapa 3 agrega Nuevo filtro/Refrescar/Atras/Reiniciar.
     private RenderFragment HistorialHeaderActions => @<text>
         @if (historialStage == 2)
         {
@@ -269,8 +255,6 @@
         }
     </text>;
 
-    // Resumen del filtro activo (dispensario + producto), mostrado por
-    // MainLayout debajo del titulo "Historial". Solo aplica en Etapa 3.
     private RenderFragment HistorialHeaderSubtitle => @<text>
         @if (historialStage >= 3)
         {
@@ -392,10 +376,6 @@
     {
         historialStage = stage;
 
-        // La seleccion (dispensario/producto) se conserva al regresar para que
-        // la tarjeta elegida se vea marcada (contorno neon + palomita), igual
-        // que en el despacho. Solo se limpian los datos derivados; al volver a
-        // tocar una tarjeta, SelectDispenserAsync/SelectProductAsync recargan.
         if (stage <= 1)
         {
             availableProducts.Clear();
@@ -407,8 +387,6 @@
         }
     }
 
-    // Reinicio total: borra los filtros (a diferencia de Volver/Nuevo filtro,
-    // que conservan la seleccion marcada) y regresa a la seccion de dispensarios.
     private void ResetFilters()
     {
         selectedDispenser = 0;
@@ -450,9 +428,6 @@
         return record.IsClosed ? "is-closed" : "is-authorized";
     }
 
-    // Folio "Abierta": aun no cierra en BD, dblVendido/dblVolumenVendido
-    // vienen en 0 desde el API porque el despacho sigue en curso o quedo sin
-    // cerrar. Se usa para mostrar "En curso" en vez de $0.00/0.000.
     private static bool IsStillOpen(DispatchHistoryRecord record) =>
         !record.IsClosed && !record.IsCanceled;
 
@@ -470,8 +445,6 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    // La tarjeta completa dispara la impresion (antes lo hacia el boton Imprimir).
-    // isPrinting evita que un doble tap registre dos impresiones en tblImpresiones.
     private bool isPrinting;
     private bool showPrintConfirm;
     private DispatchHistoryRecord? printConfirmRecord;
@@ -483,9 +456,6 @@
             return;
         }
 
-        // El mensaje de confirmacion solo aplica a transacciones cerradas (las
-        // unicas que realmente se pueden imprimir); para las demas se avisa
-        // directo sin preguntar si quiere imprimir.
         if (!record.IsClosed)
         {
             ShowToast("No se pueden imprimir tickets con transaccion abierta.", false);
@@ -550,7 +520,6 @@
             }
             catch { }
 
-            // El router decide la ruta: dialogo del sistema o termica Bluetooth ESC/POS.
             var outcome = await ReceiptPrinter.PrintReceiptAsync(record, ticketNumber, $"Ticket_{record.Sequence}");
             if (!outcome.Handled && outcome.Html is not null)
                 await JsRuntime.InvokeVoidAsync("uaacPrintHtml", outcome.Html);

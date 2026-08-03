@@ -190,16 +190,12 @@
         display: none;
     }
 
-    /* El checkbox del menu movil no debe alterar el layout en pantallas anchas
-       (cada click dentro del menu lo togglea y rompia el anclaje del boton). */
     .nav-scrollable,
     .navbar-toggler:checked ~ .nav-scrollable {
-        /* Never collapse the sidebar for wide screens */
         display: flex;
         flex-direction: column;
         justify-content: space-between;
 
-        /* Fill whatever height the sidebar gives us (sidebar is now a flex column) */
         flex: 1;
         overflow-y: auto;
     }
@@ -208,11 +204,6 @@
         margin-top: auto;
     }
 
-    /* El boton de tema (.sidebar-theme-toggle) flota position:absolute arriba
-       a la derecha del sidebar SOLO cuando Modo DEV lo activa
-       (.has-theme-toggle en <div class="sidebar">); en ese caso el primer
-       link de nav (Despacho) necesita aire extra para no toparse con el
-       boton. Sin el boton (caso comun), no se reserva espacio de mas. */
     .has-theme-toggle .nav-item:first-of-type {
         padding-top: 3.5rem;
     }

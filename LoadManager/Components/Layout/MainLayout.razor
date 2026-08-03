@@ -119,10 +119,6 @@
         HeaderState.Changed -= OnHeaderStateChanged;
     }
 
-    // Titulo de modulo mostrado arriba del contenido, calculado por ruta. Solo
-    // cubre pantallas que no tienen su propio <h1> (Despacho/Historial); las que
-    // ya tienen uno propio (Configuracion, Estado de dispensario, Tester) quedan
-    // afuera para no duplicarlo.
     private string CurrentModuleTitle
     {
         get
