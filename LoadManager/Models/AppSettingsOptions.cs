@@ -1,5 +1,44 @@
 namespace LoadManager.Models;
 
+public sealed class AppSettings
+{
+    public GasStationConsoleOptions GasStationConsole { get; set; } = new();
+
+    public AppConfigurationOptions AppConfiguration { get; set; } = new();
+
+    public ApiOptions Api { get; set; } = new();
+
+    public PrinterOptions Printer { get; set; } = new();
+
+    public ConsoleLogOptions ConsoleLogs { get; set; } = new();
+}
+
+public sealed class ApiOptions
+{
+    public string BaseUrl { get; set; } = string.Empty;
+
+    public int RequestTimeoutSeconds { get; set; }
+}
+
+public sealed class GasStationConsoleOptions
+{
+    public string IpAddress { get; set; } = string.Empty;
+
+    public int Port { get; set; }
+
+    public int ConnectionTimeoutMilliseconds { get; set; }
+
+    public int ReadTimeoutMilliseconds { get; set; }
+
+    public int ReceiveBufferSize { get; set; }
+
+    public int MaxSendAttempts { get; set; }
+
+    public string EncodingName { get; set; } = string.Empty;
+
+    public Dictionary<string, string> Commands { get; set; } = [];
+}
+
 public sealed class AppConfigurationOptions
 {
     public int Tpv { get; set; }

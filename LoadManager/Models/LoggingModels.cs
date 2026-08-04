@@ -20,3 +20,8 @@ public sealed class AppLogEntry
 
     public string? Exception { get; init; }
 }
+
+public sealed class ConsoleLogOptions
+{
+    public string BasePath { get; set; } = "Logs";
+}
