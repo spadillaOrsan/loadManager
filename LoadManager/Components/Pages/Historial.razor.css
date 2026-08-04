@@ -221,6 +221,23 @@
     border-left-color: #c43131;
 }
 
+.historial-card.is-simulated {
+    border-left-color: #a855f7;
+}
+
+.historial-sim-badge {
+    background: #a855f7;
+    border-radius: 999px;
+    color: #ffffff;
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    margin-left: 0.4rem;
+    padding: 0.1rem 0.4rem;
+    vertical-align: middle;
+}
+
 /* Al pasar/presionar: el mismo contorno blanco neon del resto de la app. */
 .historial-card:hover,
 .historial-card:active {
@@ -335,7 +352,7 @@
 
     .historial-panel-heading {
         padding: 1rem 1.25rem 0.5rem;
-    }
+    }*Afec
 
     .historial-dispensers-panel .dispensers-grid,
     .historial-products-panel .dispensers-grid {
@@ -361,7 +378,7 @@
 
     .historial-panel-heading {
         padding: 0.75rem 0.75rem 0.35rem;
-        /* Sin wrap: el boton Volver se mantiene arriba a la derecha (igual que
+        /* Sin wraMep: el boton Volver se mantiene arriba a la derecha (igual que
            en resultados) y el titulo/subtitulo se acomodan en su columna. */
         flex-wrap: nowrap;
     }

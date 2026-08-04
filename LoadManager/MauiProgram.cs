@@ -35,6 +35,7 @@ namespace LoadManager
                 (services, _) => services.GetRequiredService<IBluetoothEscPosPrinterService>());
             builder.Services.AddSingleton<IReceiptPrinterService, ReceiptPrinterService>();
             builder.Services.AddSingleton<IConnectionValidationService, ConnectionValidationService>();
+            builder.Services.AddSingleton<ISimulatedDispatchHistoryStore, SimulatedDispatchHistoryStore>();
             builder.Services.AddSingleton<IDevModeService, DevModeService>();
             builder.Services.AddSingleton<IActiveDispatchTracker, ActiveDispatchTracker>();
             builder.Services.AddSingleton<ModuleHeaderState>();

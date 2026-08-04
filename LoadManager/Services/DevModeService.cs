@@ -5,6 +5,13 @@ namespace LoadManager.Services;
 /// <inheritdoc cref="IDevModeService" />
 public sealed class DevModeService : IDevModeService
 {
+    private readonly ISimulatedDispatchHistoryStore simulatedHistory;
+
+    public DevModeService(ISimulatedDispatchHistoryStore simulatedHistory)
+    {
+        this.simulatedHistory = simulatedHistory;
+    }
+
     public bool IsEnabled { get; set; }
 
     public bool SkipTcpConnection { get; set; }
@@ -57,5 +64,6 @@ public sealed class DevModeService : IDevModeService
         ShowLiveCounter = false;
         ShowThemeButton = false;
         ShowCancelDispatchButton = false;
+        simulatedHistory.Clear();
     }
 }

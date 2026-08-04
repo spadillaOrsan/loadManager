@@ -8,6 +8,7 @@
 @inject IReceiptPrinterService ReceiptPrinter
 @inject IConsoleLogService Logger
 @inject IDevModeService DevMode
+@inject ISimulatedDispatchHistoryStore SimulatedHistory
 @inject LoadManager.Services.ModuleHeaderState HeaderState
 
 <section class="console-shell history-shell @(isLoading ? "is-busy" : string.Empty)" aria-busy="@isLoading">
@@ -61,11 +62,17 @@
                 <div class="historial-cards">
                     @foreach (var record in records)
                     {
-                        <article class="historial-card @GetStatusClass(record)"
+                        <article class="historial-card @GetStatusClass(record) @(record.IsSimulated ? "is-simulated" : null)"
                                  role="button"
                                  @onclick="() => OnRecordCardClick(record)">
                             <header class="historial-card-header">
-                                <span class="historial-card-folio">Folio #@record.Sequence</span>
+                                <span class="historial-card-folio">
+                                    Folio #@record.Sequence
+                                    @if (record.IsSimulated)
+                                    {
+                                        <span class="historial-sim-badge">SIMULADO</span>
+                                    }
+                                </span>
                                 <span class="history-status @GetStatusClass(record)">@record.Status</span>
                             </header>
 
@@ -186,7 +193,7 @@
     private string SelectedProductDescription =>
         availableProducts.FirstOrDefault(p => p.Id == selectedProduct)?.Description ?? selectedProduct.ToString();
 
-    private List<DispatchHistoryRecord> records = [];
+    private List<HistorialCardViewModel> records = [];
 
     private string? toastMessage;
     private string toastCss = "is-success";
@@ -334,8 +341,7 @@
                 RequestBody = $"Disp={selectedDispenser:D2}; Prod={selectedProduct} ({SelectedProductDescription}); Top={historialTop}"
             });
 
-            records = (await GasStationService.GetHistorialAsync(
-                selectedDispenser, selectedProduct, historialTop)).ToList();
+            records = await LoadMergedRecordsAsync();
 
             await Logger.WriteAsync(new AppLogEntry
             {
@@ -363,13 +369,23 @@
         await InvokeAsync(StateHasChanged);
         try
         {
-            records = (await GasStationService.GetHistorialAsync(
-                selectedDispenser, selectedProduct, historialTop)).ToList();
+            records = await LoadMergedRecordsAsync();
         }
         finally
         {
             isLoading = false;
         }
+    }
+
+    private async Task<List<HistorialCardViewModel>> LoadMergedRecordsAsync()
+    {
+        var real = await GasStationService.GetHistorialAsync(selectedDispenser, selectedProduct, historialTop);
+        var simulated = SimulatedHistory.GetFor(selectedDispenser, selectedProduct);
+
+        return real.Select(HistorialCardViewModel.FromReal)
+            .Concat(simulated.Select(HistorialCardViewModel.FromSimulated))
+            .OrderByDescending(r => r.CreatedAt)
+            .ToList();
     }
 
     private void GoToStage(int stage)
@@ -422,13 +438,13 @@
     private string FormatDecimal(decimal value) =>
         value == 0 ? "0" : value.ToString("N2", culture);
 
-    private static string GetStatusClass(DispatchHistoryRecord record)
+    private static string GetStatusClass(HistorialCardViewModel record)
     {
         if (record.IsCanceled) return "is-canceled";
         return record.IsClosed ? "is-closed" : "is-authorized";
     }
 
-    private static bool IsStillOpen(DispatchHistoryRecord record) =>
+    private static bool IsStillOpen(HistorialCardViewModel record) =>
         !record.IsClosed && !record.IsCanceled;
 
     private void ShowToast(string message, bool success)
@@ -447,9 +463,9 @@
 
     private bool isPrinting;
     private bool showPrintConfirm;
-    private DispatchHistoryRecord? printConfirmRecord;
+    private HistorialCardViewModel? printConfirmRecord;
 
-    private void OnRecordCardClick(DispatchHistoryRecord record)
+    private void OnRecordCardClick(HistorialCardViewModel record)
     {
         if (isLoading || isPrinting || !printEnabled)
         {
@@ -495,7 +511,7 @@
         }
     }
 
-    private async Task PrintRecordAsync(DispatchHistoryRecord record)
+    private async Task PrintRecordAsync(HistorialCardViewModel record)
     {
         if (!record.IsClosed)
         {
@@ -514,13 +530,16 @@
         try
         {
             int ticketNumber = 0;
-            try
+            if (!record.IsSimulated)
             {
-                ticketNumber = await GasStationService.RegisterImpressionAsync(record.Sequence);
+                try
+                {
+                    ticketNumber = await GasStationService.RegisterImpressionAsync(record.Sequence);
+                }
+                catch { }
             }
-            catch { }
 
-            var outcome = await ReceiptPrinter.PrintReceiptAsync(record, ticketNumber, $"Ticket_{record.Sequence}");
+            var outcome = await ReceiptPrinter.PrintReceiptAsync(record.ToDispatchHistoryRecord(), ticketNumber, $"Ticket_{record.Sequence}");
             if (!outcome.Handled && outcome.Html is not null)
                 await JsRuntime.InvokeVoidAsync("uaacPrintHtml", outcome.Html);
 

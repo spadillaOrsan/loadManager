@@ -7,6 +7,7 @@
 @inject IConnectionValidationService ConnectionState
 @inject IDevModeService DevMode
 @inject IActiveDispatchTracker DispatchTracker
+@inject ISimulatedDispatchHistoryStore SimulatedHistory
 @inject IReceiptPrinterService ReceiptPrinter
 @inject IConsoleLogService Logger
 @inject IJSRuntime JsRuntime
@@ -1502,6 +1503,22 @@
             liveLiters = Math.Round(targetLiters, 3);
             liveAmount = Math.Round(targetAmount, 2);
             isFueling = false;
+
+            var dispenser = int.Parse(DispenserFrameHelper.ToCommandNumber(selectedDispenser!), CultureInfo.InvariantCulture);
+            SimulatedHistory.Add(new SimulatedDispatchRecord
+            {
+                Sequence = currentDispatchFolio.Value,
+                Dispenser = dispenser,
+                Hose = hoseNumber,
+                Product = SelectedProduct?.ProductCode ?? 1,
+                ProductDescription = SelectedProduct?.Name ?? "SUPREME+",
+                DispatchTypeId = SelectedDispatchType?.Id ?? 0,
+                ProgrammedAmount = targetPrimary,
+                Amount = liveAmount,
+                Liters = liveLiters,
+                Price = price,
+                CreatedAt = DateTime.Now
+            });
 
             dispatchTicket = new DispatchTicketViewModel
             {
