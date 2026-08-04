@@ -530,6 +530,9 @@
         ("Mostrar boton de tema",
             "El boton para cambiar de tema del sidebar esta oculto por defecto; este interruptor lo muestra.",
             () => DevMode.ShowThemeButton, v => DevMode.ShowThemeButton = v),
+        ("Mostrar boton de cancelar carga",
+            "Muestra, debajo del preset del simulador de despacho, un boton para cancelar la carga en curso: envia CAUTH por socket y detiene la animacion simulada si esta corriendo. Activo por defecto, en produccion y en Modo DEV.",
+            () => DevMode.ShowCancelDispatchButton, v => DevMode.ShowCancelDispatchButton = v),
     };
 
     private bool AreAllDevTogglesOn => DevToggles.All(toggle => toggle.Get());

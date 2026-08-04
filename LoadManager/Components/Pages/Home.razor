@@ -276,6 +276,14 @@
                         <span class="fuel-tank-preset-label">Preset</span>
                         <strong>@((MarkupString)FormatPresetValue())</strong>
                     </div>
+                    @if (DevMode.ShouldShowCancelDispatchButton && !isWaitingForDispatchHoseHang && !isCancelingAuthorization)
+                    {
+                        <button type="button" class="btn btn-outline-danger cancel-dispatch-button"
+                                @onclick="CancelActiveDispatchManuallyAsync"
+                                disabled="@isCancelingAuthorization">
+                            Cancelar carga
+                        </button>
+                    }
                 }
             }
             else
@@ -438,8 +446,8 @@
     <div class="app-modal-backdrop blocking-alert-backdrop">
         <section class="app-modal hose-alert" role="alertdialog" aria-modal="true" aria-live="assertive">
             <span class="loading-spinner" aria-hidden="true"></span>
-            <h2>Cancelando autorizacion</h2>
-            <p>Consultando registros...</p>
+            <h2>@cancelingAuthorizationTitle</h2>
+            <p>@cancelingAuthorizationMessage</p>
             <span>La pantalla permanecera bloqueada hasta terminar.</span>
         </section>
     </div>
@@ -514,9 +522,12 @@
     private CancellationTokenSource? dispatchCancellation;
     private CancellationTokenSource? authorizationCountdownCancellation;
     private CancellationTokenSource? fuelingMonitorCancellation;
+    private CancellationTokenSource? simulatedDispatchCancellation;
     private bool isRefreshingSummary;
     private bool isDispatching;
     private bool isCancelingAuthorization;
+    private string cancelingAuthorizationTitle = "Cancelando autorizacion";
+    private string cancelingAuthorizationMessage = "Consultando registros...";
     private bool isLoadingDispensers;
     private bool isSelectingDispenser;
     private bool isStartingFlow;
@@ -1395,6 +1406,39 @@
         return Task.CompletedTask;
     }
 
+    private async Task CancelActiveDispatchManuallyAsync()
+    {
+        if (isCancelingAuthorization)
+        {
+            return;
+        }
+
+        cancelingAuthorizationTitle = "Cancelando carga";
+        cancelingAuthorizationMessage = "Enviando cancelacion...";
+        isCancelingAuthorization = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            simulatedDispatchCancellation?.Cancel();
+            StopFuelingMonitor();
+            StopAuthorizationCountdown(clearAuthorization: false);
+
+            await DispatchTracker.CancelActiveDispatchAsync(pageCancellation.Token);
+
+            ResetDispatchFormState();
+            await RefreshDispenserSummaryAsync(pageCancellation.Token);
+            ShowToast("Carga cancelada.", true);
+        }
+        finally
+        {
+            isCancelingAuthorization = false;
+            cancelingAuthorizationTitle = "Cancelando autorizacion";
+            cancelingAuthorizationMessage = "Consultando registros...";
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
     private async Task RunSimulatedDispatchAsync()
     {
         var isMoney = SelectedDispatchType?.IsMoney == true;
@@ -1435,6 +1479,8 @@
             ShowInfoToast("Modo DEV: surtido simulado.");
             await InvokeAsync(StateHasChanged);
 
+            simulatedDispatchCancellation = CancellationTokenSource.CreateLinkedTokenSource(pageCancellation.Token);
+
             const int steps = 40;
             for (var i = 1; i <= steps; i++)
             {
@@ -1442,7 +1488,7 @@
                 liveLiters = Math.Round(targetLiters * ratio, 3);
                 liveAmount = Math.Round(targetAmount * ratio, 2);
                 await InvokeAsync(StateHasChanged);
-                await Task.Delay(150, pageCancellation.Token);
+                await Task.Delay(150, simulatedDispatchCancellation.Token);
             }
 
             liveLiters = Math.Round(targetLiters, 3);
@@ -1468,6 +1514,11 @@
         }
         catch (OperationCanceledException)
         {
+        }
+        finally
+        {
+            simulatedDispatchCancellation?.Dispose();
+            simulatedDispatchCancellation = null;
         }
     }
 
@@ -2784,6 +2835,7 @@
         dispatchCancellation?.Dispose();
         authorizationCountdownCancellation?.Dispose();
         fuelingMonitorCancellation?.Dispose();
+        simulatedDispatchCancellation?.Dispose();
     }
 
 }

@@ -26,6 +26,7 @@ public interface IDevModeService
     bool UseCountdown { get; set; }
     bool ShowLiveCounter { get; set; }
     bool ShowThemeButton { get; set; }
+    bool ShowCancelDispatchButton { get; set; }
 
     // Efectivos: combinan el interruptor maestro con cada interruptor individual.
     bool BypassTcpConnection { get; }
@@ -45,6 +46,8 @@ public interface IDevModeService
     bool ShouldShowCountdown { get; }
     /// <summary>true cuando debe mostrarse el contador de litros/moneda durante el surtido. Depende solo de ShowLiveCounter, no del switch maestro.</summary>
     bool ShouldShowLiveCounter { get; }
+    /// <summary>true cuando debe mostrarse el boton "Cancelar carga" en el simulador de despacho. Depende solo de ShowCancelDispatchButton, no del switch maestro. Activo por defecto.</summary>
+    bool ShouldShowCancelDispatchButton { get; }
 
     /// <summary>Apaga el modo DEV y reinicia todos los interruptores.</summary>
     void Disable();

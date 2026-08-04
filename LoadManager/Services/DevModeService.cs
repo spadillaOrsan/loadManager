@@ -21,6 +21,7 @@ public sealed class DevModeService : IDevModeService
     public bool UseCountdown { get; set; }
     public bool ShowLiveCounter { get; set; }
     public bool ShowThemeButton { get; set; }
+    public bool ShowCancelDispatchButton { get; set; } = true;
 
     public bool BypassTcpConnection => IsEnabled && SkipTcpConnection;
     public bool BypassDatabase => IsEnabled && SkipDatabase;
@@ -36,6 +37,7 @@ public sealed class DevModeService : IDevModeService
     public bool ShouldCancelOnBackground => IsEnabled && CancelOnBackground;
     public bool ShouldShowCountdown => UseCountdown;
     public bool ShouldShowLiveCounter => ShowLiveCounter;
+    public bool ShouldShowCancelDispatchButton => ShowCancelDispatchButton;
 
     public void Disable()
     {
@@ -54,5 +56,6 @@ public sealed class DevModeService : IDevModeService
         UseCountdown = false;
         ShowLiveCounter = false;
         ShowThemeButton = false;
+        ShowCancelDispatchButton = false;
     }
 }

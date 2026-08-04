@@ -2391,6 +2391,11 @@ a, .btn-link {
     .fuel-tank-preset strong { font-size: 2.5rem; }
 }
 
+.cancel-dispatch-button {
+    margin-top: 0.75rem;
+    width: 100%;
+}
+
 .fueling-note {
     color: #455463;
     font-weight: 800;
