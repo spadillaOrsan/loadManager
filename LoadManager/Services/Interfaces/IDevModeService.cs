@@ -31,6 +31,7 @@ public interface IDevModeService
     // Efectivos: combinan el interruptor maestro con cada interruptor individual.
     bool BypassTcpConnection { get; }
     bool BypassDatabase { get; }
+    /// <summary>true con SkipDispenserCommunication o con SkipTcpConnection: sin conexion TCP no puede haber comunicacion real con el dispensario.</summary>
     bool BypassDispenserCommunication { get; }
     bool BypassDispatchTypesAndProducts { get; }
     bool BypassSendAuthorization { get; }

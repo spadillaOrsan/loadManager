@@ -957,6 +957,11 @@
 
     private async Task RefreshDispenserSummaryAsync(CancellationToken cancellationToken)
     {
+        if (DevMode.BypassDispenserCommunication)
+        {
+            return;
+        }
+
         if (isRefreshingSummary)
         {
             return;

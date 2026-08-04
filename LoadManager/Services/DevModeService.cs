@@ -25,7 +25,7 @@ public sealed class DevModeService : IDevModeService
 
     public bool BypassTcpConnection => IsEnabled && SkipTcpConnection;
     public bool BypassDatabase => IsEnabled && SkipDatabase;
-    public bool BypassDispenserCommunication => IsEnabled && SkipDispenserCommunication;
+    public bool BypassDispenserCommunication => IsEnabled && (SkipDispenserCommunication || SkipTcpConnection);
     public bool BypassDispatchTypesAndProducts => IsEnabled && SkipDispatchTypesAndProducts;
     public bool BypassSendAuthorization => IsEnabled && SkipSendAuthorization;
     public bool BypassAuthorizationResponse => IsEnabled && SkipAuthorizationResponse;
