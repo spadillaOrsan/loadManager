@@ -1,4 +1,20 @@
+using LoadManager.Models;
+
 namespace LoadManager.Services.Interfaces;
+
+public interface IAppSettingsService
+{
+    Task<AppSettings> GetSettingsAsync(CancellationToken cancellationToken = default);
+
+    Task SaveSettingsAsync(AppSettings settings, CancellationToken cancellationToken = default);
+}
+
+public interface IConsoleLogService
+{
+    Task<string> WriteAsync(ConsoleCommandResult result, CancellationToken cancellationToken = default);
+
+    Task<string> WriteAsync(AppLogEntry entry, CancellationToken cancellationToken = default);
+}
 
 /// <summary>
 /// Estado en memoria del "Modo DEV": permite saltar validaciones del modulo de
@@ -52,4 +68,18 @@ public interface IDevModeService
 
     /// <summary>Apaga el modo DEV y reinicia todos los interruptores.</summary>
     void Disable();
+}
+
+/// <summary>
+/// Guarda en memoria las cargas simuladas de Modo DEV para que Historial pueda
+/// mostrarlas. No persiste a disco ni llama a la API/BD: se pierde al cerrar la
+/// app o al desactivar Modo DEV.
+/// </summary>
+public interface ISimulatedDispatchHistoryStore
+{
+    void Add(SimulatedDispatchRecord record);
+
+    IReadOnlyList<SimulatedDispatchRecord> GetFor(int dispenser, int product);
+
+    void Clear();
 }

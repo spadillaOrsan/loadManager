@@ -22,13 +22,19 @@ con [`LoadManagerApi`](../LoadManagerApi/README.md). Ver el panorama completo en
 
 | Página | Archivo | Función |
 | --- | --- | --- |
-| Despacho | `Home.razor` | Flujo completo de autorización y surtido (el archivo más grande del repo, ~2700 líneas — contiene toda la máquina de estados del despacho) |
+| Despacho | `Home.razor` | Flujo completo de autorización y surtido. El markup vive en `Home.razor`; la máquina de estados (~2350 líneas) está en code-behind partial classes: `Home.razor.cs` (campos/lifecycle), `Home.Selection.razor.cs` (selección de dispensario/producto/monto), `Home.Dispatch.razor.cs` (autorización/despacho), `Home.Polling.razor.cs` (countdown/polling/monitor de surtido), `Home.Formatting.razor.cs` (formateo de texto/clases y toasts) |
 | Configuración | `Configuracion.razor` | Settings TCP/IP, API, límites, tiempos |
 | Historial | `Historial.razor` | Consulta de despachos pasados con filtros |
 | Estado Dispensario | `EstadoDispensario.razor` | Diagnóstico y estados en tiempo real |
 | Tester | `Tester.razor` | Envío de tramas TCP crudas para debug |
 
 ### Servicios
+
+Antes de crear un servicio nuevo, revisar esta tabla — es común que ya exista algo
+reusable (ej. el patrón de `SimulatedDispatchHistoryStore` como store en memoria). Cada
+servicio tiene su interfaz en `Services/Interfaces/`, agrupadas por tema en
+`DispatchInterfaces.cs`, `AppInterfaces.cs` y `PrintingInterfaces.cs` (no hay un archivo
+de interfaz por servicio).
 
 | Servicio | Responsabilidad |
 | --- | --- |
@@ -41,6 +47,8 @@ con [`LoadManagerApi`](../LoadManagerApi/README.md). Ver el panorama completo en
 | `ConnectionValidationService` | Valida estado TCP y API antes de despachar |
 | `ActiveDispatchTracker` | Control de despachos activos en pantalla |
 | `DevModeService` | Expone los flags `Bypass*` de Modo DEV (ver abajo) |
+| `SimulatedDispatchHistoryStore` | Historial en memoria de cargas simuladas en Modo DEV (sin BD/API), consumido por Historial |
+| `ModuleHeaderState` | Estado del header dinámico (título/subtítulo/acciones) compartido entre páginas |
 
 ### Helpers
 
@@ -53,6 +61,9 @@ con [`LoadManagerApi`](../LoadManagerApi/README.md). Ver el panorama completo en
 | `TicketEscPosBuilder` | El mismo ticket pero en bytes ESC/POS para térmicas (texto + corte, a N columnas) |
 | `EscPosDocumentBuilder` | Builder fluido de comandos ESC/POS: texto, alineación, negrita, QR, CODE128, corte |
 | `FuelProductHelper` | Utilidades de productos de combustible |
+| `ProductNameHelper` | Resuelve el nombre de producto a mostrar (overrides de Configuración) |
+| `TouchKeyboardHelper` | Teclado táctil en pantalla para inputs numéricos (Windows) |
+| `PathHelpers` | Rutas locales: `ConsoleLogPathHelper` (logs por día) y `AppSettingsPathHelper` (`appsettings.json` del usuario/proyecto) |
 
 ### Modelos
 
